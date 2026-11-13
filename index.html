@@ -1,0 +1,1112 @@
+<!doctype html>
+<html lang="zh-Hant-TW">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="鐵週期">
+<meta name="theme-color" content="#0D1015">
+<link rel="apple-touch-icon" href="icon-180.png">
+<link rel="icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}input,textarea{font-size:16px}</style>
+</head>
+<body>
+<title>鐵週期</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Noto+Sans+TC:wght@400;500;700;900&display=swap">
+<style>
+/* Layout: single-column phone app, max 520px, fixed tab bar; the whole UI tints itself with the current week's bumper-plate color. */
+:root{
+  --bg:#0D1015; --surface:#151920; --surface2:#1D222B; --line:#272D38; --line2:#323947;
+  --text:#EEF1F5; --muted:#8C94A3; --faint:#5E6676;
+  --on-phase:#0B0E13; --danger:#FF6B6B; --ok:#3DDC97;
+  --phase:#3DDC97; --phase-soft:rgba(61,220,151,.14);
+  --f-body:"Noto Sans TC",-apple-system,"PingFang TC","Microsoft JhengHei",sans-serif;
+  --f-num:"Barlow Condensed","DIN Alternate","Arial Narrow",sans-serif;
+  --r-lg:20px; --r-md:14px; --r-sm:10px;
+  color-scheme:dark;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--f-body);font-size:15px;line-height:1.5;margin:0}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--bg)}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer;padding:0}
+input,select{font:inherit;color:var(--text)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--phase);outline-offset:2px}
+.num{font-family:var(--f-num);font-variant-numeric:tabular-nums;letter-spacing:.01em}
+.muted{color:var(--muted)}
+.wrap{max-width:520px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px calc(110px + env(safe-area-inset-bottom,0px))}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;align-items:center;gap:10px}
+.between{justify-content:space-between}
+.grow{flex:1;min-width:0}
+h1{font-size:28px;font-weight:900;margin:0;letter-spacing:.02em;text-wrap:balance}
+h2{font-size:17px;font-weight:700;margin:0}
+.eyebrow{font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);font-weight:700}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r-lg);padding:16px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 16px;border-radius:12px;background:var(--surface2);border:1px solid var(--line2);font-weight:700;font-size:14px;white-space:nowrap}
+.btn svg{width:18px;height:18px}
+.btn.primary{background:var(--phase);color:var(--on-phase);border-color:transparent}
+.btn.big{height:56px;font-size:17px;border-radius:16px;width:100%;letter-spacing:.08em}
+.btn.ghost{background:transparent}
+.btn.danger{color:var(--danger)}
+.btn.sm{height:34px;padding:0 12px;font-size:13px;border-radius:10px}
+.icon-btn{width:40px;height:40px;border-radius:12px;display:grid;place-items:center;background:var(--surface2);border:1px solid var(--line2)}
+.icon-btn svg{width:20px;height:20px}
+.chip{display:inline-flex;align-items:center;height:24px;padding:0 9px;border-radius:999px;font-size:12px;font-weight:700;background:var(--surface2);color:var(--muted);border:1px solid var(--line2);white-space:nowrap}
+.chip.ph{background:var(--phase-soft);color:var(--phase);border-color:transparent}
+.seg{display:flex;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:3px;gap:3px}
+.seg button{flex:1;height:34px;border-radius:9px;font-size:13px;font-weight:700;color:var(--muted)}
+.seg button.on{background:var(--text);color:var(--bg)}
+.empty{text-align:center;color:var(--muted);padding:28px 12px;font-size:14px}
+
+/* top */
+.topbar{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;padding-top:10px}
+.brand{font-family:var(--f-num);font-weight:700;letter-spacing:.24em;font-size:12px;color:var(--phase)}
+
+/* phase card */
+.phase-card{position:relative;overflow:hidden;border-radius:var(--r-lg);padding:18px;background:var(--surface);border:1px solid var(--line)}
+.phase-card .plate{position:absolute;right:-38px;top:-38px;width:150px;height:150px;border-radius:50%;border:16px solid var(--phase);opacity:.16}
+.phase-card .plate::after{content:"";position:absolute;inset:38px;border-radius:50%;border:6px solid var(--phase)}
+.phase-name{font-size:26px;font-weight:900;color:var(--phase);line-height:1.15}
+.phase-en{font-family:var(--f-num);font-weight:700;letter-spacing:.2em;font-size:13px;color:var(--muted)}
+.cyc{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-top:14px}
+.cyc div{display:flex;flex-direction:column;gap:6px}
+.cyc i{display:block;height:8px;border-radius:4px;background:var(--line2)}
+.cyc span{font-size:11px;color:var(--faint);font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.cyc .cur span{color:var(--text)}
+
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.wd{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 7px;border-radius:14px;border:1.5px solid transparent;color:var(--muted)}
+.wd b{font-family:var(--f-num);font-size:21px;font-weight:600;color:var(--text);line-height:1.1}
+.wd small{font-size:11px;font-weight:700}
+.wd .dot{width:6px;height:6px;border-radius:50%;background:transparent}
+.wd .dot.plan{background:var(--line2)}
+.wd .dot.plan.has{background:var(--phase)}
+.wd .dot.done{background:var(--ok)}
+.wd.today b{color:var(--phase)}
+.wd.sel{border-color:var(--phase);background:var(--phase-soft)}
+
+/* day */
+.day-head{display:flex;justify-content:space-between;align-items:flex-start;gap:12px}
+.day-title{font-size:24px;font-weight:900}
+.meta{display:flex;gap:14px;flex-wrap:wrap;color:var(--muted);font-size:13px}
+.meta b{font-family:var(--f-num);font-size:18px;color:var(--text);font-weight:600;margin-right:3px}
+.ex-list{display:flex;flex-direction:column}
+.ex-row{display:flex;align-items:center;gap:12px;padding:12px 2px;border-top:1px solid var(--line);text-align:left;width:100%}
+.ex-row:first-child{border-top:0}
+.ex-badge{width:44px;height:44px;border-radius:12px;background:var(--surface2);display:grid;place-items:center;font-weight:900;font-size:15px;color:var(--muted);flex:none;border:1px solid var(--line2)}
+.ex-name{font-weight:700;font-size:15px;line-height:1.3}
+.ex-sub{font-size:13px;color:var(--muted)}
+.ex-sub .num{font-size:15px;color:var(--text)}
+.chev{width:18px;height:18px;color:var(--faint);flex:none}
+.banner{display:flex;align-items:center;gap:12px;padding:14px 16px;border-radius:16px;background:var(--phase);color:var(--on-phase);font-weight:700;width:100%;text-align:left}
+.banner .num{font-size:22px}
+.rest-day{text-align:center;padding:30px 16px}
+.rest-day h2{font-size:22px;font-weight:900;margin-bottom:6px}
+
+/* tab bar */
+.tabbar{position:fixed;left:0;right:0;bottom:0;z-index:30;background:rgba(13,16,21,.92);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+.tabbar .in{max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr)}
+.tabbar button{display:flex;flex-direction:column;align-items:center;gap:3px;padding:10px 0 8px;font-size:11px;font-weight:700;color:var(--faint)}
+.tabbar button svg{width:24px;height:24px}
+.tabbar button.on{color:var(--phase)}
+
+/* library */
+.search{display:flex;align-items:center;gap:8px;height:44px;padding:0 12px;border-radius:12px;background:var(--surface2);border:1px solid var(--line2)}
+.search svg{width:18px;height:18px;color:var(--muted);flex:none}
+.search input{flex:1;min-width:0;background:none;border:0;outline:0;height:100%}
+.chips{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;padding-bottom:2px;margin:0 -2px}
+.chips::-webkit-scrollbar{display:none}
+.chips button{flex:none;height:32px;padding:0 13px;border-radius:999px;background:var(--surface2);border:1px solid var(--line2);font-size:13px;font-weight:700;color:var(--muted)}
+.chips button.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.group-h{font-size:12px;font-weight:700;color:var(--muted);letter-spacing:.1em;margin:14px 2px 2px}
+
+/* progress */
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 12px}
+.tile .num{font-size:32px;font-weight:600;line-height:1}
+.tile small{display:block;color:var(--muted);font-size:12px;margin-top:6px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .h{font-size:11px;color:var(--faint);font-weight:700;padding:4px 0}
+.cal button{aspect-ratio:1;max-width:100%;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;font-family:var(--f-num);font-size:17px;color:var(--muted)}
+.cal button.has{color:var(--text);background:var(--surface2)}
+.cal button.sel{outline:1.5px solid var(--text)}
+.cal button.today{color:var(--phase)}
+.cal i{width:5px;height:5px;border-radius:50%}
+.bars{display:flex;flex-direction:column;gap:8px}
+.bar{display:grid;grid-template-columns:44px 1fr 28px;align-items:center;gap:8px;font-size:13px}
+.bar .t{height:10px;border-radius:5px;background:var(--surface2);overflow:hidden}
+.bar .t i{display:block;height:100%;background:var(--phase);border-radius:5px}
+.log{border-top:1px solid var(--line);padding:12px 0}
+.log:first-child{border-top:0}
+.log-sets{font-size:13px;color:var(--muted);margin-top:6px;display:flex;flex-direction:column;gap:3px}
+.log-sets b{color:var(--text);font-weight:500}
+
+/* settings */
+.set-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
+.set-item:first-child{border-top:0}
+.stepper{display:flex;align-items:center;gap:4px}
+.stepper button{width:36px;height:36px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);font-size:18px;font-weight:700}
+.stepper .num{min-width:56px;text-align:center;font-size:20px}
+.toggle{width:50px;height:30px;border-radius:15px;background:var(--line2);position:relative;flex:none;transition:background .2s}
+.toggle::after{content:"";position:absolute;left:3px;top:3px;width:24px;height:24px;border-radius:50%;background:var(--text);transition:transform .2s}
+.toggle.on{background:var(--phase)}
+.toggle.on::after{transform:translateX(20px);background:var(--on-phase)}
+textarea{width:100%;min-height:120px;background:var(--surface2);border:1px solid var(--line2);border-radius:12px;color:var(--text);padding:10px;font-family:ui-monospace,Menlo,monospace;font-size:12px}
+
+/* session */
+.sess{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
+.sess-top{flex:none;border-bottom:1px solid var(--line);background:var(--bg)}
+.sess-top .in{max-width:520px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px}
+.stats{flex:1;display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
+.stats small{display:block;font-size:11px;color:var(--muted);font-weight:700}
+.stats .num{font-size:20px;font-weight:600;line-height:1.1}
+.sess-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.sess-body .in{max-width:520px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-right,0px)) 200px max(16px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.progress-dots{display:flex;gap:4px}
+.progress-dots i{flex:1;height:4px;border-radius:2px;background:var(--line2)}
+.progress-dots i.done{background:var(--ok)}
+.progress-dots i.cur{background:var(--phase)}
+.ex-title{font-size:26px;font-weight:900;line-height:1.2;text-wrap:balance}
+.pr-row{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:end}
+.pr-row .num{font-size:30px;font-weight:600;line-height:1}
+.spark{width:100%;height:56px;display:block}
+.warm{border-radius:16px;border:1px dashed var(--line2);padding:12px 14px}
+.warm summary{list-style:none;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:700}
+.warm summary::-webkit-details-marker{display:none}
+.warm ol{margin:10px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.warm li{background:var(--surface2);border-radius:10px;padding:8px 10px;font-size:13px;color:var(--muted)}
+.warm li .num{color:var(--text);font-size:18px}
+.target{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
+.target .num{font-size:20px;color:var(--text)}
+.sets{display:flex;flex-direction:column;gap:8px}
+.set{display:grid;grid-template-columns:28px 1fr 1fr 56px;gap:8px;align-items:stretch;background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:8px}
+.set-n{display:grid;place-items:center;font-family:var(--f-num);font-size:18px;color:var(--faint);font-weight:600}
+.fld{display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--surface2);border-radius:12px;padding:6px 4px;min-width:0}
+.fld .in-row{display:flex;align-items:baseline;justify-content:center;gap:3px;width:100%}
+.fld input{width:100%;max-width:90px;text-align:center;background:none;border:0;outline:0;font-family:var(--f-num);font-size:30px;font-weight:600;padding:0;line-height:1.1;min-width:0}
+.fld input::placeholder{color:var(--faint)}
+.fld .u{font-size:12px;color:var(--muted);flex:none}
+.fld small{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%}
+.chk{border-radius:12px;display:grid;place-items:center;background:var(--surface2);border:1.5px solid var(--line2);color:var(--faint)}
+.chk svg{width:26px;height:26px}
+.set.done{background:var(--phase-soft);border-color:transparent}
+.set.done .chk{background:var(--phase);color:var(--on-phase);border-color:transparent}
+.set.done .set-n{color:var(--phase)}
+.set.done input{color:var(--phase)}
+.sess-foot{flex:none;border-top:1px solid var(--line);background:var(--bg);padding-bottom:env(safe-area-inset-bottom,0px)}
+.sess-foot .in{max-width:520px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;gap:10px}
+.sess-foot .btn{flex:1;height:50px}
+
+/* rest timer */
+.rest{position:fixed;left:0;right:0;z-index:45;bottom:calc(71px + env(safe-area-inset-bottom,0px));padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.rest .in{max-width:496px;margin:0 auto;background:var(--text);color:var(--bg);border-radius:20px;padding:12px 14px;display:flex;align-items:center;gap:12px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.rest .ring{width:56px;height:56px;flex:none;position:relative}
+.rest .ring svg{width:56px;height:56px;transform:rotate(-90deg)}
+.rest .clock{font-family:var(--f-num);font-size:34px;font-weight:700;line-height:1;font-variant-numeric:tabular-nums}
+.rest small{display:block;font-size:12px;font-weight:700;opacity:.65}
+.rest .rb{height:36px;min-width:42px;padding:0 8px;border-radius:10px;background:rgba(0,0,0,.08);font-weight:700;font-size:13px;color:var(--bg)}
+.rest .rb.go{background:var(--bg);color:var(--text)}
+.rest.over .in{background:var(--phase);color:var(--on-phase)}
+
+/* sheets */
+.scrim{position:fixed;inset:0;z-index:70;background:rgba(0,0,0,.6);display:flex;align-items:flex-end;justify-content:center;animation:fade .18s ease}
+.sheet{width:100%;max-width:560px;max-height:90%;background:var(--surface);border-radius:24px 24px 0 0;border:1px solid var(--line);border-bottom:0;display:flex;flex-direction:column;animation:up .22s ease;padding-bottom:env(safe-area-inset-bottom,0px)}
+.sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px max(18px,env(safe-area-inset-right,0px)) 10px max(18px,env(safe-area-inset-left,0px))}
+.sheet-b{overflow-y:auto;padding:4px max(18px,env(safe-area-inset-right,0px)) 18px max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.sheet-f{padding:10px max(18px,env(safe-area-inset-right,0px)) 14px max(18px,env(safe-area-inset-left,0px));display:flex;gap:10px;border-top:1px solid var(--line)}
+.sheet-f .btn{flex:1}
+.dialog{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:20px}
+.dialog .box{background:var(--surface);border:1px solid var(--line2);border-radius:20px;padding:20px;max-width:360px;width:100%;display:flex;flex-direction:column;gap:12px}
+.dialog .row .btn{flex:1}
+.field{display:flex;flex-direction:column;gap:6px}
+.field label{font-size:12px;font-weight:700;color:var(--muted)}
+.field input,.field select{height:44px;border-radius:12px;background:var(--surface2);border:1px solid var(--line2);padding:0 12px;outline:0;width:100%}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));transform:translateX(-50%);z-index:100;background:var(--text);color:var(--bg);padding:10px 16px;border-radius:12px;font-weight:700;font-size:14px;box-shadow:0 8px 30px rgba(0,0,0,.4);max-width:calc(100% - 32px);animation:fade .2s ease}
+.sync{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
+.sync i{width:7px;height:7px;border-radius:50%;background:var(--faint)}
+.sync.on i{background:var(--ok)}
+@keyframes up{from{transform:translateY(30px);opacity:.4}}
+@keyframes fade{from{opacity:0}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+@media (max-width:370px){.fld input{font-size:25px}.set{grid-template-columns:22px 1fr 1fr 48px;gap:6px}.tile .num{font-size:26px}}
+</style>
+
+<div id="app"></div>
+<div id="layer"></div>
+
+<script>
+/* ---------- Exercise library ---------- */
+const EX_RAW=`bb_bench|槓鈴平板臥推|胸|槓鈴|c
+bb_incline|槓鈴上斜臥推|胸|槓鈴|c
+bb_decline|槓鈴下斜臥推|胸|槓鈴|c
+db_bench|啞鈴平板臥推|胸|啞鈴|c
+db_incline|啞鈴上斜臥推|胸|啞鈴|c
+db_decline|啞鈴下斜臥推|胸|啞鈴|c
+db_fly|啞鈴平板飛鳥|胸|啞鈴|i
+db_incline_fly|啞鈴上斜飛鳥|胸|啞鈴|i
+db_pullover|啞鈴仰臥拉舉|胸|啞鈴|i
+sm_bench|史密斯平板臥推|胸|史密斯|c
+sm_incline|史密斯上斜臥推|胸|史密斯|c
+m_chest_press|坐姿胸推機|胸|器械|c
+m_incline_press|上斜胸推機|胸|器械|c
+pl_chest_press|槓片式胸推機|胸|器械|c
+m_pec_deck|蝴蝶機夾胸|胸|器械|i
+cb_crossover|繩索夾胸（高位）|胸|繩索|i
+cb_mid_fly|繩索夾胸（中位）|胸|繩索|i
+cb_low_fly|繩索夾胸（低位）|胸|繩索|i
+bw_pushup|伏地挺身|胸|自體重|c
+bw_decline_pushup|下斜伏地挺身|胸|自體重|c
+bw_dip_chest|雙槓撐體（胸）|胸|自體重|c
+m_dip|輔助雙槓撐體機|胸|器械|c
+bb_deadlift|槓鈴硬舉|背|槓鈴|c
+bb_row|槓鈴俯身划船|背|槓鈴|c
+bb_pendlay|潘德雷划船|背|槓鈴|c
+tbar_row|T 槓划船|背|槓鈴|c
+bb_rack_pull|架上拉|背|槓鈴|c
+db_row|單臂啞鈴划船|背|啞鈴|c
+db_chest_row|上斜椅俯臥啞鈴划船|背|啞鈴|c
+bw_pullup|引體向上|背|自體重|c
+bw_chinup|反手引體向上|背|自體重|c
+m_assist_pullup|輔助引體向上機|背|器械|c
+cb_lat_pd|寬握滑輪下拉|背|繩索|c
+cb_lat_pd_close|窄握滑輪下拉|背|繩索|c
+cb_lat_pd_rev|反握滑輪下拉|背|繩索|c
+cb_single_pd|單臂滑輪下拉|背|繩索|c
+cb_seated_row|坐姿繩索划船|背|繩索|c
+cb_single_row|單臂繩索划船|背|繩索|c
+cb_straight_pd|直臂下拉|背|繩索|i
+m_lat_pd|下拉機|背|器械|c
+m_row|坐姿划船機|背|器械|c
+pl_row|槓片式胸靠划船機（正握）|背|器械|c
+pl_hi_row|槓片式高位下拉機|背|器械|c
+sm_row|史密斯俯身划船|背|史密斯|c
+bw_inverted_row|反式划船|背|自體重|c
+m_back_ext|背部伸展（羅馬椅）|背|自體重|i
+bb_shrug|槓鈴聳肩|背|槓鈴|i
+db_shrug|啞鈴聳肩|背|啞鈴|i
+bb_ohp|站姿槓鈴肩推|肩|槓鈴|c
+bb_seated_ohp|坐姿槓鈴肩推|肩|槓鈴|c
+bb_push_press|借力推舉|肩|槓鈴|c
+bb_landmine_press|地雷管推舉|肩|槓鈴|c
+db_ohp|坐姿啞鈴肩推|肩|啞鈴|c
+db_arnold|阿諾推舉|肩|啞鈴|c
+db_lateral|啞鈴側平舉|肩|啞鈴|i
+db_front|啞鈴前平舉|肩|啞鈴|i
+db_rear_fly|俯身啞鈴反向飛鳥|肩|啞鈴|i
+db_upright|啞鈴直立划船|肩|啞鈴|c
+bb_upright|槓鈴直立划船|肩|槓鈴|c
+sm_ohp|史密斯肩推|肩|史密斯|c
+m_shoulder_press|肩推機|肩|器械|c
+pl_shoulder|槓片式肩推機|肩|器械|c
+m_lateral|側平舉機|肩|器械|i
+m_rear_delt|反向蝴蝶機|肩|器械|i
+cb_lateral|單臂繩索側平舉|肩|繩索|i
+cb_face_pull|繩索面拉|肩|繩索|i
+cb_rear_fly|繩索反向飛鳥|肩|繩索|i
+cb_front|繩索前平舉|肩|繩索|i
+bb_curl|槓鈴彎舉|二頭|槓鈴|i
+ez_curl|EZ 槓彎舉|二頭|EZ槓|i
+ez_preacher|EZ 槓牧師椅彎舉|二頭|EZ槓|i
+db_curl|啞鈴交替彎舉|二頭|啞鈴|i
+db_hammer|啞鈴錘式彎舉|二頭|啞鈴|i
+db_incline_curl|上斜啞鈴彎舉|二頭|啞鈴|i
+db_conc|集中彎舉|二頭|啞鈴|i
+db_preacher|啞鈴牧師椅彎舉|二頭|啞鈴|i
+db_spider|蜘蛛彎舉|二頭|啞鈴|i
+cb_curl|繩索彎舉|二頭|繩索|i
+cb_rope_hammer|繩索錘式彎舉|二頭|繩索|i
+cb_bayesian|貝氏繩索彎舉|二頭|繩索|i
+m_preacher|牧師椅彎舉機|二頭|器械|i
+bb_cgbp|窄握槓鈴臥推|三頭|槓鈴|c
+ez_skull|EZ 槓仰臥臂屈伸|三頭|EZ槓|i
+db_skull|啞鈴仰臥臂屈伸|三頭|啞鈴|i
+db_oh_ext|啞鈴過頭臂屈伸|三頭|啞鈴|i
+db_kickback|啞鈴後踢|三頭|啞鈴|i
+cb_pushdown|繩索下壓（直槓）|三頭|繩索|i
+cb_rope_pd|繩索下壓（繩索）|三頭|繩索|i
+cb_oh_ext|繩索過頭臂屈伸|三頭|繩索|i
+cb_single_tpd|單臂反握繩索下壓|三頭|繩索|i
+bw_dip|雙槓撐體（三頭）|三頭|自體重|c
+bw_bench_dip|板凳撐體|三頭|自體重|i
+bw_diamond|鑽石伏地挺身|三頭|自體重|c
+m_tri_ext|三頭伸展機|三頭|器械|i
+m_dip_tri|坐姿撐體機|三頭|器械|c
+bb_wrist_curl|槓鈴腕彎舉|前臂|槓鈴|i
+bb_rev_wrist|槓鈴反握腕彎舉|前臂|槓鈴|i
+bb_rev_curl|槓鈴反握彎舉|前臂|槓鈴|i
+db_farmer|農夫走路|前臂|啞鈴|c
+bw_dead_hang|懸吊|前臂|自體重|i
+bb_squat|槓鈴背蹲|股四頭|槓鈴|c
+bb_front_squat|槓鈴前蹲|股四頭|槓鈴|c
+sm_squat|史密斯深蹲|股四頭|史密斯|c
+m_hack|哈克深蹲機|股四頭|器械|c
+m_leg_press|腿推機|股四頭|器械|c
+m_pendulum|鐘擺深蹲機|股四頭|器械|c
+m_belt_squat|腰帶深蹲機|股四頭|器械|c
+m_leg_ext|腿伸展機|股四頭|器械|i
+db_goblet|高腳杯深蹲|股四頭|啞鈴|c
+db_bulgarian|保加利亞分腿蹲|股四頭|啞鈴|c
+db_lunge|啞鈴弓箭步|股四頭|啞鈴|c
+db_walk_lunge|行走弓箭步|股四頭|啞鈴|c
+bb_lunge|槓鈴弓箭步|股四頭|槓鈴|c
+db_stepup|啞鈴登階|股四頭|啞鈴|c
+sm_split|史密斯分腿蹲|股四頭|史密斯|c
+bw_sissy|西西深蹲|股四頭|自體重|i
+bw_squat|徒手深蹲|股四頭|自體重|c
+m_adductor|髖內收機（大腿內側）|股四頭|器械|i
+bb_rdl|槓鈴羅馬尼亞硬舉|腿後|槓鈴|c
+db_rdl|啞鈴羅馬尼亞硬舉|腿後|啞鈴|c
+sm_rdl|史密斯羅馬尼亞硬舉|腿後|史密斯|c
+db_single_rdl|單腿羅馬尼亞硬舉|腿後|啞鈴|c
+bb_sldl|直腿硬舉|腿後|槓鈴|c
+bb_good_morning|早安式體前屈|腿後|槓鈴|c
+m_lying_curl|俯臥腿彎舉機|腿後|器械|i
+m_seated_curl|坐姿腿彎舉機|腿後|器械|i
+m_standing_curl|站姿單腿彎舉機|腿後|器械|i
+bw_nordic|北歐挺|腿後|自體重|i
+m_ghr|臀腿抬升 GHR|腿後|自體重|i
+bb_hip_thrust|槓鈴臀推|臀|槓鈴|c
+sm_hip_thrust|史密斯臀推|臀|史密斯|c
+m_hip_thrust|臀推機|臀|器械|c
+bb_glute_bridge|槓鈴臀橋|臀|槓鈴|c
+bb_sumo_dl|相撲硬舉|臀|槓鈴|c
+db_sumo_squat|啞鈴相撲深蹲|臀|啞鈴|c
+kb_swing|壺鈴擺盪|臀|壺鈴|c
+cb_pull_through|繩索後拉|臀|繩索|c
+cb_kickback|繩索後踢腿|臀|繩索|i
+m_glute_kick|臀部後踢機|臀|器械|i
+m_abductor|髖外展機|臀|器械|i
+m_reverse_hyper|反向超伸|臀|器械|i
+m_standing_calf|站姿提踵機|小腿|器械|i
+m_seated_calf|坐姿提踵機|小腿|器械|i
+m_leg_press_calf|腿推機提踵|小腿|器械|i
+sm_calf|史密斯提踵|小腿|史密斯|i
+db_calf|啞鈴單腿提踵|小腿|啞鈴|i
+bw_plank|棒式（秒）|核心|自體重|i
+bw_side_plank|側棒式（秒）|核心|自體重|i
+bw_crunch|捲腹|核心|自體重|i
+cb_crunch|繩索跪姿捲腹|核心|繩索|i
+m_ab_crunch|腹部捲腹機|核心|器械|i
+bw_hanging_leg|懸垂舉腿|核心|自體重|i
+bw_hanging_knee|懸垂抬膝|核心|自體重|i
+m_captain|羅馬椅抬腿|核心|自體重|i
+bw_ab_wheel|健腹輪|核心|自體重|i
+bw_leg_raise|仰臥抬腿|核心|自體重|i
+bw_russian|俄羅斯轉體|核心|自體重|i
+bw_vup|V 字起坐|核心|自體重|i
+bw_deadbug|死蟲式|核心|自體重|i
+cb_woodchop|繩索伐木|核心|繩索|i
+cb_pallof|Pallof 抗旋轉推|核心|繩索|i
+bb_power_clean|高翻|全身|槓鈴|c
+bb_clean|槓鈴上膊|全身|槓鈴|c
+bb_snatch|抓舉|全身|槓鈴|c
+bb_thruster|槓鈴推舉深蹲|全身|槓鈴|c
+kb_tgu|土耳其起立|全身|壺鈴|c
+kb_goblet_swing|壺鈴高腳杯深蹲|全身|壺鈴|c
+bw_burpee|波比跳|全身|自體重|c
+bw_box_jump|跳箱|全身|自體重|c
+sled_push|雪橇推|全身|器械|c
+battle_rope|戰繩（秒）|全身|器械|c`;
+const GROUPS=['胸','背','肩','二頭','三頭','前臂','股四頭','腿後','臀','小腿','核心','全身'];
+const EQUIPS=['槓鈴','啞鈴','器械','繩索','史密斯','EZ槓','壺鈴','自體重'];
+const INC={'槓鈴':2.5,'EZ槓':2.5,'史密斯':2.5,'器械':2.5,'繩索':2.5,'啞鈴':2,'壺鈴':4,'自體重':2.5};
+const BASE_EX=EX_RAW.split('\n').map(l=>{const [id,name,group,equip,t]=l.split('|');return {id,name,group,equip,compound:t==='c'}});
+
+/* ---------- Five-week cycle ---------- */
+const PHASES=[
+ {key:'base',name:'基礎週',en:'BASE',mult:1,repF:1,setsF:1,color:'#3DDC97',soft:'rgba(61,220,151,.14)',desc:'表定重量，練好動作與節奏'},
+ {key:'load',name:'負荷週',en:'LOAD',mult:1.05,repF:1,setsF:1,color:'#FFD23F',soft:'rgba(255,210,63,.14)',desc:'重量 +5%，次數不變'},
+ {key:'prepeak',name:'預備高峰週',en:'PRE-PEAK',mult:1.075,repF:.8,setsF:1,color:'#5B95FF',soft:'rgba(91,149,255,.16)',desc:'重量 +7.5%，次數約減兩成'},
+ {key:'peak',name:'高峰週',en:'PEAK',mult:1.1,repF:.65,setsF:1,color:'#FF5468',soft:'rgba(255,84,104,.15)',desc:'重量 +10%，低次數衝強度'},
+ {key:'deload',name:'減量週',en:'DELOAD',mult:.65,repF:1,setsF:.6,color:'#C9D1DC',soft:'rgba(201,209,220,.13)',desc:'重量 65%、組數減少，讓身體恢復'}];
+
+/* ---------- Plan templates ---------- */
+const T={
+ UA:['上肢 A',[['bb_bench',3,6,8,60],['bb_row',3,8,10,50],['db_ohp',3,8,10,16],['cb_lat_pd',3,10,12,50],['db_lateral',3,15,20,8],['cb_rope_pd',3,10,12,20],['db_curl',3,10,12,10]]],
+ LA:['下肢 A',[['bb_squat',3,6,8,80],['bb_rdl',3,8,10,60],['m_leg_press',3,10,12,120],['m_lying_curl',3,10,12,35],['m_standing_calf',4,12,15,60],['cb_crunch',3,12,15,30]]],
+ UB:['上肢 B',[['bb_ohp',3,6,8,40],['cb_lat_pd',4,10,12,50],['db_incline',3,8,10,22],['pl_row',3,10,12,60],['db_lateral',4,15,20,8],['cb_face_pull',4,15,20,20],['ez_curl',3,10,12,25]]],
+ LB:['下肢 B',[['bb_deadlift',3,4,6,100],['db_bulgarian',3,8,10,14],['bb_hip_thrust',3,8,12,80],['m_leg_ext',3,12,15,45],['m_seated_curl',3,10,12,35],['bw_hanging_leg',3,10,15,0]]],
+ PU:['推',[['bb_bench',3,6,8,60],['bb_ohp',3,6,8,40],['db_incline',3,8,10,22],['db_lateral',4,15,20,8],['cb_crossover',3,12,15,15],['cb_rope_pd',3,10,12,20],['db_oh_ext',3,10,12,14]]],
+ PL:['拉',[['bw_pullup',3,6,10,0],['bb_row',3,8,10,50],['cb_seated_row',3,10,12,50],['cb_face_pull',3,15,20,20],['db_rear_fly',3,15,20,6],['ez_curl',3,10,12,25],['db_hammer',3,10,12,12]]],
+ LG:['腿',[['bb_squat',3,6,8,80],['bb_rdl',3,8,10,60],['m_leg_press',3,10,12,120],['m_leg_ext',3,12,15,45],['m_lying_curl',3,10,12,35],['m_standing_calf',4,12,15,60]]],
+ FA:['全身 A',[['bb_squat',3,6,8,80],['bb_bench',3,6,8,60],['bb_row',3,8,10,50],['db_lateral',3,15,20,8],['cb_rope_pd',3,10,12,20],['cb_crunch',3,12,15,30]]],
+ FB:['全身 B',[['bb_deadlift',3,4,6,100],['bb_ohp',3,6,8,40],['cb_lat_pd',3,10,12,50],['db_incline',3,8,10,22],['db_curl',3,10,12,10],['m_standing_calf',3,12,15,60]]],
+};
+const FREQ={2:[['FA',1],['FB',4]],3:[['PU',1],['PL',3],['LG',5]],4:[['UA',1],['LA',2],['UB',4],['LB',5]],5:[['PU',1],['PL',2],['LG',3],['UA',5],['LB',6]],6:[['PU',1],['PL',2],['LG',3],['PU',4],['PL',5],['LG',6]]};
+
+/* ---------- utils ---------- */
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const uid=()=>Math.random().toString(36).slice(2,9)+Date.now().toString(36).slice(-4);
+const ds=(d=new Date())=>{const z=new Date(d);return z.getFullYear()+'-'+String(z.getMonth()+1).padStart(2,'0')+'-'+String(z.getDate()).padStart(2,'0')};
+const pd=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addDays=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return ds(d)};
+const mondayOf=s=>{const d=pd(s);d.setDate(d.getDate()-((d.getDay()+6)%7));return ds(d)};
+const between=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+const WD=['日','一','二','三','四','五','六'];
+const clone=o=>JSON.parse(JSON.stringify(o));
+const fw=v=>{v=Math.round((+v||0)*100)/100;return String(v)};
+const roundTo=(v,inc)=>Math.round(v/inc)*inc;
+const mmss=s=>{s=Math.max(0,Math.round(s));return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const hms=ms=>{const s=Math.floor(ms/1000);return Math.floor(s/3600)+':'+String(Math.floor(s%3600/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0')};
+const kfmt=v=>v>=1e6?(v/1e6).toFixed(2)+'M':v>=1e4?(v/1e3).toFixed(1)+'k':String(Math.round(v));
+const e1rm=(w,r)=>r>0?w*(1+r/30):w;
+const TODAY=()=>ds();
+
+const ICON={
+ dumb:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 6v12M17.5 6v12M3.5 9v6M20.5 9v6M6.5 12h11"/></svg>',
+ book:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 5h6v14H4zM14 5h6v14h-6z"/><path d="M7 9h0M17 9h0"/></svg>',
+ chart:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19h16M5 15l4-5 4 3 6-7"/></svg>',
+ gear:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>',
+ check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>',
+ chev:'<svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
+ left:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M15 6l-6 6 6 6"/></svg>',
+ right:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M9 6l6 6-6 6"/></svg>',
+ x:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>',
+ plus:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>',
+ edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>',
+ search:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4-4"/></svg>',
+ timer:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2h4"/></svg>',
+ list:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h12M8 12h12M8 18h12M4 6h0M4 12h0M4 18h0"/></svg>',
+};
+
+/* ---------- state ---------- */
+function defaultPlan(freq){
+  return {freq,days:FREQ[freq].map(([k,wd],i)=>({id:uid(),name:T[k][0]+(freq===6&&i>2?' ·2':''),wd,
+    exercises:T[k][1].map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}))}))};
+}
+function freshState(){
+  return {v:1,updatedAt:0,settings:{cycleStart:mondayOf(TODAY()),restCompound:150,restIso:90,sound:true,vibrate:true},
+    plan:defaultPlan(4),overrides:{},restByEx:{},customEx:[],active:null};
+}
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+let state=LS.get('ic.state')||freshState();
+let logs=LS.get('ic.logs')||[];
+const ui={tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null};
+
+/* ---------- cloud sync (artifact db; falls back to this device only) ---------- */
+const Cloud={db:null,uid:null,status:'local',appRef:null,logsCol:null,chain:Promise.resolve(),timer:null,
+  async init(){
+    try{
+      if(!window.claude||!window.claude.use) return;
+      const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
+      if(!db||!user) return;
+      const id=await user.id(); if(!id) return;
+      this.db=db;this.uid=id;
+      this.appRef=db.doc('data/users/'+id+'/app');
+      this.logsCol=this.appRef.collection('logs');
+      const to=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
+      const [appSnap,logSnap]=await Promise.race([Promise.all([this.appRef.get(),this.logsCol.get()]),to]);
+      const remote=appSnap.exists?appSnap.data():null;
+      if(remote&&remote.state&&(remote.state.updatedAt||0)>(state.updatedAt||0)){state=clone(remote.state);LS.set('ic.state',state)}
+      else if(state.updatedAt) this.queueState(true);
+      const rl=logSnap.docs.map(d=>d.data().log).filter(Boolean);
+      const ids=new Set(rl.map(l=>l.id));
+      const localOnly=logs.filter(l=>!ids.has(l.id));
+      logs=[...rl,...localOnly].sort((a,b)=>b.end-a.end);
+      LS.set('ic.logs',logs);
+      for(const l of localOnly) this.putLog(l);
+      this.status='cloud';
+      render();
+    }catch(e){this.status='offline';render()}
+  },
+  queueState(now){
+    if(!this.appRef) return;
+    clearTimeout(this.timer);
+    this.timer=setTimeout(()=>{const snap=clone(state);this.chain=this.chain.then(()=>this.appRef.set({state:snap})).catch(()=>{this.status='offline'})},now?0:900);
+  },
+  putLog(l){if(!this.logsCol)return;this.chain=this.chain.then(()=>this.logsCol.doc(l.id).set({log:l,end:l.end})).catch(()=>{})},
+  delLog(id){if(!this.logsCol)return;this.chain=this.chain.then(()=>this.logsCol.doc(id).delete()).catch(()=>{})},
+};
+function save(){state.updatedAt=Date.now();LS.set('ic.state',state);Cloud.queueState()}
+function saveLogs(){LS.set('ic.logs',logs)}
+
+/* ---------- domain ---------- */
+const allEx=()=>BASE_EX.concat(state.customEx||[]);
+let EXMAP={};const rebuildEx=()=>{EXMAP={};allEx().forEach(e=>EXMAP[e.id]=e)};rebuildEx();
+const EX=id=>EXMAP[id]||{id,name:'未知動作',group:'全身',equip:'器械',compound:false};
+const incOf=ex=>INC[ex.equip]||2.5;
+const restOf=exId=>state.restByEx[exId]??(EX(exId).compound?state.settings.restCompound:state.settings.restIso);
+function phaseAt(date){
+  const w=Math.max(0,Math.floor(between(state.settings.cycleStart,date)/7));
+  return {idx:w%5,cycle:Math.floor(w/5)+1,week:w%5+1};
+}
+function prescribe(pe,ph){
+  const ex=EX(pe.exId),inc=incOf(ex);
+  const sets=Math.max(1,Math.round(pe.sets*ph.setsF));
+  const rmin=Math.max(1,Math.round(pe.repMin*ph.repF));
+  const rmax=Math.max(rmin,Math.round(pe.repMax*ph.repF));
+  const w=pe.weight>0?Math.max(inc,roundTo(pe.weight*ph.mult,inc)):0;
+  return {sets,rmin,rmax,w};
+}
+function dayFor(date){
+  const ov=state.overrides[date];
+  const day=ov?state.plan.days.find(d=>d.id===ov.dayId):state.plan.days.find(d=>d.wd===pd(date).getDay());
+  if(!day) return null;
+  return {day,exercises:ov&&ov.exercises?ov.exercises:day.exercises,ov};
+}
+function lastSets(exId,beforeEnd){
+  for(const l of logs){ if(beforeEnd&&l.end>=beforeEnd) continue; const it=l.items.find(i=>i.exId===exId); if(it&&it.sets.length) return it.sets }
+  return null;
+}
+function history(exId){
+  const out=[];
+  for(const l of logs){const it=l.items.find(i=>i.exId===exId);if(it&&it.sets.length){const top=it.sets.reduce((a,s)=>s.w>a.w||(s.w===a.w&&s.r>a.r)?s:a,it.sets[0]);out.push({date:l.date,end:l.end,top,sets:it.sets,best1:Math.max(...it.sets.map(s=>e1rm(s.w,s.r)))})}}
+  return out.sort((a,b)=>a.end-b.end);
+}
+function bestOf(exId){const h=history(exId);if(!h.length)return null;return h.reduce((a,x)=>x.top.w>a.top.w||(x.top.w===a.top.w&&x.top.r>a.top.r)?x:a,h[0])}
+function estMinutes(list,ph){let s=0;list.forEach(pe=>{const p=prescribe(pe,ph);s+=p.sets*(restOf(pe.exId)+45)});return Math.round(s/60)}
+
+/* ---------- theme from phase ---------- */
+function applyPhase(){
+  const p=PHASES[(state.active?state.active.phaseIdx:phaseAt(TODAY()).idx)];
+  document.documentElement.style.setProperty('--phase',p.color);
+  document.documentElement.style.setProperty('--phase-soft',p.soft);
+}
+
+/* ---------- render: shell ---------- */
+function render(){
+  applyPhase();
+  const app=document.getElementById('app');
+  if(state.active&&ui.inSession){app.innerHTML=renderSession();bindSessionScroll()}
+  else{
+    const view={today:renderToday,library:renderLibrary,progress:renderProgress,settings:renderSettings}[ui.tab]();
+    app.innerHTML=`<div class="wrap">${view}</div>${renderTabbar()}`;
+  }
+  renderLayer();
+}
+function renderTabbar(){
+  const t=[['today','訓練',ICON.dumb],['library','動作庫',ICON.book],['progress','進度',ICON.chart],['settings','設定',ICON.gear]];
+  return `<nav class="tabbar"><div class="in">${t.map(([k,l,i])=>`<button data-act="tab" data-k="${k}" class="${ui.tab===k?'on':''}" aria-label="${l}">${i}<span>${l}</span></button>`).join('')}</div></nav>`;
+}
+
+/* ---------- Today ---------- */
+function renderToday(){
+  const today=TODAY(),ph=phaseAt(today),P=PHASES[ph.idx];
+  const mon=addDays(mondayOf(today),ui.weekOff*7);
+  const days=[...Array(7)].map((_,i)=>addDays(mon,i));
+  const sel=ui.selDate,selPh=PHASES[phaseAt(sel).idx];
+  const r=dayFor(sel);
+  const doneOn=d=>logs.some(l=>l.date===d);
+  let h=`<div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>訓練</h1></div>
+    <button class="btn sm" data-act="openPlan">${ICON.edit}編輯計畫</button></div>`;
+  if(state.active) h+=`<button class="banner" data-act="resume"><div class="grow"><div style="font-size:13px;opacity:.75">訓練進行中 · ${esc(state.active.dayName)}</div><div class="num" id="bannerClock">${hms(Date.now()-state.active.startedAt)}</div></div><span>繼續 →</span></button>`;
+  h+=`<section class="phase-card"><div class="plate"></div>
+    <div class="eyebrow">第 ${ph.cycle} 輪 · 第 ${ph.week} / 5 週</div>
+    <div class="phase-name" style="margin-top:6px">${P.name}</div>
+    <div class="phase-en">${P.en}</div>
+    <div class="muted" style="font-size:13px;margin-top:6px;max-width:75%">${P.desc}</div>
+    <div class="cyc">${PHASES.map((x,i)=>`<div class="${i===ph.idx?'cur':''}"><i style="background:${i<=ph.idx?x.color:''};opacity:${i<ph.idx?.45:1}"></i><span>${x.name}</span></div>`).join('')}</div>
+  </section>`;
+  h+=`<section class="card" style="padding:12px 10px">
+    <div class="row between" style="padding:0 6px 8px"><button class="icon-btn" style="width:32px;height:32px" data-act="week" data-d="-1" aria-label="上一週">${ICON.left}</button>
+      <span class="muted" style="font-size:13px;font-weight:700">${pd(days[0]).getMonth()+1}/${pd(days[0]).getDate()} – ${pd(days[6]).getMonth()+1}/${pd(days[6]).getDate()}</span>
+      <button class="icon-btn" style="width:32px;height:32px" data-act="week" data-d="1" aria-label="下一週">${ICON.right}</button></div>
+    <div class="week">${days.map(d=>{const plan=!!dayFor(d);const done=doneOn(d);
+      return `<button class="wd ${d===today?'today':''} ${d===sel?'sel':''}" data-act="selDay" data-d="${d}"><small>${WD[pd(d).getDay()]}</small><b>${pd(d).getDate()}</b><span class="dot ${done?'done':plan?'plan has':''}"></span></button>`}).join('')}</div>
+  </section>`;
+  if(r){
+    const list=r.exercises;const nSets=list.reduce((a,pe)=>a+prescribe(pe,selPh).sets,0);
+    h+=`<section class="card stack">
+      <div class="day-head"><div><div class="eyebrow">${sel===today?'今天':pd(sel).getMonth()+1+'/'+pd(sel).getDate()+' 週'+WD[pd(sel).getDay()]} · ${selPh.name}</div><div class="day-title">${esc(r.day.name)}</div></div>
+      ${r.ov&&r.ov.exercises?'<span class="chip ph">今日已調整</span>':''}</div>
+      <div class="meta"><span><b>${list.length}</b>動作</span><span><b>${nSets}</b>組</span><span><b>${estMinutes(list,selPh)}</b>分鐘</span></div>
+      <div class="ex-list">${list.map((pe,i)=>{const ex=EX(pe.exId),p=prescribe(pe,selPh);
+        return `<button class="ex-row" data-act="customize" data-pe="${pe.id}" data-date="${sel}">
+          <span class="ex-badge">${i+1}</span>
+          <span class="grow"><div class="ex-name">${esc(ex.name)}</div>
+          <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> 次${p.w?` · <span class="num">${fw(p.w)}</span> kg`:''} · ${ex.group}</div></span>${ICON.chev}</button>`}).join('')}
+        ${list.length?'':'<div class="empty">這天還沒有動作</div>'}
+      </div>
+      <div class="row"><button class="btn sm ghost" data-act="addExToDay" data-date="${sel}">${ICON.plus}新增動作</button>
+        ${r.ov?`<button class="btn sm ghost" data-act="clearOverride" data-date="${sel}">還原成計畫</button>`:''}</div>
+      ${state.active?'':`<button class="btn primary big" data-act="start" data-date="${sel}">開始訓練</button>`}
+    </section>`;
+  }else{
+    h+=`<section class="card rest-day"><h2>休息日</h2><p class="muted" style="margin:0 0 16px">肌肉在休息時長大。可以散步 20–30 分鐘或做些伸展。<br>想練的話，選一個菜單：</p>
+      <div class="row" style="flex-wrap:wrap;justify-content:center">${state.plan.days.map(d=>`<button class="btn sm" data-act="swapDay" data-date="${sel}" data-day="${d.id}">${esc(d.name)}</button>`).join('')}</div></section>`;
+  }
+  return `<div class="stack">${h}</div>`;
+}
+
+/* ---------- Library ---------- */
+function renderLibrary(){
+  const q=ui.libQ.trim().toLowerCase();
+  const list=allEx().filter(e=>(ui.libGroup==='全部'||e.group===ui.libGroup)&&(!q||e.name.toLowerCase().includes(q)||e.equip.includes(q)));
+  let h=`<div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>動作庫</h1></div><button class="btn sm" data-act="newEx">${ICON.plus}自訂動作</button></div>
+  <label class="search">${ICON.search}<input id="libQ" placeholder="搜尋 ${allEx().length} 個動作" value="${esc(ui.libQ)}" autocomplete="off"></label>
+  <div class="chips">${['全部',...GROUPS].map(g=>`<button class="${ui.libGroup===g?'on':''}" data-act="libGroup" data-g="${g}">${g}</button>`).join('')}</div>
+  <div id="libList">${libListHTML(list,'exDetail')}</div>`;
+  return `<div class="stack">${h}</div>`;
+}
+function libListHTML(list,act){
+  if(!list.length) return '<div class="empty">找不到動作，可以按「自訂動作」新增</div>';
+  const by={};list.forEach(e=>(by[e.group]=by[e.group]||[]).push(e));
+  return GROUPS.filter(g=>by[g]).map(g=>`<div class="group-h">${g} · ${by[g].length}</div><div class="card" style="padding:4px 14px">${by[g].map(e=>{const b=bestOf(e.id);
+    return `<button class="ex-row" data-act="${act}" data-ex="${e.id}"><span class="grow"><div class="ex-name">${esc(e.name)}</div><div class="ex-sub">${e.equip} · ${e.compound?'複合':'孤立'}${b?` · 最佳 <span class="num">${fw(b.top.w)}</span> kg × ${b.top.r}`:''}</div></span>${ICON.chev}</button>`}).join('')}</div>`).join('');
+}
+
+/* ---------- Progress ---------- */
+function renderProgress(){
+  const now=Date.now(),range=ui.range;
+  const inRange=logs.filter(l=>range==='all'||now-l.end<=(+range)*864e5);
+  const hrs=inRange.reduce((a,l)=>a+(l.end-l.start),0)/36e5;
+  const vol=inRange.reduce((a,l)=>a+l.volume,0);
+  const [y,m]=ui.calMonth.split('-').map(Number);
+  const first=new Date(y,m-1,1),startPad=first.getDay(),nDays=new Date(y,m,0).getDate();
+  const byDate={};logs.forEach(l=>(byDate[l.date]=byDate[l.date]||[]).push(l));
+  // weekly sets per muscle (last 7 days)
+  const wk={};logs.filter(l=>now-l.end<=7*864e5).forEach(l=>l.items.forEach(it=>{const g=EX(it.exId).group;wk[g]=(wk[g]||0)+it.sets.length}));
+  const maxS=Math.max(10,...Object.values(wk));
+  const selLogs=ui.calSel?(byDate[ui.calSel]||[]):logs.slice(0,8);
+  let h=`<div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>進度</h1></div></div>
+  <div class="seg">${[['7','7 天'],['30','30 天'],['180','6 個月'],['all','全部']].map(([k,l])=>`<button class="${range===k?'on':''}" data-act="range" data-k="${k}">${l}</button>`).join('')}</div>
+  <div class="tiles"><div class="tile"><div class="num">${inRange.length}</div><small>訓練次數</small></div><div class="tile"><div class="num">${hrs.toFixed(hrs<10?1:0)}</div><small>訓練時數</small></div><div class="tile"><div class="num">${kfmt(vol)}</div><small>總重量 kg</small></div></div>
+  <section class="card stack"><div class="row between"><h2>${y} 年 ${m} 月</h2><div class="row" style="gap:6px"><button class="icon-btn" style="width:34px;height:34px" data-act="cal" data-d="-1" aria-label="上個月">${ICON.left}</button><button class="icon-btn" style="width:34px;height:34px" data-act="cal" data-d="1" aria-label="下個月">${ICON.right}</button></div></div>
+   <div class="cal">${WD.map(w=>`<div class="h">${w}</div>`).join('')}${'<div></div>'.repeat(startPad)}${[...Array(nDays)].map((_,i)=>{const d=`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;const has=byDate[d];const c=has?PHASES[has[0].phaseIdx].color:'';
+     return `<button class="${has?'has':''} ${d===TODAY()?'today':''} ${ui.calSel===d?'sel':''}" data-act="calSel" data-d="${d}">${i+1}${has?`<i style="background:${c}"></i>`:''}</button>`}).join('')}</div>
+  </section>
+  <section class="card stack"><div class="row between"><h2>${ui.calSel?`${pd(ui.calSel).getMonth()+1}/${pd(ui.calSel).getDate()} 的訓練`:'最近訓練'}</h2>${ui.calSel?'<button class="btn sm ghost" data-act="calSel" data-d="">全部</button>':''}</div>
+   <div>${selLogs.length?selLogs.map(logHTML).join(''):'<div class="empty">還沒有紀錄。完成第一次訓練後，這裡會列出每一組的重量與次數。</div>'}</div></section>
+  <section class="card stack"><h2>近 7 天各部位組數</h2>${Object.keys(wk).length?`<div class="bars">${GROUPS.filter(g=>wk[g]).map(g=>`<div class="bar"><span>${g}</span><span class="t"><i style="width:${wk[g]/maxS*100}%"></i></span><span class="num" style="text-align:right">${wk[g]}</span></div>`).join('')}</div><div class="muted" style="font-size:12px">增肌常見建議：每個部位每週 10–20 組</div>`:'<div class="empty">本週還沒有訓練</div>'}</section>`;
+  return `<div class="stack">${h}</div>`;
+}
+function logHTML(l){
+  const open=ui.openLog===l.id,P=PHASES[l.phaseIdx];
+  return `<div class="log"><button class="row" style="width:100%;text-align:left" data-act="toggleLog" data-id="${l.id}">
+    <span class="grow"><div class="ex-name">${esc(l.dayName)} <span class="chip" style="color:${P.color};margin-left:4px">${P.name}</span></div>
+    <div class="ex-sub">${pd(l.date).getMonth()+1}/${pd(l.date).getDate()} · ${Math.round((l.end-l.start)/6e4)} 分 · <span class="num">${kfmt(l.volume)}</span> kg · ${l.items.length} 動作</div></span>${ICON.chev}</button>
+    ${open?`<div class="log-sets">${l.items.map(it=>`<div><b>${esc(EX(it.exId).name)}</b>　${it.sets.map(s=>`${fw(s.w)}×${s.r}`).join('、')}</div>`).join('')}
+    <div style="margin-top:6px"><button class="btn sm danger ghost" data-act="delLog" data-id="${l.id}">刪除這筆紀錄</button></div></div>`:''}</div>`;
+}
+
+/* ---------- Settings ---------- */
+function renderSettings(){
+  const s=state.settings,ph=phaseAt(TODAY());
+  return `<div class="stack"><div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>設定</h1></div><span class="sync ${Cloud.status==='cloud'?'on':''}"><i></i>${Cloud.status==='cloud'?'已同步到你的帳號':Cloud.status==='offline'?'暫時連不上雲端，先存在此裝置':'資料存在此裝置'}</span></div>
+  <section class="card"><div class="eyebrow" style="margin-bottom:6px">五週循環</div>
+   <div class="set-item"><div><div class="ex-name">目前是第幾週</div><div class="ex-sub">${PHASES[ph.idx].name} · 第 ${ph.cycle} 輪</div></div>
+    <div class="stepper"><button data-act="weekAdj" data-d="-1" aria-label="減一週">−</button><span class="num">${ph.week}</span><button data-act="weekAdj" data-d="1" aria-label="加一週">+</button></div></div>
+   <div class="set-item" style="display:block"><div class="ex-sub" style="display:grid;gap:4px">${PHASES.map((p,i)=>`<div><b style="color:${p.color}">第 ${i+1} 週 ${p.name}</b>　${p.desc}</div>`).join('')}</div></div>
+  </section>
+  <section class="card"><div class="eyebrow" style="margin-bottom:6px">休息計時預設</div>
+   <div class="set-item"><div><div class="ex-name">複合動作</div><div class="ex-sub">深蹲、臥推、硬舉等</div></div><div class="stepper"><button data-act="restDef" data-k="restCompound" data-d="-15">−</button><span class="num">${mmss(s.restCompound)}</span><button data-act="restDef" data-k="restCompound" data-d="15">+</button></div></div>
+   <div class="set-item"><div><div class="ex-name">孤立動作</div><div class="ex-sub">側平舉、彎舉等</div></div><div class="stepper"><button data-act="restDef" data-k="restIso" data-d="-15">−</button><span class="num">${mmss(s.restIso)}</span><button data-act="restDef" data-k="restIso" data-d="15">+</button></div></div>
+   <div class="set-item"><div class="ex-sub" style="margin:0">在訓練中改過休息時間的動作會各自記住，共 ${Object.keys(state.restByEx).length} 個。</div>${Object.keys(state.restByEx).length?'<button class="btn sm ghost" data-act="resetRest">全部重設</button>':''}</div>
+   <div class="set-item"><div class="ex-name">休息結束提示音</div><button class="toggle ${s.sound?'on':''}" data-act="toggleSet2" data-k="sound" aria-label="提示音"></button></div>
+   <div class="set-item"><div class="ex-name">震動（Android）</div><button class="toggle ${s.vibrate?'on':''}" data-act="toggleSet2" data-k="vibrate" aria-label="震動"></button></div>
+  </section>
+  <section class="card stack"><div class="eyebrow">備份</div>
+   <div class="ex-sub">複製下面的文字存起來，換手機時貼回來即可還原。</div>
+   <div class="row"><button class="btn sm" data-act="exportData">複製備份</button><button class="btn sm" data-act="importData">貼上還原</button></div>
+   <textarea id="backup" placeholder="備份資料會出現在這裡，或把備份貼到這裡後按「貼上還原」"></textarea>
+   <button class="btn sm danger ghost" data-act="resetAll" style="align-self:flex-start">清除全部資料</button>
+  </section></div>`;
+}
+
+/* ---------- Session ---------- */
+function sessionTotals(){let v=0,r=0;state.active.items.forEach(it=>it.sets.forEach(s=>{if(s.done){v+=(+s.w||0)*(+s.r||0);r+=+s.r||0}}));return {v,r}}
+function renderSession(){
+  const a=state.active,it=a.items[a.idx],P=PHASES[a.phaseIdx];
+  const tot=sessionTotals();
+  let body='';
+  if(!it){body='<div class="empty">今天沒有動作，按「調整」新增一個</div>'}
+  else{
+    const ex=EX(it.exId),best=bestOf(it.exId),h=history(it.exId).slice(-16),last=lastSets(it.exId);
+    const allDone=it.sets.length&&it.sets.every(s=>s.done);
+    body+=`<div class="progress-dots">${a.items.map((x,i)=>`<i class="${x.sets.length&&x.sets.every(s=>s.done)?'done':i===a.idx?'cur':''}"></i>`).join('')}</div>
+    <div><div class="row" style="gap:6px;margin-bottom:6px"><span class="chip ph">${P.name}</span><span class="chip">${ex.group}</span><span class="chip">${ex.equip}</span></div>
+     <div class="ex-title">${esc(ex.name)}</div></div>`;
+    if(best){
+      body+=`<div class="card pr-row"><div><div class="eyebrow">最佳紀錄</div><div class="num" style="margin-top:6px">${fw(best.top.w)}<span style="font-size:15px;color:var(--muted)"> kg × ${best.top.r}</span></div><div class="muted" style="font-size:12px;margin-top:4px">${best.date.replace(/-/g,'/')}</div></div>${sparkSVG(h.map(x=>x.top.w))}</div>`;
+    }
+    if(ex.compound&&it.sugg>=30&&['槓鈴','史密斯'].includes(ex.equip)){
+      const bar=ex.equip==='槓鈴'?20:15,inc=incOf(ex),W=it.sugg;
+      const steps=[[bar,10,'空槓'],[Math.max(bar,roundTo(W*.5,inc)),5,'輕'],[Math.max(bar,roundTo(W*.7,inc)),3,'中'],[Math.max(bar,roundTo(W*.85,inc)),1,'中重']];
+      body+=`<details class="warm" ${it.warm?'':'open'}><summary><span>${it.warm?'✓ 熱身完成':'熱身組'}</span><span class="muted" style="font-size:13px">${it.warm?'展開':'依今天重量計算'}</span></summary>
+       <ol>${steps.map(([w,r,l])=>`<li><span class="num">${fw(w)}</span> kg × ${r}　${l}</li>`).join('')}</ol>
+       ${it.warm?'':`<button class="btn sm" style="margin-top:10px;width:100%" data-act="warmDone">熱身完成</button>`}</details>`;
+    }
+    body+=`<div class="target"><span>目標</span><span class="num">${it.sets.length}</span>組 ×<span class="num">${it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax}</span>次 <span class="grow"></span><button class="btn sm ghost" data-act="restEdit" data-ex="${it.exId}">${ICON.timer}休息 ${mmss(restOf(it.exId))}</button></div>
+    <div class="sets">${it.sets.map((s,i)=>{const ls=last&&(last[i]||last[last.length-1]);
+      return `<div class="set ${s.done?'done':''}" data-i="${i}"><div class="set-n">${i+1}</div>
+       <label class="fld"><span class="in-row"><input inputmode="decimal" data-f="w" data-i="${i}" value="${s.w===''?'':fw(s.w)}" placeholder="0" aria-label="第${i+1}組重量"><span class="u">kg</span></span><small>${ls?'上次 '+fw(ls.w):'建議 '+fw(it.sugg)}</small></label>
+       <label class="fld"><span class="in-row"><input inputmode="numeric" data-f="r" data-i="${i}" value="${esc(s.r)}" placeholder="${it.rmax}" aria-label="第${i+1}組次數"><span class="u">次</span></span><small>${ls?'上次 '+ls.r:'目標 '+(it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax)}</small></label>
+       <button class="chk" data-act="setDone" data-i="${i}" aria-label="完成第${i+1}組">${ICON.check}</button></div>`}).join('')}</div>
+    <div class="row"><button class="btn sm" data-act="addSet">${ICON.plus}加一組</button>${it.sets.length>1?'<button class="btn sm ghost" data-act="rmSet">減一組</button>':''}<span class="grow"></span><button class="btn sm" data-act="customizeSess">${ICON.edit}調整動作</button></div>
+    ${allDone&&a.idx<a.items.length-1?`<div class="card" style="text-align:center">這個動作完成了 💪<div class="muted" style="font-size:13px">下一個：${esc(EX(a.items[a.idx+1].exId).name)}</div></div>`:''}`;
+  }
+  const isLast=a.idx>=a.items.length-1;
+  return `<div class="sess">
+   <div class="sess-top"><div class="in"><button class="btn sm" data-act="exitSess">離開</button>
+    <div class="stats"><div><small>時間</small><div class="num" id="sessClock">${hms(Date.now()-a.startedAt)}</div></div><div><small>總量 kg</small><div class="num">${kfmt(tot.v)}</div></div><div><small>次數</small><div class="num">${tot.r}</div></div></div>
+    <button class="btn sm" data-act="exList">${a.idx+1}/${a.items.length}</button></div></div>
+   <div class="sess-body" id="sessBody"><div class="in">${body}</div></div>
+   <div class="sess-foot"><div class="in"><button class="btn" data-act="prevEx" ${a.idx===0?'disabled style="opacity:.4"':''}>${ICON.left}上一個</button>
+    ${isLast?'<button class="btn primary" data-act="finish">完成訓練</button>':`<button class="btn primary" data-act="nextEx">下一個${ICON.right}</button>`}</div></div>
+   ${renderRest()}
+  </div>`;
+}
+function sparkSVG(vals){
+  if(vals.length<2) return '<div></div>';
+  const W=200,H=56,mn=Math.min(...vals),mx=Math.max(...vals),rg=mx-mn||1;
+  const pts=vals.map((v,i)=>[i/(vals.length-1)*(W-8)+4,H-6-(v-mn)/rg*(H-14)]);
+  const line=pts.map(p=>p.map(n=>n.toFixed(1)).join(',')).join(' ');
+  const last=pts[pts.length-1];
+  return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="重量趨勢"><polygon points="4,${H} ${line} ${W-4},${H}" fill="var(--phase-soft)"/><polyline points="${line}" fill="none" stroke="var(--phase)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="var(--phase)"/></svg>`;
+}
+function renderRest(){
+  const r=state.active&&state.active.rest;if(!r) return '';
+  const left=(r.endAt-Date.now())/1000,over=left<=0;
+  const C=2*Math.PI*24,frac=Math.max(0,Math.min(1,left/r.total));
+  return `<div class="rest ${over?'over':''}" id="rest"><div class="in">
+   <div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" stroke-opacity=".15" stroke-width="5"/><circle id="restArc" cx="28" cy="28" r="24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}"/></svg></div>
+   <div class="grow"><small id="restLbl">${over?'休息結束，開始下一組':'休息中'}</small><div class="clock" id="restClock">${over?'+'+mmss(-left):mmss(left)}</div></div>
+   <button class="rb" data-act="restAdd" data-d="-15">−15</button><button class="rb" data-act="restAdd" data-d="15">+15</button><button class="rb go" data-act="restSkip">${over?'關閉':'跳過'}</button></div></div>`;
+}
+function bindSessionScroll(){const b=document.getElementById('sessBody');if(b&&ui.keepScroll!=null){b.scrollTop=ui.keepScroll;ui.keepScroll=null}}
+function rerenderSession(keep=true){const b=document.getElementById('sessBody');if(keep&&b) ui.keepScroll=b.scrollTop;render()}
+
+/* ---------- rest timer & audio ---------- */
+let actx=null;
+function unlockAudio(){try{if(!actx){actx=new (window.AudioContext||window.webkitAudioContext)()}if(actx.state==='suspended')actx.resume()}catch(e){}}
+function beep(){
+  if(state.settings.vibrate&&navigator.vibrate) try{navigator.vibrate([200,100,200])}catch(e){}
+  if(!state.settings.sound||!actx) return;
+  try{[0,.28,.56].forEach((t,i)=>{const o=actx.createOscillator(),g=actx.createGain(),T0=actx.currentTime+t;o.type='sine';o.frequency.value=i===2?1320:880;g.gain.setValueAtTime(.0001,T0);g.gain.exponentialRampToValueAtTime(.35,T0+.02);g.gain.exponentialRampToValueAtTime(.0001,T0+.22);o.connect(g).connect(actx.destination);o.start(T0);o.stop(T0+.25)})}catch(e){}
+}
+function startRest(exId){const sec=restOf(exId);state.active.rest={endAt:Date.now()+sec*1000,total:sec,exId,beeped:false}}
+setInterval(()=>{
+  if(!state.active) return;
+  const c=document.getElementById('sessClock')||document.getElementById('bannerClock');
+  if(c) c.textContent=hms(Date.now()-state.active.startedAt);
+  const r=state.active.rest;if(!r) return;
+  const left=(r.endAt-Date.now())/1000;
+  if(left<=0&&!r.beeped){r.beeped=true;beep();save();if(ui.inSession) rerenderSession();return}
+  const el=document.getElementById('restClock');
+  if(el){el.textContent=left<=0?'+'+mmss(-left):mmss(left);
+    const arc=document.getElementById('restArc');if(arc){const C=2*Math.PI*24;arc.setAttribute('stroke-dashoffset',C*(1-Math.max(0,Math.min(1,left/r.total))))}}
+  if(left<-600){state.active.rest=null;save();if(ui.inSession)rerenderSession()}
+},250);
+let wakeLock=null;
+async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>wakeLock=null)}}catch(e){}}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&state.active&&ui.inSession)keepAwake()});
+
+/* ---------- sessions ---------- */
+function makeItem(pe,P){
+  const p=prescribe(pe,P),last=lastSets(pe.exId);
+  const sugg=p.w||(last?last[0].w:0);
+  return {key:uid(),exId:pe.exId,peId:pe.id,rmin:p.rmin,rmax:p.rmax,sugg,warm:false,sets:Array.from({length:p.sets},()=>({w:sugg,r:'',done:false}))};
+}
+function startSession(date){
+  const r=dayFor(date);if(!r) return;
+  const ph=phaseAt(TODAY()),P=PHASES[ph.idx];
+  state.active={id:uid(),date:TODAY(),planDate:date,dayId:r.day.id,dayName:r.day.name,phaseIdx:ph.idx,cycle:ph.cycle,startedAt:Date.now(),idx:0,items:r.exercises.map(pe=>makeItem(pe,P)),rest:null};
+  ui.inSession=true;save();keepAwake();render();
+}
+function finishSession(){
+  const a=state.active;
+  const items=a.items.map(it=>({exId:it.exId,sets:it.sets.filter(s=>s.done).map(s=>({w:+s.w||0,r:+s.r||0}))})).filter(it=>it.sets.length);
+  if(!items.length){ui.dialog={title:'還沒有完成任何一組',msg:'要直接放棄這次訓練嗎？不會留下紀錄。',ok:'放棄訓練',danger:true,onOk:()=>{state.active=null;ui.inSession=false;save();render()}};render();return}
+  const volume=items.reduce((t,it)=>t+it.sets.reduce((x,s)=>x+s.w*s.r,0),0);
+  const reps=items.reduce((t,it)=>t+it.sets.reduce((x,s)=>x+s.r,0),0);
+  const log={id:uid(),date:a.date,dayName:a.dayName,phaseIdx:a.phaseIdx,cycle:a.cycle,start:a.startedAt,end:Date.now(),items,volume,reps};
+  // PRs vs previous history
+  const prs=[];items.forEach(it=>{const b=bestOf(it.exId);const top=Math.max(...it.sets.map(s=>s.w));if(top>0&&(!b||top>b.top.w))prs.push(EX(it.exId).name+' '+fw(top)+' kg')});
+  // auto progression on base/load weeks
+  const ups=[];
+  if(PHASES[a.phaseIdx].key==='base'||PHASES[a.phaseIdx].key==='load'){
+    a.items.forEach(it=>{
+      const day=state.plan.days.find(d=>d.id===a.dayId);const pe=day&&day.exercises.find(x=>x.id===it.peId);
+      if(!pe||!pe.weight) return;
+      const ok=it.sets.length&&it.sets.every(s=>s.done&&(+s.r||0)>=it.rmax&&(+s.w||0)>=it.sugg);
+      if(ok){const inc=incOf(EX(it.exId));pe.weight=Math.round((pe.weight+inc)*100)/100;ups.push(EX(it.exId).name+' +'+inc+' kg')}
+    });
+  }
+  logs.unshift(log);saveLogs();Cloud.putLog(log);
+  state.active=null;ui.inSession=false;save();
+  ui.sheet={type:'summary',log,prs,ups};render();
+}
+
+/* ---------- layer: sheets & dialogs ---------- */
+function renderLayer(){
+  const L=document.getElementById('layer');let h='';
+  const s=ui.sheet;
+  if(s){
+    const fn={customize:sheetCustomize,picker:sheetPicker,exDetail:sheetExDetail,plan:sheetPlan,newEx:sheetNewEx,summary:sheetSummary,exList:sheetExList,restEdit:sheetRestEdit}[s.type];
+    h+=`<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">${fn(s)}</div></div>`;
+  }
+  if(ui.dialog){const d=ui.dialog;h+=`<div class="dialog"><div class="box"><h2>${esc(d.title)}</h2><div class="muted">${esc(d.msg)}</div><div class="row"><button class="btn" data-act="dlgNo">取消</button><button class="btn ${d.danger?'danger':'primary'}" data-act="dlgOk">${esc(d.ok)}</button></div></div></div>`}
+  const keepScroll=L.querySelector('.sheet-b');const st=keepScroll?keepScroll.scrollTop:0;
+  L.innerHTML=h;
+  const nb=L.querySelector('.sheet-b');if(nb&&ui.keepSheetScroll){nb.scrollTop=st;ui.keepSheetScroll=false}
+}
+const sheetHead=(t,sub)=>`<div class="sheet-h"><div class="grow"><h2>${t}</h2>${sub?`<div class="muted" style="font-size:13px">${sub}</div>`:''}</div><button class="icon-btn" data-act="closeSheet" aria-label="關閉">${ICON.x}</button></div>`;
+
+function sheetCustomize(s){
+  const d=s.draft,ex=EX(d.exId),P=PHASES[s.phaseIdx],p=prescribe(d,P);
+  return sheetHead(s.isNew?'新增動作':'調整動作',s.isNew?'':esc(EX(s.origExId).name))+`<div class="sheet-b">
+   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace"><span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${ex.group} · ${ex.equip}</div></span><span class="chip">${s.isNew?'選擇':'更換'}</span></button>
+   <div class="grid2">
+    <div class="field"><label for="cz-sets">組數</label><input id="cz-sets" inputmode="numeric" data-cz="sets" value="${d.sets}"></div>
+    <div class="field"><label for="cz-w">基準重量 kg（基礎週）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>
+    <div class="field"><label for="cz-min">最少次數</label><input id="cz-min" inputmode="numeric" data-cz="repMin" value="${d.repMin}"></div>
+    <div class="field"><label for="cz-max">最多次數</label><input id="cz-max" inputmode="numeric" data-cz="repMax" value="${d.repMax}"></div>
+   </div>
+   <div class="card" style="padding:12px 14px;font-size:14px" id="czPreview">${czPreview(d,P)}</div>
+   <div class="set-item" style="border:0;padding:0"><div><div class="ex-name">休息時間</div><div class="ex-sub">這個動作會記住</div></div><div class="stepper"><button data-act="czRest" data-d="-15">−</button><span class="num">${mmss(d.rest)}</span><button data-act="czRest" data-d="15">+</button></div></div>
+   <div class="field"><label>套用範圍</label><div class="seg"><button class="${s.scope==='today'?'on':''}" data-act="czScope" data-k="today">只改今天</button><button class="${s.scope==='plan'?'on':''}" data-act="czScope" data-k="plan">整個計畫</button></div>
+   <div class="muted" style="font-size:12px">${s.scope==='today'?'只影響這一次訓練，計畫不變。':'之後每一週的「'+esc(s.dayName)+'」都會用這個設定。'}</div></div>
+  </div><div class="sheet-f">${s.isNew?'':'<button class="btn danger" data-act="czDelete">刪除</button>'}<button class="btn primary" data-act="czSave">儲存</button></div>`;
+}
+function czPreview(d,P){const p=prescribe(d,P);return `本週（${P.name}）：<b class="num" style="font-size:18px">${p.sets}</b> 組 × <b class="num" style="font-size:18px">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</b> 次${p.w?` · <b class="num" style="font-size:18px">${fw(p.w)}</b> kg`:''}`}
+
+function sheetPicker(s){
+  const q=(s.q||'').trim().toLowerCase(),g=s.g||'全部';
+  const list=allEx().filter(e=>(g==='全部'||e.group===g)&&(!q||e.name.toLowerCase().includes(q)));
+  return sheetHead('選擇動作')+`<div class="sheet-b"><label class="search">${ICON.search}<input id="pickQ" placeholder="搜尋動作" value="${esc(s.q||'')}" autocomplete="off"></label>
+  <div class="chips">${['全部',...GROUPS].map(x=>`<button class="${g===x?'on':''}" data-act="pickGroup" data-g="${x}">${x}</button>`).join('')}</div>
+  <div id="pickList">${libListHTML(list,'pickEx')}</div></div>`;
+}
+function sheetExDetail(s){
+  const ex=EX(s.exId),h=history(s.exId),best=bestOf(s.exId);
+  const est=h.length?Math.max(...h.map(x=>x.best1)):0;
+  return sheetHead(esc(ex.name),`${ex.group} · ${ex.equip} · ${ex.compound?'複合動作':'孤立動作'}`)+`<div class="sheet-b">
+   <div class="tiles"><div class="tile"><div class="num">${best?fw(best.top.w):'–'}</div><small>最重 kg${best?' × '+best.top.r:''}</small></div><div class="tile"><div class="num">${est?Math.round(est):'–'}</div><small>推估 1RM</small></div><div class="tile"><div class="num">${h.length}</div><small>訓練次數</small></div></div>
+   ${h.length>1?`<div class="card"><div class="eyebrow" style="margin-bottom:8px">每次最重一組</div>${sparkSVG(h.slice(-30).map(x=>x.top.w))}</div>`:''}
+   <div class="set-item" style="border:0;padding:0"><div><div class="ex-name">休息時間</div><div class="ex-sub">${state.restByEx[s.exId]!=null?'已自訂':'使用預設'}</div></div><div class="stepper"><button data-act="exRest" data-d="-15">−</button><span class="num">${mmss(restOf(s.exId))}</span><button data-act="exRest" data-d="15">+</button></div></div>
+   <div><div class="eyebrow" style="margin-bottom:6px">最近紀錄</div>${h.length?h.slice(-8).reverse().map(x=>`<div class="log"><div class="ex-sub">${x.date.replace(/-/g,'/')}</div><div style="font-size:14px">${x.sets.map(z=>`<span class="num" style="font-size:17px">${fw(z.w)}</span>×${z.r}`).join('　')}</div></div>`).join(''):'<div class="empty">還沒練過這個動作</div>'}</div>
+   ${ex.custom?'<button class="btn sm danger ghost" data-act="delCustomEx" style="align-self:flex-start">刪除自訂動作</button>':''}
+  </div>`;
+}
+function sheetPlan(s){
+  const p=state.plan;
+  return sheetHead('編輯計畫','每週固定菜單，五週循環自動調整重量')+`<div class="sheet-b">
+   <div class="field"><label>一週練幾天</label><div class="seg">${[2,3,4,5,6].map(n=>`<button class="${p.freq===n?'on':''}" data-act="planFreq" data-n="${n}">${n} 天</button>`).join('')}</div>
+   <div class="muted" style="font-size:12px">切換天數會套用新的範本菜單（2 天全身、3 天推拉腿、4 天上下肢、5 天推拉腿+上下、6 天推拉腿×2）。</div></div>
+   ${p.days.map(d=>`<div class="card stack" style="padding:14px">
+     <div class="row"><input class="grow" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 10px;font-weight:700;outline:0" data-dayname="${d.id}" value="${esc(d.name)}" aria-label="菜單名稱">
+      <select data-daywd="${d.id}" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${d.wd===w?'selected':''}>週${WD[w]}</option>`).join('')}</select></div>
+     <div class="ex-list">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row" style="padding:8px 0"><span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div><div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight?' · '+fw(pe.weight)+' kg':''}</div></span>
+       <button class="icon-btn" style="width:32px;height:32px" data-act="peMove" data-day="${d.id}" data-i="${i}" data-d="-1" aria-label="上移">↑</button>
+       <button class="icon-btn" style="width:32px;height:32px" data-act="planEditPe" data-day="${d.id}" data-pe="${pe.id}" aria-label="編輯">${ICON.edit}</button></div>`}).join('')}</div>
+     <div class="row"><button class="btn sm" data-act="planAddPe" data-day="${d.id}">${ICON.plus}加動作</button><span class="grow"></span>${p.days.length>1?`<button class="btn sm ghost danger" data-act="planDelDay" data-day="${d.id}">刪除這天</button>`:''}</div>
+   </div>`).join('')}
+   <button class="btn" data-act="planAddDay">${ICON.plus}新增一天</button>
+  </div>`;
+}
+function sheetNewEx(s){
+  return sheetHead('自訂動作')+`<div class="sheet-b">
+   <div class="field"><label for="nx-name">名稱</label><input id="nx-name" placeholder="例如：單臂繩索划船（跪姿）"></div>
+   <div class="grid2"><div class="field"><label for="nx-g">部位</label><select id="nx-g">${GROUPS.map(g=>`<option>${g}</option>`).join('')}</select></div>
+   <div class="field"><label for="nx-e">器材</label><select id="nx-e">${EQUIPS.map(g=>`<option>${g}</option>`).join('')}</select></div></div>
+   <div class="field"><label for="nx-t">類型</label><select id="nx-t"><option value="c">複合動作（休息較長）</option><option value="i">孤立動作</option></select></div>
+  </div><div class="sheet-f"><button class="btn primary" data-act="saveNewEx">加入動作庫</button></div>`;
+}
+function sheetSummary(s){
+  const l=s.log;
+  return sheetHead('訓練完成',esc(l.dayName)+' · '+PHASES[l.phaseIdx].name)+`<div class="sheet-b">
+   <div class="tiles"><div class="tile"><div class="num">${Math.round((l.end-l.start)/6e4)}</div><small>分鐘</small></div><div class="tile"><div class="num">${kfmt(l.volume)}</div><small>總重量 kg</small></div><div class="tile"><div class="num">${l.items.reduce((a,i)=>a+i.sets.length,0)}</div><small>完成組數</small></div></div>
+   ${s.prs.length?`<div class="card"><div class="eyebrow" style="color:var(--phase)">新紀錄</div><div style="margin-top:6px">${s.prs.map(esc).join('<br>')}</div></div>`:''}
+   ${s.ups.length?`<div class="card"><div class="eyebrow">達標，下次自動加重</div><div style="margin-top:6px">${s.ups.map(esc).join('<br>')}</div></div>`:''}
+   <div class="muted" style="font-size:13px">紀錄已存到「進度」。</div>
+  </div><div class="sheet-f"><button class="btn primary" data-act="closeSheet">好</button></div>`;
+}
+function sheetExList(){
+  const a=state.active;
+  return sheetHead('今天的動作')+`<div class="sheet-b"><div class="ex-list">${a.items.map((it,i)=>{const d=it.sets.filter(s=>s.done).length;
+    return `<button class="ex-row" data-act="jumpEx" data-i="${i}"><span class="ex-badge" style="${i===a.idx?'color:var(--phase);border-color:var(--phase)':''}">${d===it.sets.length&&d?'✓':i+1}</span><span class="grow"><div class="ex-name">${esc(EX(it.exId).name)}</div><div class="ex-sub">${d}/${it.sets.length} 組</div></span>${ICON.chev}</button>`}).join('')}</div>
+   <button class="btn" data-act="sessAddEx">${ICON.plus}新增動作</button>
+   <button class="btn danger ghost" data-act="discardSess">放棄這次訓練</button></div>`;
+}
+function sheetRestEdit(s){
+  return sheetHead('休息時間',esc(EX(s.exId).name)+' · 會記住這個動作的設定')+`<div class="sheet-b" style="align-items:center">
+   <div class="stepper" style="gap:14px"><button data-act="exRest" data-d="-15" style="width:52px;height:52px">−</button><span class="num" style="font-size:44px;min-width:110px">${mmss(restOf(s.exId))}</span><button data-act="exRest" data-d="15" style="width:52px;height:52px">+</button></div>
+   <div class="row" style="flex-wrap:wrap;justify-content:center">${[60,90,120,150,180,240,300].map(v=>`<button class="btn sm" data-act="exRestSet" data-v="${v}">${mmss(v)}</button>`).join('')}</div>
+  </div><div class="sheet-f"><button class="btn primary" data-act="closeSheet">完成</button></div>`;
+}
+
+/* ---------- customize logic ---------- */
+function openCustomize({mode,date,peId,isNew,dayId}){
+  let pe,dayName,phaseIdx,dId;
+  if(mode==='session'){
+    const a=state.active,it=a.items[a.idx];
+    dId=a.dayId;dayName=a.dayName;phaseIdx=a.phaseIdx;
+    if(isNew) pe={id:uid(),exId:null,sets:3,repMin:8,repMax:12,weight:0};
+    else{const planPe=(state.plan.days.find(d=>d.id===a.dayId)||{exercises:[]}).exercises.find(x=>x.id===it.peId);
+      pe=planPe?clone(planPe):{id:it.peId||uid(),exId:it.exId,sets:it.sets.length,repMin:it.rmin,repMax:it.rmax,weight:it.sugg};
+      pe.exId=it.exId;pe.sets=it.sets.length;}
+  }else if(mode==='plan'){
+    const d=state.plan.days.find(x=>x.id===dayId);dId=d.id;dayName=d.name;phaseIdx=0;
+    pe=isNew?{id:uid(),exId:null,sets:3,repMin:8,repMax:12,weight:0}:clone(d.exercises.find(x=>x.id===peId));
+  }else{
+    const r=dayFor(date);dId=r.day.id;dayName=r.day.name;phaseIdx=phaseAt(date).idx;
+    pe=isNew?{id:uid(),exId:null,sets:3,repMin:8,repMax:12,weight:0}:clone(r.exercises.find(x=>x.id===peId));
+  }
+  const draft={...pe,rest:pe.exId?restOf(pe.exId):90};
+  ui.sheet={type:'customize',mode,date,dayId:dId,dayName,phaseIdx,draft,isNew:!!isNew,origExId:pe.exId,scope:mode==='plan'?'plan':'today'};
+  if(isNew){ui.sheet.type='picker';ui.sheet.after='custom';ui.pending={...ui.sheet,type:'customize'}}
+  render();
+}
+function czApply(del){
+  const s=ui.sheet,d=s.draft;
+  if(!d.exId){toast('請先選擇動作');return}
+  d.sets=Math.max(1,Math.min(12,parseInt(d.sets)||1));d.repMin=Math.max(1,parseInt(d.repMin)||1);d.repMax=Math.max(d.repMin,parseInt(d.repMax)||d.repMin);d.weight=Math.max(0,parseFloat(d.weight)||0);
+  if(d.rest!==restOf(d.exId)||state.restByEx[d.exId]!=null) state.restByEx[d.exId]=d.rest;
+  const pe={id:d.id,exId:d.exId,sets:d.sets,repMin:d.repMin,repMax:d.repMax,weight:d.weight};
+  const applyList=(list)=>{const i=list.findIndex(x=>x.id===pe.id);if(del){if(i>=0)list.splice(i,1)}else if(i>=0)list[i]=clone(pe);else list.push(clone(pe))};
+  const planDay=state.plan.days.find(x=>x.id===s.dayId);
+  if(s.mode==='plan'){applyList(planDay.exercises)}
+  else if(s.mode==='preview'){
+    if(s.scope==='plan'){applyList(planDay.exercises);const ov=state.overrides[s.date];if(ov&&ov.exercises)applyList(ov.exercises)}
+    else{const ov=state.overrides[s.date]||(state.overrides[s.date]={dayId:s.dayId,exercises:null});if(!ov.exercises)ov.exercises=clone(planDay.exercises);applyList(ov.exercises)}
+  }else{
+    const a=state.active,P=PHASES[a.phaseIdx];
+    if(s.scope==='plan'&&planDay) applyList(planDay.exercises);
+    if(del){a.items.splice(a.idx,1);a.idx=Math.max(0,Math.min(a.idx,a.items.length-1))}
+    else if(s.isNew){a.items.push(makeItem(pe,P));a.idx=a.items.length-1}
+    else{const it=a.items[a.idx],p=prescribe(pe,P);const changedEx=it.exId!==pe.exId;
+      it.exId=pe.exId;it.peId=pe.id;it.rmin=p.rmin;it.rmax=p.rmax;const ns=p.w||it.sugg;
+      if(changedEx){Object.assign(it,makeItem(pe,P),{key:it.key})}
+      else{if(ns!==it.sugg){it.sets.forEach(x=>{if(!x.done)x.w=ns})}it.sugg=ns;
+        while(it.sets.length<pe.sets)it.sets.push({w:ns,r:'',done:false});
+        while(it.sets.length>pe.sets&&!it.sets[it.sets.length-1].done)it.sets.pop();}
+    }
+  }
+  pruneOverrides();
+  const back=s.mode==='plan';
+  ui.sheet=back?{type:'plan'}:null;save();render();
+  toast(del?'已刪除':s.scope==='plan'||s.mode==='plan'?'已更新計畫':'已更新今天的菜單');
+}
+function pruneOverrides(){const t=TODAY();for(const k in state.overrides) if(k<addDays(t,-14)) delete state.overrides[k]}
+
+/* ---------- toast & dialog ---------- */
+let toastT;function toast(msg){let el=document.getElementById('toast');if(!el){el=document.createElement('div');el.id='toast';el.className='toast';document.body.appendChild(el)}el.textContent=msg;el.hidden=false;clearTimeout(toastT);toastT=setTimeout(()=>el.hidden=true,2200)}
+function confirmDlg(title,msg,ok,onOk,danger=true){ui.dialog={title,msg,ok,onOk,danger};renderLayer()}
+
+/* ---------- actions ---------- */
+const A={
+ tab:el=>{ui.tab=el.dataset.k;render();window.scrollTo(0,0)},
+ week:el=>{ui.weekOff+=+el.dataset.d;ui.selDate=addDays(mondayOf(TODAY()),ui.weekOff*7+(ui.weekOff===0?(pd(TODAY()).getDay()+6)%7:0));render()},
+ selDay:el=>{ui.selDate=el.dataset.d;render()},
+ start:el=>startSession(el.dataset.date),
+ resume:()=>{ui.inSession=true;keepAwake();render()},
+ swapDay:el=>{state.overrides[el.dataset.date]={dayId:el.dataset.day,exercises:null};save();render()},
+ clearOverride:el=>{delete state.overrides[el.dataset.date];save();render();toast('已還原成計畫菜單')},
+ customize:el=>openCustomize({mode:'preview',date:el.dataset.date,peId:el.dataset.pe}),
+ addExToDay:el=>openCustomize({mode:'preview',date:el.dataset.date,isNew:true}),
+ openPlan:()=>{ui.sheet={type:'plan'};render()},
+ libGroup:el=>{ui.libGroup=el.dataset.g;render()},
+ exDetail:el=>{ui.sheet={type:'exDetail',exId:el.dataset.ex};render()},
+ newEx:()=>{ui.sheet={type:'newEx'};render()},
+ saveNewEx:()=>{const n=document.getElementById('nx-name').value.trim();if(!n){toast('請輸入動作名稱');return}
+   state.customEx.push({id:'cx_'+uid(),name:n,group:document.getElementById('nx-g').value,equip:document.getElementById('nx-e').value,compound:document.getElementById('nx-t').value==='c',custom:true});rebuildEx();save();ui.sheet=null;render();toast('已加入動作庫')},
+ delCustomEx:()=>{const id=ui.sheet.exId;confirmDlg('刪除自訂動作？','過去的訓練紀錄會保留。','刪除',()=>{state.customEx=state.customEx.filter(e=>e.id!==id);save();ui.sheet=null;render()})},
+ range:el=>{ui.range=el.dataset.k;render()},
+ cal:el=>{const [y,m]=ui.calMonth.split('-').map(Number);const d=new Date(y,m-1+(+el.dataset.d),1);ui.calMonth=ds(d).slice(0,7);render()},
+ calSel:el=>{ui.calSel=el.dataset.d||null;render()},
+ toggleLog:el=>{ui.openLog=ui.openLog===el.dataset.id?null:el.dataset.id;render()},
+ delLog:el=>{const id=el.dataset.id;confirmDlg('刪除這筆紀錄？','刪除後無法復原。','刪除',()=>{logs=logs.filter(l=>l.id!==id);saveLogs();Cloud.delLog(id);render()})},
+ weekAdj:el=>{const cur=phaseAt(TODAY());const w=Math.max(0,Math.floor(between(state.settings.cycleStart,TODAY())/7))+(+el.dataset.d);
+   if(w<0) return; state.settings.cycleStart=addDays(mondayOf(TODAY()),-7*w);save();render()},
+ restDef:el=>{const k=el.dataset.k;state.settings[k]=Math.max(15,Math.min(600,state.settings[k]+(+el.dataset.d)));save();render()},
+ resetRest:()=>{state.restByEx={};save();render()},
+ toggleSet2:el=>{const k=el.dataset.k;state.settings[k]=!state.settings[k];save();render()},
+ exportData:()=>{const t=JSON.stringify({state,logs});const ta=document.getElementById('backup');ta.value=t;ta.select();
+   if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(()=>toast('已複製備份'),()=>toast('已選取文字，請手動複製'));else toast('已選取文字，請手動複製')},
+ importData:()=>{const v=document.getElementById('backup').value.trim();try{const o=JSON.parse(v);if(!o.state||!o.logs)throw 0;
+   confirmDlg('用備份覆蓋目前資料？','目前的計畫與紀錄會被取代。','還原',()=>{state=o.state;state.updatedAt=Date.now();logs=o.logs;rebuildEx();save();saveLogs();logs.forEach(l=>Cloud.putLog(l));render();toast('已還原')})}catch(e){toast('備份格式不正確，請貼上完整的備份文字')}},
+ resetAll:()=>confirmDlg('清除全部資料？','計畫、紀錄、設定都會刪除，無法復原。','全部清除',()=>{const old=logs;state=freshState();state.updatedAt=Date.now();logs=[];old.forEach(l=>Cloud.delLog(l.id));save();saveLogs();rebuildEx();render()}),
+ // session
+ exitSess:()=>{ui.inSession=false;render()},
+ prevEx:()=>{const a=state.active;if(a.idx>0){a.idx--;save();rerenderSession(false);document.getElementById('sessBody').scrollTop=0}},
+ nextEx:()=>{const a=state.active;if(a.idx<a.items.length-1){a.idx++;save();rerenderSession(false);document.getElementById('sessBody').scrollTop=0}},
+ jumpEx:el=>{state.active.idx=+el.dataset.i;ui.sheet=null;save();rerenderSession(false)},
+ exList:()=>{ui.sheet={type:'exList'};render()},
+ warmDone:()=>{state.active.items[state.active.idx].warm=true;save();rerenderSession()},
+ setDone:el=>{
+   const a=state.active,it=a.items[a.idx],s=it.sets[+el.dataset.i];
+   if(s.done){s.done=false;save();rerenderSession();return}
+   if(s.r===''||s.r==null) s.r=it.rmax;
+   if(s.w===''||s.w==null) s.w=it.sugg||0;
+   s.done=true;
+   // carry weight forward to next undone sets if user changed it
+   startRest(it.exId);save();rerenderSession();
+ },
+ addSet:()=>{const it=state.active.items[state.active.idx];const l=it.sets[it.sets.length-1];it.sets.push({w:l?l.w:it.sugg,r:'',done:false});save();rerenderSession()},
+ rmSet:()=>{const it=state.active.items[state.active.idx];if(it.sets.length>1)it.sets.pop();save();rerenderSession()},
+ customizeSess:()=>openCustomize({mode:'session'}),
+ sessAddEx:()=>openCustomize({mode:'session',isNew:true}),
+ restEdit:el=>{ui.sheet={type:'restEdit',exId:el.dataset.ex};render()},
+ exRest:el=>{const id=ui.sheet.exId;state.restByEx[id]=Math.max(15,Math.min(900,restOf(id)+(+el.dataset.d)));save();ui.keepSheetScroll=true;render()},
+ exRestSet:el=>{state.restByEx[ui.sheet.exId]=+el.dataset.v;save();render()},
+ restAdd:el=>{const r=state.active.rest;if(!r)return;const d=+el.dataset.d*1000;r.endAt=Math.max(Date.now(),r.endAt+d);r.total=Math.max(1,r.total+(+el.dataset.d));if(r.endAt>Date.now())r.beeped=false;save();rerenderSession()},
+ restSkip:()=>{state.active.rest=null;save();rerenderSession()},
+ finish:()=>{const a=state.active;const left=a.items.reduce((t,it)=>t+it.sets.filter(s=>!s.done).length,0);
+   if(left) confirmDlg('完成訓練？',`還有 ${left} 組沒打勾，只會記錄已完成的組。`,'完成並儲存',finishSession,false);else finishSession()},
+ discardSess:()=>confirmDlg('放棄這次訓練？','這次的紀錄不會儲存。','放棄',()=>{state.active=null;ui.inSession=false;ui.sheet=null;save();render()}),
+ // customize sheet
+ pickReplace:()=>{ui.pending=ui.sheet;ui.sheet={type:'picker',after:'custom'};render()},
+ pickGroup:el=>{ui.sheet.g=el.dataset.g;render()},
+ pickEx:el=>{const id=el.dataset.ex;const s=ui.pending;ui.pending=null;s.draft.exId=id;s.draft.rest=restOf(id);
+   if(s.isNew||s.origExId!==id){const last=lastSets(id);const ex=EX(id);s.draft.weight=last?Math.max(...last.map(x=>x.w)):0;if(s.isNew){s.draft.repMin=ex.compound?6:10;s.draft.repMax=ex.compound?10:15}}
+   ui.sheet=s;render()},
+ czScope:el=>{ui.sheet.scope=el.dataset.k;ui.keepSheetScroll=true;render()},
+ czRest:el=>{const d=ui.sheet.draft;d.rest=Math.max(15,Math.min(900,d.rest+(+el.dataset.d)));ui.keepSheetScroll=true;render()},
+ czSave:()=>czApply(false),
+ czDelete:()=>confirmDlg('刪除這個動作？',ui.sheet.scope==='plan'||ui.sheet.mode==='plan'?'會從計畫中移除。':'只從今天移除。','刪除',()=>czApply(true)),
+ // plan
+ planFreq:el=>{const n=+el.dataset.n;if(n===state.plan.freq)return;confirmDlg(`改成一週 ${n} 天？`,'會套用新的範本菜單，取代目前計畫的動作。訓練紀錄不受影響。','套用',()=>{state.plan=defaultPlan(n);state.overrides={};save();render()},false)},
+ planEditPe:el=>openCustomize({mode:'plan',dayId:el.dataset.day,peId:el.dataset.pe}),
+ planAddPe:el=>openCustomize({mode:'plan',dayId:el.dataset.day,isNew:true}),
+ peMove:el=>{const d=state.plan.days.find(x=>x.id===el.dataset.day),i=+el.dataset.i;if(i<=0)return;[d.exercises[i-1],d.exercises[i]]=[d.exercises[i],d.exercises[i-1]];save();ui.keepSheetScroll=true;render()},
+ planAddDay:()=>{const used=new Set(state.plan.days.map(d=>d.wd));const wd=[1,2,3,4,5,6,0].find(w=>!used.has(w));if(wd==null){toast('一週七天都排滿了');return}
+   state.plan.days.push({id:uid(),name:'新菜單',wd,exercises:[]});state.plan.freq=state.plan.days.length;save();ui.keepSheetScroll=true;render()},
+ planDelDay:el=>confirmDlg('刪除這天的菜單？','','刪除',()=>{state.plan.days=state.plan.days.filter(d=>d.id!==el.dataset.day);state.plan.freq=state.plan.days.length;save();render()}),
+ // generic
+ closeSheet:()=>{const back=ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:(ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan'?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
+ scrim:(el,e)=>{if(e.target===el) A.closeSheet()},
+ dlgNo:()=>{ui.dialog=null;renderLayer()},
+ dlgOk:()=>{const f=ui.dialog.onOk;ui.dialog=null;renderLayer();f&&f()},
+};
+document.addEventListener('click',e=>{
+  unlockAudio();
+  const el=e.target.closest('[data-act]');if(!el)return;
+  const fn=A[el.dataset.act];if(!fn)return;
+  if(el.dataset.act!=='scrim') e.stopPropagation();
+  fn(el,e);
+});
+document.addEventListener('input',e=>{
+  const t=e.target;
+  if(t.id==='libQ'){ui.libQ=t.value;const q=t.value.trim().toLowerCase();document.getElementById('libList').innerHTML=libListHTML(allEx().filter(x=>(ui.libGroup==='全部'||x.group===ui.libGroup)&&(!q||x.name.toLowerCase().includes(q)||x.equip.includes(q))),'exDetail');return}
+  if(t.id==='pickQ'){ui.sheet.q=t.value;const q=t.value.trim().toLowerCase(),g=ui.sheet.g||'全部';document.getElementById('pickList').innerHTML=libListHTML(allEx().filter(x=>(g==='全部'||x.group===g)&&(!q||x.name.toLowerCase().includes(q))),'pickEx');return}
+  if(t.dataset.f&&state.active){const it=state.active.items[state.active.idx],s=it.sets[+t.dataset.i];
+    const v=t.value.trim();s[t.dataset.f]=v===''?'':(t.dataset.f==='w'?parseFloat(v)||0:parseInt(v)||0);
+    // weight typed on an undone set carries to following undone sets
+    if(t.dataset.f==='w'&&v!==''){for(let j=+t.dataset.i+1;j<it.sets.length;j++){if(!it.sets[j].done){it.sets[j].w=s.w;const inp=document.querySelector(`input[data-f="w"][data-i="${j}"]`);if(inp)inp.value=fw(s.w)}}}
+    clearTimeout(A._t);A._t=setTimeout(save,600);return}
+  if(t.dataset.cz&&ui.sheet&&ui.sheet.draft){ui.sheet.draft[t.dataset.cz]=t.value;const d={...ui.sheet.draft};['sets','repMin','repMax'].forEach(k=>d[k]=Math.max(1,parseInt(d[k])||1));d.weight=parseFloat(d.weight)||0;if(d.repMax<d.repMin)d.repMax=d.repMin;
+    const pv=document.getElementById('czPreview');if(pv&&d.exId)pv.innerHTML=czPreview(d,PHASES[ui.sheet.phaseIdx]);return}
+  if(t.dataset.dayname){const d=state.plan.days.find(x=>x.id===t.dataset.dayname);d.name=t.value||'菜單';clearTimeout(A._t);A._t=setTimeout(save,600)}
+});
+document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.daywd){const d=state.plan.days.find(x=>x.id===t.dataset.daywd);const w=+t.value;const clash=state.plan.days.find(x=>x.id!==d.id&&x.wd===w);if(clash)clash.wd=d.wd;d.wd=w;save();ui.keepSheetScroll=true;render();if(clash)toast(`已和「${clash.name}」對調星期`)}
+});
+document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.f)setTimeout(()=>e.target.select(),0)});
+
+/* ---------- boot ---------- */
+ui.inSession=!!state.active;
+render();
+Cloud.init();
+</script>
+<script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
+<style>.field input,.field select,.search input,textarea{font-size:16px}</style>
+</body>
+</html>
