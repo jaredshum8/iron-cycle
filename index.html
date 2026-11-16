@@ -236,6 +236,46 @@ textarea{width:100%;min-height:120px;background:var(--surface2);border:1px solid
 .sync{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px}
 .sync i{width:7px;height:7px;border-radius:50%;background:var(--faint)}
 .sync.on i{background:var(--ok)}
+
+/* names, demos, tutorials */
+.en{font-family:var(--f-num);font-size:13px;letter-spacing:.03em;color:var(--faint);font-weight:500;line-height:1.25}
+.demo{position:relative;aspect-ratio:3/2;max-width:100%;border-radius:12px;overflow:hidden;background:#fff}
+.demo img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
+.demo img.b{animation:flip 2.4s steps(1,end) infinite}
+@keyframes flip{0%{opacity:0}50%{opacity:1}}
+.demo .approx{position:absolute;left:6px;bottom:6px;font-size:10px;font-weight:700;background:rgba(13,16,21,.75);color:#EEF1F5;padding:2px 6px;border-radius:6px}
+.tut{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:12px}
+.tut summary{list-style:none;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-weight:700}
+.tut summary::-webkit-details-marker{display:none}
+.tut-grid{display:grid;grid-template-columns:minmax(0,46%) minmax(0,1fr);gap:12px;margin-top:10px;align-items:start}
+.cues{margin:0;padding:0 0 0 18px;font-size:13px;line-height:1.5;color:var(--text);display:flex;flex-direction:column;gap:4px}
+.cues li::marker{color:var(--phase);font-family:var(--f-num);font-weight:700}
+.warn{font-size:13px;color:#FFB4A8;background:rgba(255,107,107,.1);border-radius:10px;padding:8px 10px}
+.links{display:flex;gap:8px;flex-wrap:wrap}
+a.btn{text-decoration:none;color:var(--text)}
+/* auth & onboarding */
+.full{min-height:100%;display:flex;flex-direction:column;justify-content:center}
+.full .wrap{padding-block:28px calc(28px + env(safe-area-inset-bottom,0px));width:100%}
+.hero-mark{width:64px;height:64px;border-radius:50%;border:9px solid var(--phase);position:relative}
+.hero-mark::after{content:"";position:absolute;inset:12px;border-radius:50%;border:4px solid var(--phase)}
+.lead{font-size:15px;color:var(--muted);margin:0}
+.msg{font-size:14px;padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.linkbtn{color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:6px 0}
+.steps{display:flex;gap:6px}
+.steps i{flex:1;height:4px;border-radius:2px;background:var(--line2)}
+.steps i.on{background:var(--phase)}
+.big-q{font-size:26px;font-weight:900;line-height:1.25;text-wrap:balance}
+.tiles5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tiles5 button,.wdpick button{height:72px;border-radius:16px;background:var(--surface);border:1.5px solid var(--line2);font-family:var(--f-num);font-size:32px;font-weight:600}
+.tiles5 button small{display:block;font-family:var(--f-body);font-size:11px;color:var(--muted);font-weight:700}
+.tiles5 button.on,.wdpick button.on{border-color:var(--phase);background:var(--phase-soft);color:var(--phase)}
+.wdpick{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.wdpick button{height:58px;font-family:var(--f-body);font-size:16px;font-weight:700}
+.opt{display:block;width:100%;text-align:left;background:var(--surface);border:1.5px solid var(--line2);border-radius:16px;padding:14px 16px}
+.opt.on{border-color:var(--phase);background:var(--phase-soft)}
+.opt b{display:block;font-size:16px}
+.opt span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
+.opt .days{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
 @keyframes up{from{transform:translateY(30px);opacity:.4}}
 @keyframes fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -245,6 +285,9 @@ textarea{width:100%;min-height:120px;background:var(--surface2);border:1px solid
 <div id="app"></div>
 <div id="layer"></div>
 
+<script src="config.js"></script>
+<script src="exdata.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* ---------- Exercise library ---------- */
 const EX_RAW=`bb_bench|槓鈴平板臥推|胸|槓鈴|c
@@ -421,7 +464,8 @@ battle_rope|戰繩（秒）|全身|器械|c`;
 const GROUPS=['胸','背','肩','二頭','三頭','前臂','股四頭','腿後','臀','小腿','核心','全身'];
 const EQUIPS=['槓鈴','啞鈴','器械','繩索','史密斯','EZ槓','壺鈴','自體重'];
 const INC={'槓鈴':2.5,'EZ槓':2.5,'史密斯':2.5,'器械':2.5,'繩索':2.5,'啞鈴':2,'壺鈴':4,'自體重':2.5};
-const BASE_EX=EX_RAW.split('\n').map(l=>{const [id,name,group,equip,t]=l.split('|');return {id,name,group,equip,compound:t==='c'}});
+const EXD=window.EXDATA||{};
+const BASE_EX=EX_RAW.split('\n').map(l=>{const [id,name,group,equip,t]=l.split('|');const x=EXD[id]||{};return {id,name,group,equip,compound:t==='c',en:x.en||'',img:x.img||'',approx:!!x.approx,cues:x.cues||[],mistake:x.mistake||''}});
 
 /* ---------- Five-week cycle ---------- */
 const PHASES=[
@@ -430,6 +474,8 @@ const PHASES=[
  {key:'prepeak',name:'預備高峰週',en:'PRE-PEAK',mult:1.075,repF:.8,setsF:1,color:'#5B95FF',soft:'rgba(91,149,255,.16)',desc:'重量 +7.5%，次數約減兩成'},
  {key:'peak',name:'高峰週',en:'PEAK',mult:1.1,repF:.65,setsF:1,color:'#FF5468',soft:'rgba(255,84,104,.15)',desc:'重量 +10%，低次數衝強度'},
  {key:'deload',name:'減量週',en:'DELOAD',mult:.65,repF:1,setsF:.6,color:'#C9D1DC',soft:'rgba(201,209,220,.13)',desc:'重量 65%、組數減少，讓身體恢復'}];
+const FIXED={key:'fixed',name:'固定菜單',en:'STEADY',mult:1,repF:1,setsF:1,color:'#3DDC97',soft:'rgba(61,220,151,.14)',desc:'每週一樣的重量與次數，達標就自動加重'};
+const PH=i=>i<0||i==null?FIXED:PHASES[i];
 
 /* ---------- Plan templates ---------- */
 const T={
@@ -443,7 +489,22 @@ const T={
  FA:['全身 A',[['bb_squat',3,6,8,80],['bb_bench',3,6,8,60],['bb_row',3,8,10,50],['db_lateral',3,15,20,8],['cb_rope_pd',3,10,12,20],['cb_crunch',3,12,15,30]]],
  FB:['全身 B',[['bb_deadlift',3,4,6,100],['bb_ohp',3,6,8,40],['cb_lat_pd',3,10,12,50],['db_incline',3,8,10,22],['db_curl',3,10,12,10],['m_standing_calf',3,12,15,60]]],
 };
-const FREQ={2:[['FA',1],['FB',4]],3:[['PU',1],['PL',3],['LG',5]],4:[['UA',1],['LA',2],['UB',4],['LB',5]],5:[['PU',1],['PL',2],['LG',3],['UA',5],['LB',6]],6:[['PU',1],['PL',2],['LG',3],['PU',4],['PL',5],['LG',6]]};
+T.FC=['全身 C',[['m_leg_press',3,10,12,120],['db_bench',3,8,10,22],['cb_seated_row',3,10,12,50],['db_bulgarian',3,8,10,14],['cb_face_pull',3,15,20,20],['bw_plank',3,30,60,0]]];
+const DEFAULT_WD={2:[1,4],3:[1,3,5],4:[1,2,4,5],5:[1,2,3,5,6],6:[1,2,3,4,5,6]};
+const REC={
+ 2:[{name:'全身 A / B',desc:'每次練全身，適合剛開始或時間少',days:['FA','FB']}],
+ 3:[{name:'推 / 拉 / 腿',desc:'最經典的三分化',days:['PU','PL','LG']},{name:'全身 A / B / C',desc:'每個部位一週練三次，新手進步快',days:['FA','FB','FC']}],
+ 4:[{name:'上下肢分化 ×2',desc:'每個部位一週兩次，增肌效率高',days:['UA','LA','UB','LB']},{name:'推 / 拉 / 腿 / 上肢',desc:'推拉腿再加一天上半身',days:['PU','PL','LG','UA']}],
+ 5:[{name:'推 / 拉 / 腿 / 上肢 / 下肢',desc:'訓練量大，適合有經驗',days:['PU','PL','LG','UA','LB']}],
+ 6:[{name:'推 / 拉 / 腿 ×2',desc:'每個部位一週兩次，訓練量最大',days:['PU','PL','LG','PU','PL','LG']}]};
+function buildPlan(wds,keys){
+  const seen={};
+  return {freq:wds.length,days:wds.map((wd,i)=>{
+    if(!keys) return {id:uid(),name:'訓練日 '+'ABCDEF'[i],wd,exercises:[]};
+    const k=keys[i];seen[k]=(seen[k]||0)+1;
+    return {id:uid(),name:T[k][0]+(seen[k]>1?' ·'+seen[k]:''),wd,exercises:T[k][1].map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}))};
+  })};
+}
 
 /* ---------- utils ---------- */
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -481,63 +542,78 @@ const ICON={
 };
 
 /* ---------- state ---------- */
-function defaultPlan(freq){
-  return {freq,days:FREQ[freq].map(([k,wd],i)=>({id:uid(),name:T[k][0]+(freq===6&&i>2?' ·2':''),wd,
-    exercises:T[k][1].map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}))}))};
-}
+function defaultPlan(freq){return buildPlan(DEFAULT_WD[freq],REC[freq][0].days)}
 function freshState(){
-  return {v:1,updatedAt:0,settings:{cycleStart:mondayOf(TODAY()),restCompound:150,restIso:90,sound:true,vibrate:true},
+  return {v:2,updatedAt:0,onboarded:false,settings:{cycleStart:mondayOf(TODAY()),restCompound:150,restIso:90,sound:true,vibrate:true,periodize:true,showTut:true},
     plan:defaultPlan(4),overrides:{},restByEx:{},customEx:[],active:null};
 }
-const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
-let state=LS.get('ic.state')||freshState();
-let logs=LS.get('ic.logs')||[];
-const ui={tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null};
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k))}catch(e){return null}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+let user=null; // signed-in account {id,email}; null = this device only
+const key=k=>'ic.'+(user?user.id+'.':'')+k;
+let state=freshState(),logs=[];
+function migrate(){
+  if(state.onboarded==null) state.onboarded=true; // existing data from earlier versions
+  const st=state.settings;if(st.periodize==null)st.periodize=true;if(st.showTut==null)st.showTut=true;
+}
+function loadLocal(){state=LS.get(key('state'))||freshState();logs=LS.get(key('logs'))||[];migrate();if(typeof rebuildEx==='function')rebuildEx()}
+const ui={tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null,screen:null,auth:{mode:'login',msg:'',busy:false},ob:null};
 
-/* ---------- cloud sync (artifact db; falls back to this device only) ---------- */
-const Cloud={db:null,uid:null,status:'local',appRef:null,logsCol:null,chain:Promise.resolve(),timer:null,
-  async init(){
+/* ---------- accounts & cloud sync (Supabase) ---------- */
+const CFG=window.IC_CONFIG||{};
+let SB=null;
+try{if(CFG.supabaseUrl&&CFG.supabaseKey&&window.supabase)SB=supabase.createClient(CFG.supabaseUrl,CFG.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})}catch(e){SB=null}
+const Cloud={status:'local',chain:Promise.resolve(),timer:null,hadRemote:false,
+  async pull(){
+    if(!SB||!user) return;
     try{
-      if(!window.claude||!window.claude.use) return;
-      const [db,user]=await Promise.all([claude.use('db'),claude.use('user')]);
-      if(!db||!user) return;
-      const id=await user.id(); if(!id) return;
-      this.db=db;this.uid=id;
-      this.appRef=db.doc('data/users/'+id+'/app');
-      this.logsCol=this.appRef.collection('logs');
-      const to=new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),10000));
-      const [appSnap,logSnap]=await Promise.race([Promise.all([this.appRef.get(),this.logsCol.get()]),to]);
-      const remote=appSnap.exists?appSnap.data():null;
-      if(remote&&remote.state&&(remote.state.updatedAt||0)>(state.updatedAt||0)){state=clone(remote.state);LS.set('ic.state',state)}
+      const [r1,r2]=await Promise.all([
+        SB.from('app_state').select('state').eq('user_id',user.id).maybeSingle(),
+        SB.from('workout_logs').select('log').eq('user_id',user.id).order('ended_at',{ascending:false}).limit(3000)]);
+      if(r1.error||r2.error) throw (r1.error||r2.error);
+      const st=r1.data;this.hadRemote=!!(st&&st.state);
+      if(this.hadRemote&&(st.state.updatedAt||0)>(state.updatedAt||0)){state=st.state;migrate();LS.set(key('state'),state)}
       else if(state.updatedAt) this.queueState(true);
-      const rl=logSnap.docs.map(d=>d.data().log).filter(Boolean);
-      const ids=new Set(rl.map(l=>l.id));
+      const rl=(r2.data||[]).map(r=>r.log).filter(Boolean);const ids=new Set(rl.map(l=>l.id));
       const localOnly=logs.filter(l=>!ids.has(l.id));
-      logs=[...rl,...localOnly].sort((a,b)=>b.end-a.end);
-      LS.set('ic.logs',logs);
-      for(const l of localOnly) this.putLog(l);
-      this.status='cloud';
-      render();
-    }catch(e){this.status='offline';render()}
+      logs=[...rl,...localOnly].sort((a,b)=>b.end-a.end);saveLogs();
+      localOnly.forEach(l=>this.putLog(l));
+      this.status='cloud';rebuildEx();
+    }catch(e){this.status='offline'}
+    render();
   },
+  run(fn){this.chain=this.chain.then(fn).then(()=>{this.status='cloud'}).catch(()=>{this.status='offline'})},
   queueState(now){
-    if(!this.appRef) return;
+    if(!SB||!user) return;
     clearTimeout(this.timer);
-    this.timer=setTimeout(()=>{const snap=clone(state);this.chain=this.chain.then(()=>this.appRef.set({state:snap})).catch(()=>{this.status='offline'})},now?0:900);
+    this.timer=setTimeout(()=>{const snap=clone(state),u=user.id;
+      this.run(async()=>{const {error}=await SB.from('app_state').upsert({user_id:u,state:snap,updated_at:new Date().toISOString()});if(error)throw error})},now?0:900);
   },
-  putLog(l){if(!this.logsCol)return;this.chain=this.chain.then(()=>this.logsCol.doc(l.id).set({log:l,end:l.end})).catch(()=>{})},
-  delLog(id){if(!this.logsCol)return;this.chain=this.chain.then(()=>this.logsCol.doc(id).delete()).catch(()=>{})},
+  putLog(l){if(!SB||!user)return;const u=user.id;this.run(async()=>{const {error}=await SB.from('workout_logs').upsert({id:l.id,user_id:u,log:l,ended_at:l.end});if(error)throw error})},
+  delLog(id){if(!SB||!user)return;this.run(async()=>{const {error}=await SB.from('workout_logs').delete().eq('id',id);if(error)throw error})},
 };
-function save(){state.updatedAt=Date.now();LS.set('ic.state',state);Cloud.queueState()}
-function saveLogs(){LS.set('ic.logs',logs)}
+function save(){state.updatedAt=Date.now();LS.set(key('state'),state);Cloud.queueState()}
+function saveLogs(){LS.set(key('logs'),logs)}
+const AUTH_ERR={'Invalid login credentials':'Email 或密碼不對','User already registered':'這個 Email 已經註冊過，請直接登入','Email not confirmed':'還沒完成 Email 驗證，請先點信裡的確認連結','Password should be at least 6 characters.':'密碼至少要 6 個字'};
+const authMsg=e=>AUTH_ERR[e.message]||(/password/i.test(e.message)&&/6/.test(e.message)?'密碼至少要 6 個字':/rate limit/i.test(e.message)?'嘗試太多次，請稍後再試':'發生錯誤：'+e.message);
+async function afterLogin(session){
+  const guestState=LS.get('ic.state'),guestLogs=LS.get('ic.logs')||[];
+  user={id:session.user.id,email:session.user.email};LS.del('ic.guest');
+  loadLocal();ui.screen=null;render();
+  await Cloud.pull();
+  if(!Cloud.hadRemote&&!state.updatedAt&&guestState&&guestState.onboarded){
+    state=guestState;migrate();const ids=new Set(logs.map(l=>l.id));logs=[...logs,...guestLogs.filter(l=>!ids.has(l.id))].sort((a,b)=>b.end-a.end);
+    save();saveLogs();logs.forEach(l=>Cloud.putLog(l));LS.del('ic.state');LS.del('ic.logs');rebuildEx();render();toast('已把這支手機上的紀錄搬進你的帳號');
+  }
+}
 
 /* ---------- domain ---------- */
-const allEx=()=>BASE_EX.concat(state.customEx||[]);
+const allEx=()=>BASE_EX.concat((state&&state.customEx)||[]);
 let EXMAP={};const rebuildEx=()=>{EXMAP={};allEx().forEach(e=>EXMAP[e.id]=e)};rebuildEx();
 const EX=id=>EXMAP[id]||{id,name:'未知動作',group:'全身',equip:'器械',compound:false};
 const incOf=ex=>INC[ex.equip]||2.5;
 const restOf=exId=>state.restByEx[exId]??(EX(exId).compound?state.settings.restCompound:state.settings.restIso);
 function phaseAt(date){
+  if(!state.settings.periodize) return {idx:-1,cycle:0,week:0};
   const w=Math.max(0,Math.floor(between(state.settings.cycleStart,date)/7));
   return {idx:w%5,cycle:Math.floor(w/5)+1,week:w%5+1};
 }
@@ -569,7 +645,7 @@ function estMinutes(list,ph){let s=0;list.forEach(pe=>{const p=prescribe(pe,ph);
 
 /* ---------- theme from phase ---------- */
 function applyPhase(){
-  const p=PHASES[(state.active?state.active.phaseIdx:phaseAt(TODAY()).idx)];
+  const p=PH((state.active?state.active.phaseIdx:phaseAt(TODAY()).idx));
   document.documentElement.style.setProperty('--phase',p.color);
   document.documentElement.style.setProperty('--phase-soft',p.soft);
 }
@@ -578,6 +654,8 @@ function applyPhase(){
 function render(){
   applyPhase();
   const app=document.getElementById('app');
+  if(ui.screen==='auth'||ui.screen==='reset'){app.innerHTML=renderAuth();renderLayer();return}
+  if(!state.onboarded||ui.screen==='onboard'){if(!ui.ob)ui.ob=newOb();app.innerHTML=renderOnboard();renderLayer();return}
   if(state.active&&ui.inSession){app.innerHTML=renderSession();bindSessionScroll()}
   else{
     const view={today:renderToday,library:renderLibrary,progress:renderProgress,settings:renderSettings}[ui.tab]();
@@ -592,16 +670,17 @@ function renderTabbar(){
 
 /* ---------- Today ---------- */
 function renderToday(){
-  const today=TODAY(),ph=phaseAt(today),P=PHASES[ph.idx];
+  const today=TODAY(),ph=phaseAt(today),P=PH(ph.idx);
   const mon=addDays(mondayOf(today),ui.weekOff*7);
   const days=[...Array(7)].map((_,i)=>addDays(mon,i));
-  const sel=ui.selDate,selPh=PHASES[phaseAt(sel).idx];
+  const sel=ui.selDate,selPh=PH(phaseAt(sel).idx);
   const r=dayFor(sel);
   const doneOn=d=>logs.some(l=>l.date===d);
   let h=`<div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>訓練</h1></div>
     <button class="btn sm" data-act="openPlan">${ICON.edit}編輯計畫</button></div>`;
   if(state.active) h+=`<button class="banner" data-act="resume"><div class="grow"><div style="font-size:13px;opacity:.75">訓練進行中 · ${esc(state.active.dayName)}</div><div class="num" id="bannerClock">${hms(Date.now()-state.active.startedAt)}</div></div><span>繼續 →</span></button>`;
-  h+=`<section class="phase-card"><div class="plate"></div>
+  if(ph.idx<0) h+=`<section class="phase-card"><div class="plate"></div><div class="eyebrow">每週相同</div><div class="phase-name" style="margin-top:6px">固定菜單</div><div class="muted" style="font-size:13px;margin-top:6px;max-width:75%">${FIXED.desc}</div></section>`;
+  else h+=`<section class="phase-card"><div class="plate"></div>
     <div class="eyebrow">第 ${ph.cycle} 輪 · 第 ${ph.week} / 5 週</div>
     <div class="phase-name" style="margin-top:6px">${P.name}</div>
     <div class="phase-en">${P.en}</div>
@@ -624,7 +703,7 @@ function renderToday(){
       <div class="ex-list">${list.map((pe,i)=>{const ex=EX(pe.exId),p=prescribe(pe,selPh);
         return `<button class="ex-row" data-act="customize" data-pe="${pe.id}" data-date="${sel}">
           <span class="ex-badge">${i+1}</span>
-          <span class="grow"><div class="ex-name">${esc(ex.name)}</div>
+          <span class="grow"><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}
           <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> 次${p.w?` · <span class="num">${fw(p.w)}</span> kg`:''} · ${ex.group}</div></span>${ICON.chev}</button>`}).join('')}
         ${list.length?'':'<div class="empty">這天還沒有動作</div>'}
       </div>
@@ -642,7 +721,7 @@ function renderToday(){
 /* ---------- Library ---------- */
 function renderLibrary(){
   const q=ui.libQ.trim().toLowerCase();
-  const list=allEx().filter(e=>(ui.libGroup==='全部'||e.group===ui.libGroup)&&(!q||e.name.toLowerCase().includes(q)||e.equip.includes(q)));
+  const list=allEx().filter(e=>(ui.libGroup==='全部'||e.group===ui.libGroup)&&exMatch(e,q));
   let h=`<div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>動作庫</h1></div><button class="btn sm" data-act="newEx">${ICON.plus}自訂動作</button></div>
   <label class="search">${ICON.search}<input id="libQ" placeholder="搜尋 ${allEx().length} 個動作" value="${esc(ui.libQ)}" autocomplete="off"></label>
   <div class="chips">${['全部',...GROUPS].map(g=>`<button class="${ui.libGroup===g?'on':''}" data-act="libGroup" data-g="${g}">${g}</button>`).join('')}</div>
@@ -653,7 +732,7 @@ function libListHTML(list,act){
   if(!list.length) return '<div class="empty">找不到動作，可以按「自訂動作」新增</div>';
   const by={};list.forEach(e=>(by[e.group]=by[e.group]||[]).push(e));
   return GROUPS.filter(g=>by[g]).map(g=>`<div class="group-h">${g} · ${by[g].length}</div><div class="card" style="padding:4px 14px">${by[g].map(e=>{const b=bestOf(e.id);
-    return `<button class="ex-row" data-act="${act}" data-ex="${e.id}"><span class="grow"><div class="ex-name">${esc(e.name)}</div><div class="ex-sub">${e.equip} · ${e.compound?'複合':'孤立'}${b?` · 最佳 <span class="num">${fw(b.top.w)}</span> kg × ${b.top.r}`:''}</div></span>${ICON.chev}</button>`}).join('')}</div>`).join('');
+    return `<button class="ex-row" data-act="${act}" data-ex="${e.id}"><span class="grow"><div class="ex-name">${esc(e.name)}</div>${enLine(e)}<div class="ex-sub">${e.equip} · ${e.compound?'複合':'孤立'}${b?` · 最佳 <span class="num">${fw(b.top.w)}</span> kg × ${b.top.r}`:''}</div></span>${ICON.chev}</button>`}).join('')}</div>`).join('');
 }
 
 /* ---------- Progress ---------- */
@@ -673,7 +752,7 @@ function renderProgress(){
   <div class="seg">${[['7','7 天'],['30','30 天'],['180','6 個月'],['all','全部']].map(([k,l])=>`<button class="${range===k?'on':''}" data-act="range" data-k="${k}">${l}</button>`).join('')}</div>
   <div class="tiles"><div class="tile"><div class="num">${inRange.length}</div><small>訓練次數</small></div><div class="tile"><div class="num">${hrs.toFixed(hrs<10?1:0)}</div><small>訓練時數</small></div><div class="tile"><div class="num">${kfmt(vol)}</div><small>總重量 kg</small></div></div>
   <section class="card stack"><div class="row between"><h2>${y} 年 ${m} 月</h2><div class="row" style="gap:6px"><button class="icon-btn" style="width:34px;height:34px" data-act="cal" data-d="-1" aria-label="上個月">${ICON.left}</button><button class="icon-btn" style="width:34px;height:34px" data-act="cal" data-d="1" aria-label="下個月">${ICON.right}</button></div></div>
-   <div class="cal">${WD.map(w=>`<div class="h">${w}</div>`).join('')}${'<div></div>'.repeat(startPad)}${[...Array(nDays)].map((_,i)=>{const d=`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;const has=byDate[d];const c=has?PHASES[has[0].phaseIdx].color:'';
+   <div class="cal">${WD.map(w=>`<div class="h">${w}</div>`).join('')}${'<div></div>'.repeat(startPad)}${[...Array(nDays)].map((_,i)=>{const d=`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;const has=byDate[d];const c=has?PH(has[0].phaseIdx).color:'';
      return `<button class="${has?'has':''} ${d===TODAY()?'today':''} ${ui.calSel===d?'sel':''}" data-act="calSel" data-d="${d}">${i+1}${has?`<i style="background:${c}"></i>`:''}</button>`}).join('')}</div>
   </section>
   <section class="card stack"><div class="row between"><h2>${ui.calSel?`${pd(ui.calSel).getMonth()+1}/${pd(ui.calSel).getDate()} 的訓練`:'最近訓練'}</h2>${ui.calSel?'<button class="btn sm ghost" data-act="calSel" data-d="">全部</button>':''}</div>
@@ -682,7 +761,7 @@ function renderProgress(){
   return `<div class="stack">${h}</div>`;
 }
 function logHTML(l){
-  const open=ui.openLog===l.id,P=PHASES[l.phaseIdx];
+  const open=ui.openLog===l.id,P=PH(l.phaseIdx);
   return `<div class="log"><button class="row" style="width:100%;text-align:left" data-act="toggleLog" data-id="${l.id}">
     <span class="grow"><div class="ex-name">${esc(l.dayName)} <span class="chip" style="color:${P.color};margin-left:4px">${P.name}</span></div>
     <div class="ex-sub">${pd(l.date).getMonth()+1}/${pd(l.date).getDate()} · ${Math.round((l.end-l.start)/6e4)} 分 · <span class="num">${kfmt(l.volume)}</span> kg · ${l.items.length} 動作</div></span>${ICON.chev}</button>
@@ -694,10 +773,13 @@ function logHTML(l){
 function renderSettings(){
   const s=state.settings,ph=phaseAt(TODAY());
   return `<div class="stack"><div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>設定</h1></div><span class="sync ${Cloud.status==='cloud'?'on':''}"><i></i>${Cloud.status==='cloud'?'已同步到你的帳號':Cloud.status==='offline'?'暫時連不上雲端，先存在此裝置':'資料存在此裝置'}</span></div>
-  <section class="card"><div class="eyebrow" style="margin-bottom:6px">五週循環</div>
-   <div class="set-item"><div><div class="ex-name">目前是第幾週</div><div class="ex-sub">${PHASES[ph.idx].name} · 第 ${ph.cycle} 輪</div></div>
+  ${accountHTML()}
+  <section class="card"><div class="eyebrow" style="margin-bottom:6px">訓練週期</div>
+   <div class="set-item"><div><div class="ex-name">五週循環</div><div class="ex-sub">${s.periodize?'基礎、負荷、預備高峰、高峰、減量輪流':'已關閉：每週都用一樣的重量與次數'}</div></div><button class="toggle ${s.periodize?'on':''}" data-act="togglePeriod" aria-label="五週循環"></button></div>
+   ${s.periodize?`
+   <div class="set-item"><div><div class="ex-name">目前是第幾週</div><div class="ex-sub">${PH(ph.idx).name} · 第 ${ph.cycle} 輪</div></div>
     <div class="stepper"><button data-act="weekAdj" data-d="-1" aria-label="減一週">−</button><span class="num">${ph.week}</span><button data-act="weekAdj" data-d="1" aria-label="加一週">+</button></div></div>
-   <div class="set-item" style="display:block"><div class="ex-sub" style="display:grid;gap:4px">${PHASES.map((p,i)=>`<div><b style="color:${p.color}">第 ${i+1} 週 ${p.name}</b>　${p.desc}</div>`).join('')}</div></div>
+   <div class="set-item" style="display:block"><div class="ex-sub" style="display:grid;gap:4px">${PHASES.map((p,i)=>`<div><b style="color:${p.color}">第 ${i+1} 週 ${p.name}</b>　${p.desc}</div>`).join('')}</div></div>`:''}
   </section>
   <section class="card"><div class="eyebrow" style="margin-bottom:6px">休息計時預設</div>
    <div class="set-item"><div><div class="ex-name">複合動作</div><div class="ex-sub">深蹲、臥推、硬舉等</div></div><div class="stepper"><button data-act="restDef" data-k="restCompound" data-d="-15">−</button><span class="num">${mmss(s.restCompound)}</span><button data-act="restDef" data-k="restCompound" data-d="15">+</button></div></div>
@@ -717,7 +799,7 @@ function renderSettings(){
 /* ---------- Session ---------- */
 function sessionTotals(){let v=0,r=0;state.active.items.forEach(it=>it.sets.forEach(s=>{if(s.done){v+=(+s.w||0)*(+s.r||0);r+=+s.r||0}}));return {v,r}}
 function renderSession(){
-  const a=state.active,it=a.items[a.idx],P=PHASES[a.phaseIdx];
+  const a=state.active,it=a.items[a.idx],P=PH(a.phaseIdx);
   const tot=sessionTotals();
   let body='';
   if(!it){body='<div class="empty">今天沒有動作，按「調整」新增一個</div>'}
@@ -726,7 +808,8 @@ function renderSession(){
     const allDone=it.sets.length&&it.sets.every(s=>s.done);
     body+=`<div class="progress-dots">${a.items.map((x,i)=>`<i class="${x.sets.length&&x.sets.every(s=>s.done)?'done':i===a.idx?'cur':''}"></i>`).join('')}</div>
     <div><div class="row" style="gap:6px;margin-bottom:6px"><span class="chip ph">${P.name}</span><span class="chip">${ex.group}</span><span class="chip">${ex.equip}</span></div>
-     <div class="ex-title">${esc(ex.name)}</div></div>`;
+     <div class="ex-title">${esc(ex.name)}</div>${ex.en?`<div class="en" style="font-size:16px;margin-top:2px">${esc(ex.en)}</div>`:''}</div>`;
+    body+=tutHTML(ex);
     if(best){
       body+=`<div class="card pr-row"><div><div class="eyebrow">最佳紀錄</div><div class="num" style="margin-top:6px">${fw(best.top.w)}<span style="font-size:15px;color:var(--muted)"> kg × ${best.top.r}</span></div><div class="muted" style="font-size:12px;margin-top:4px">${best.date.replace(/-/g,'/')}</div></div>${sparkSVG(h.map(x=>x.top.w))}</div>`;
     }
@@ -810,7 +893,7 @@ function makeItem(pe,P){
 }
 function startSession(date){
   const r=dayFor(date);if(!r) return;
-  const ph=phaseAt(TODAY()),P=PHASES[ph.idx];
+  const ph=phaseAt(TODAY()),P=PH(ph.idx);
   state.active={id:uid(),date:TODAY(),planDate:date,dayId:r.day.id,dayName:r.day.name,phaseIdx:ph.idx,cycle:ph.cycle,startedAt:Date.now(),idx:0,items:r.exercises.map(pe=>makeItem(pe,P)),rest:null};
   ui.inSession=true;save();keepAwake();render();
 }
@@ -830,7 +913,7 @@ function finishSession(){
   const prs=[];items.forEach(it=>{const b=bestOf(it.exId);const top=Math.max(...it.sets.map(s=>s.w));if(top>0&&(!b||top>b.top.w))prs.push(EX(it.exId).name+' '+fw(top)+' kg')});
   // auto progression on base/load weeks
   const ups=[];
-  if(PHASES[a.phaseIdx].key==='base'||PHASES[a.phaseIdx].key==='load'){
+  if(['base','load','fixed'].includes(PH(a.phaseIdx).key)){
     a.items.forEach(it=>{
       const day=state.plan.days.find(d=>d.id===a.dayId);const pe=day&&day.exercises.find(x=>x.id===it.peId);
       if(!pe||!pe.weight) return;
@@ -848,7 +931,7 @@ function renderLayer(){
   const L=document.getElementById('layer');let h='';
   const s=ui.sheet;
   if(s){
-    const fn={customize:sheetCustomize,picker:sheetPicker,exDetail:sheetExDetail,plan:sheetPlan,newEx:sheetNewEx,summary:sheetSummary,exList:sheetExList,restEdit:sheetRestEdit}[s.type];
+    const fn={exitSess:sheetExitSess,customize:sheetCustomize,picker:sheetPicker,exDetail:sheetExDetail,plan:sheetPlan,newEx:sheetNewEx,summary:sheetSummary,exList:sheetExList,restEdit:sheetRestEdit}[s.type];
     h+=`<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">${fn(s)}</div></div>`;
   }
   if(ui.dialog){const d=ui.dialog;h+=`<div class="dialog"><div class="box"><h2>${esc(d.title)}</h2><div class="muted">${esc(d.msg)}</div><div class="row"><button class="btn" data-act="dlgNo">取消</button><button class="btn ${d.danger?'danger':'primary'}" data-act="dlgOk">${esc(d.ok)}</button></div></div></div>`}
@@ -859,9 +942,9 @@ function renderLayer(){
 const sheetHead=(t,sub)=>`<div class="sheet-h"><div class="grow"><h2>${t}</h2>${sub?`<div class="muted" style="font-size:13px">${sub}</div>`:''}</div><button class="icon-btn" data-act="closeSheet" aria-label="關閉">${ICON.x}</button></div>`;
 
 function sheetCustomize(s){
-  const d=s.draft,ex=EX(d.exId),P=PHASES[s.phaseIdx],p=prescribe(d,P);
+  const d=s.draft,ex=EX(d.exId),P=PH(s.phaseIdx),p=prescribe(d,P);
   return sheetHead(s.isNew?'新增動作':'調整動作',s.isNew?'':esc(EX(s.origExId).name))+`<div class="sheet-b">
-   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace"><span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div><div class="ex-sub">${ex.group} · ${ex.equip}</div></span><span class="chip">${s.isNew?'選擇':'更換'}</span></button>
+   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace"><span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span><span class="chip">${s.isNew?'選擇':'更換'}</span></button>
    <div class="grid2">
     <div class="field"><label for="cz-sets">組數</label><input id="cz-sets" inputmode="numeric" data-cz="sets" value="${d.sets}"></div>
     <div class="field"><label for="cz-w">基準重量 kg（基礎週）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>
@@ -878,7 +961,7 @@ function czPreview(d,P){const p=prescribe(d,P);return `本週（${P.name}）：<
 
 function sheetPicker(s){
   const q=(s.q||'').trim().toLowerCase(),g=s.g||'全部';
-  const list=allEx().filter(e=>(g==='全部'||e.group===g)&&(!q||e.name.toLowerCase().includes(q)));
+  const list=allEx().filter(e=>(g==='全部'||e.group===g)&&exMatch(e,q));
   return sheetHead('選擇動作')+`<div class="sheet-b"><label class="search">${ICON.search}<input id="pickQ" placeholder="搜尋動作" value="${esc(s.q||'')}" autocomplete="off"></label>
   <div class="chips">${['全部',...GROUPS].map(x=>`<button class="${g===x?'on':''}" data-act="pickGroup" data-g="${x}">${x}</button>`).join('')}</div>
   <div id="pickList">${libListHTML(list,'pickEx')}</div></div>`;
@@ -886,7 +969,7 @@ function sheetPicker(s){
 function sheetExDetail(s){
   const ex=EX(s.exId),h=history(s.exId),best=bestOf(s.exId);
   const est=h.length?Math.max(...h.map(x=>x.best1)):0;
-  return sheetHead(esc(ex.name),`${ex.group} · ${ex.equip} · ${ex.compound?'複合動作':'孤立動作'}`)+`<div class="sheet-b">
+  return sheetHead(esc(ex.name),`${ex.en?esc(ex.en)+' · ':''}${ex.group} · ${ex.equip}`)+`<div class="sheet-b">${tutFull(ex)}
    <div class="tiles"><div class="tile"><div class="num">${best?fw(best.top.w):'–'}</div><small>最重 kg${best?' × '+best.top.r:''}</small></div><div class="tile"><div class="num">${est?Math.round(est):'–'}</div><small>推估 1RM</small></div><div class="tile"><div class="num">${h.length}</div><small>訓練次數</small></div></div>
    ${h.length>1?`<div class="card"><div class="eyebrow" style="margin-bottom:8px">每次最重一組</div>${sparkSVG(h.slice(-30).map(x=>x.top.w))}</div>`:''}
    <div class="set-item" style="border:0;padding:0"><div><div class="ex-name">休息時間</div><div class="ex-sub">${state.restByEx[s.exId]!=null?'已自訂':'使用預設'}</div></div><div class="stepper"><button data-act="exRest" data-d="-15">−</button><span class="num">${mmss(restOf(s.exId))}</span><button data-act="exRest" data-d="15">+</button></div></div>
@@ -897,12 +980,11 @@ function sheetExDetail(s){
 function sheetPlan(s){
   const p=state.plan;
   return sheetHead('編輯計畫','每週固定菜單，五週循環自動調整重量')+`<div class="sheet-b">
-   <div class="field"><label>一週練幾天</label><div class="seg">${[2,3,4,5,6].map(n=>`<button class="${p.freq===n?'on':''}" data-act="planFreq" data-n="${n}">${n} 天</button>`).join('')}</div>
-   <div class="muted" style="font-size:12px">切換天數會套用新的範本菜單（2 天全身、3 天推拉腿、4 天上下肢、5 天推拉腿+上下、6 天推拉腿×2）。</div></div>
+   <button class="btn" data-act="redoSetup">重新設定天數、星期與菜單</button>
    ${p.days.map(d=>`<div class="card stack" style="padding:14px">
      <div class="row"><input class="grow" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 10px;font-weight:700;outline:0" data-dayname="${d.id}" value="${esc(d.name)}" aria-label="菜單名稱">
       <select data-daywd="${d.id}" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${d.wd===w?'selected':''}>週${WD[w]}</option>`).join('')}</select></div>
-     <div class="ex-list">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row" style="padding:8px 0"><span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div><div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight?' · '+fw(pe.weight)+' kg':''}</div></span>
+     <div class="ex-list">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row" style="padding:8px 0"><span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight?' · '+fw(pe.weight)+' kg':''}</div></span>
        <button class="icon-btn" style="width:32px;height:32px" data-act="peMove" data-day="${d.id}" data-i="${i}" data-d="-1" aria-label="上移">↑</button>
        <button class="icon-btn" style="width:32px;height:32px" data-act="planEditPe" data-day="${d.id}" data-pe="${pe.id}" aria-label="編輯">${ICON.edit}</button></div>`}).join('')}</div>
      <div class="row"><button class="btn sm" data-act="planAddPe" data-day="${d.id}">${ICON.plus}加動作</button><span class="grow"></span>${p.days.length>1?`<button class="btn sm ghost danger" data-act="planDelDay" data-day="${d.id}">刪除這天</button>`:''}</div>
@@ -920,7 +1002,7 @@ function sheetNewEx(s){
 }
 function sheetSummary(s){
   const l=s.log;
-  return sheetHead('訓練完成',esc(l.dayName)+' · '+PHASES[l.phaseIdx].name)+`<div class="sheet-b">
+  return sheetHead('訓練完成',esc(l.dayName)+' · '+PH(l.phaseIdx).name)+`<div class="sheet-b">
    <div class="tiles"><div class="tile"><div class="num">${Math.round((l.end-l.start)/6e4)}</div><small>分鐘</small></div><div class="tile"><div class="num">${kfmt(l.volume)}</div><small>總重量 kg</small></div><div class="tile"><div class="num">${l.items.reduce((a,i)=>a+i.sets.length,0)}</div><small>完成組數</small></div></div>
    ${s.prs.length?`<div class="card"><div class="eyebrow" style="color:var(--phase)">新紀錄</div><div style="margin-top:6px">${s.prs.map(esc).join('<br>')}</div></div>`:''}
    ${s.ups.length?`<div class="card"><div class="eyebrow">達標，下次自動加重</div><div style="margin-top:6px">${s.ups.map(esc).join('<br>')}</div></div>`:''}
@@ -930,7 +1012,7 @@ function sheetSummary(s){
 function sheetExList(){
   const a=state.active;
   return sheetHead('今天的動作')+`<div class="sheet-b"><div class="ex-list">${a.items.map((it,i)=>{const d=it.sets.filter(s=>s.done).length;
-    return `<button class="ex-row" data-act="jumpEx" data-i="${i}"><span class="ex-badge" style="${i===a.idx?'color:var(--phase);border-color:var(--phase)':''}">${d===it.sets.length&&d?'✓':i+1}</span><span class="grow"><div class="ex-name">${esc(EX(it.exId).name)}</div><div class="ex-sub">${d}/${it.sets.length} 組</div></span>${ICON.chev}</button>`}).join('')}</div>
+    return `<button class="ex-row" data-act="jumpEx" data-i="${i}"><span class="ex-badge" style="${i===a.idx?'color:var(--phase);border-color:var(--phase)':''}">${d===it.sets.length&&d?'✓':i+1}</span><span class="grow"><div class="ex-name">${esc(EX(it.exId).name)}</div>${enLine(EX(it.exId))}<div class="ex-sub">${d}/${it.sets.length} 組</div></span>${ICON.chev}</button>`}).join('')}</div>
    <button class="btn" data-act="sessAddEx">${ICON.plus}新增動作</button>
    <button class="btn danger ghost" data-act="discardSess">放棄這次訓練</button></div>`;
 }
@@ -976,7 +1058,7 @@ function czApply(del){
     if(s.scope==='plan'){applyList(planDay.exercises);const ov=state.overrides[s.date];if(ov&&ov.exercises)applyList(ov.exercises)}
     else{const ov=state.overrides[s.date]||(state.overrides[s.date]={dayId:s.dayId,exercises:null});if(!ov.exercises)ov.exercises=clone(planDay.exercises);applyList(ov.exercises)}
   }else{
-    const a=state.active,P=PHASES[a.phaseIdx];
+    const a=state.active,P=PH(a.phaseIdx);
     if(s.scope==='plan'&&planDay) applyList(planDay.exercises);
     if(del){a.items.splice(a.idx,1);a.idx=Math.max(0,Math.min(a.idx,a.items.length-1))}
     else if(s.isNew){a.items.push(makeItem(pe,P));a.idx=a.items.length-1}
@@ -1033,7 +1115,9 @@ const A={
    confirmDlg('用備份覆蓋目前資料？','目前的計畫與紀錄會被取代。','還原',()=>{state=o.state;state.updatedAt=Date.now();logs=o.logs;rebuildEx();save();saveLogs();logs.forEach(l=>Cloud.putLog(l));render();toast('已還原')})}catch(e){toast('備份格式不正確，請貼上完整的備份文字')}},
  resetAll:()=>confirmDlg('清除全部資料？','計畫、紀錄、設定都會刪除，無法復原。','全部清除',()=>{const old=logs;state=freshState();state.updatedAt=Date.now();logs=[];old.forEach(l=>Cloud.delLog(l.id));save();saveLogs();rebuildEx();render()}),
  // session
- exitSess:()=>{ui.inSession=false;render()},
+ exitSess:()=>{ui.sheet={type:'exitSess'};render()},
+ leaveSess:()=>{ui.sheet=null;ui.inSession=false;render()},
+ saveSess:()=>{ui.sheet=null;A.finish()},
  prevEx:()=>{const a=state.active;if(a.idx>0){a.idx--;save();rerenderSession(false);document.getElementById('sessBody').scrollTop=0}},
  nextEx:()=>{const a=state.active;if(a.idx<a.items.length-1){a.idx++;save();rerenderSession(false);document.getElementById('sessBody').scrollTop=0}},
  jumpEx:el=>{state.active.idx=+el.dataset.i;ui.sheet=null;save();rerenderSession(false)},
@@ -1078,6 +1162,28 @@ const A={
  planAddDay:()=>{const used=new Set(state.plan.days.map(d=>d.wd));const wd=[1,2,3,4,5,6,0].find(w=>!used.has(w));if(wd==null){toast('一週七天都排滿了');return}
    state.plan.days.push({id:uid(),name:'新菜單',wd,exercises:[]});state.plan.freq=state.plan.days.length;save();ui.keepSheetScroll=true;render()},
  planDelDay:el=>confirmDlg('刪除這天的菜單？','','刪除',()=>{state.plan.days=state.plan.days.filter(d=>d.id!==el.dataset.day);state.plan.freq=state.plan.days.length;save();render()}),
+ authMode:el=>{ui.auth.mode=el.dataset.k;ui.auth.msg='';render()},
+ authGuest:()=>{LS.set('ic.guest',1);ui.screen=null;user=null;loadLocal();render()},
+ authForgot:async()=>{const em=document.getElementById('au-email');const email=em&&em.value.trim();if(!email){ui.auth.msg='先在上面填 Email，再按忘記密碼';render();return}
+   try{const {error}=await SB.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;ui.auth.msg='重設密碼的信已寄到 '+email}catch(e){ui.auth.msg=authMsg(e)}render();const e2=document.getElementById('au-email');if(e2)e2.value=email},
+ goLogin:()=>{ui.screen='auth';ui.auth={mode:'login',msg:'',busy:false};render()},
+ logout:()=>confirmDlg('登出？','這支手機會回到登入畫面，資料都留在帳號裡。','登出',async()=>{try{await Cloud.chain;await SB.auth.signOut()}catch(e){}user=null;ui.screen='auth';ui.auth={mode:'login',msg:'',busy:false};ui.tab='today';state=freshState();logs=[];render()},false),
+ togglePeriod:()=>{const s=state.settings;s.periodize=!s.periodize;if(s.periodize)s.cycleStart=mondayOf(TODAY());save();render();toast(s.periodize?'已開啟五週循環，本週為基礎週':'已改為固定菜單')},
+ redoSetup:()=>{ui.sheet=null;ui.ob=newOb();ui.screen='onboard';render()},
+ obN:el=>{const o=ui.ob;o.n=+el.dataset.n;o.wds=DEFAULT_WD[o.n].slice();o.rec=0;render()},
+ obWd:el=>{const o=ui.ob,w=+el.dataset.w;o.wds=o.wds.includes(w)?o.wds.filter(x=>x!==w):[...o.wds,w];render()},
+ obRec:el=>{ui.ob.rec=el.dataset.i==='custom'?'custom':+el.dataset.i;render()},
+ obPer:el=>{ui.ob.periodize=el.dataset.k==='1';render()},
+ obBack:()=>{ui.ob.step--;render()},
+ obCancel:()=>{ui.ob=null;ui.screen=null;render()},
+ obNext:()=>{const o=ui.ob;
+   if(o.step===2&&o.wds.length!==o.n){toast(`請選剛好 ${o.n} 天`);return}
+   if(o.step<4){o.step++;render();window.scrollTo(0,0);return}
+   const wds=sortWds(o.wds),custom=o.rec==='custom';
+   state.plan=buildPlan(wds,custom?null:REC[o.n][o.rec].days);
+   state.overrides={};state.settings.periodize=o.periodize;state.settings.cycleStart=mondayOf(TODAY());state.onboarded=true;
+   ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0;save();
+   if(custom){ui.sheet={type:'plan'};render();toast('幫每個訓練日加入動作')}else{render();toast('計畫建立好了')}},
  // generic
  closeSheet:()=>{const back=ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:(ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan'?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
  scrim:(el,e)=>{if(e.target===el) A.closeSheet()},
@@ -1093,15 +1199,15 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target;
-  if(t.id==='libQ'){ui.libQ=t.value;const q=t.value.trim().toLowerCase();document.getElementById('libList').innerHTML=libListHTML(allEx().filter(x=>(ui.libGroup==='全部'||x.group===ui.libGroup)&&(!q||x.name.toLowerCase().includes(q)||x.equip.includes(q))),'exDetail');return}
-  if(t.id==='pickQ'){ui.sheet.q=t.value;const q=t.value.trim().toLowerCase(),g=ui.sheet.g||'全部';document.getElementById('pickList').innerHTML=libListHTML(allEx().filter(x=>(g==='全部'||x.group===g)&&(!q||x.name.toLowerCase().includes(q))),'pickEx');return}
+  if(t.id==='libQ'){ui.libQ=t.value;const q=t.value.trim().toLowerCase();document.getElementById('libList').innerHTML=libListHTML(allEx().filter(x=>(ui.libGroup==='全部'||x.group===ui.libGroup)&&exMatch(x,q)),'exDetail');return}
+  if(t.id==='pickQ'){ui.sheet.q=t.value;const q=t.value.trim().toLowerCase(),g=ui.sheet.g||'全部';document.getElementById('pickList').innerHTML=libListHTML(allEx().filter(x=>(g==='全部'||x.group===g)&&exMatch(x,q)),'pickEx');return}
   if(t.dataset.f&&state.active){const it=state.active.items[state.active.idx],s=it.sets[+t.dataset.i];
     const v=t.value.trim();s[t.dataset.f]=v===''?'':(t.dataset.f==='w'?parseFloat(v)||0:parseInt(v)||0);
     // weight typed on an undone set carries to following undone sets
     if(t.dataset.f==='w'&&v!==''){for(let j=+t.dataset.i+1;j<it.sets.length;j++){if(!it.sets[j].done){it.sets[j].w=s.w;const inp=document.querySelector(`input[data-f="w"][data-i="${j}"]`);if(inp)inp.value=fw(s.w)}}}
     clearTimeout(A._t);A._t=setTimeout(save,600);return}
   if(t.dataset.cz&&ui.sheet&&ui.sheet.draft){ui.sheet.draft[t.dataset.cz]=t.value;const d={...ui.sheet.draft};['sets','repMin','repMax'].forEach(k=>d[k]=Math.max(1,parseInt(d[k])||1));d.weight=parseFloat(d.weight)||0;if(d.repMax<d.repMin)d.repMax=d.repMin;
-    const pv=document.getElementById('czPreview');if(pv&&d.exId)pv.innerHTML=czPreview(d,PHASES[ui.sheet.phaseIdx]);return}
+    const pv=document.getElementById('czPreview');if(pv&&d.exId)pv.innerHTML=czPreview(d,PH(ui.sheet.phaseIdx));return}
   if(t.dataset.dayname){const d=state.plan.days.find(x=>x.id===t.dataset.dayname);d.name=t.value||'菜單';clearTimeout(A._t);A._t=setTimeout(save,600)}
 });
 document.addEventListener('change',e=>{const t=e.target;
@@ -1109,11 +1215,127 @@ document.addEventListener('change',e=>{const t=e.target;
 });
 document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.f)setTimeout(()=>e.target.select(),0)});
 
+/* ---------- names & tutorials ---------- */
+const exMatch=(e,q)=>!q||e.name.toLowerCase().includes(q)||(e.en||'').toLowerCase().includes(q)||e.equip.includes(q);
+const enLine=ex=>ex&&ex.en?`<div class="en">${esc(ex.en)}</div>`:'';
+const ytEn=ex=>'https://www.youtube.com/results?search_query='+encodeURIComponent((ex.en||ex.name)+' proper form tutorial');
+const ytZh=ex=>'https://www.youtube.com/results?search_query='+encodeURIComponent(ex.name+' 教學 動作');
+function demoHTML(ex){
+  if(!ex.img) return '';
+  return `<div class="demo"><img src="img/${ex.img}/0.jpg" alt="${esc(ex.name)} 起始姿勢" loading="lazy"><img class="b" src="img/${ex.img}/1.jpg" alt="${esc(ex.name)} 動作終點" loading="lazy">${ex.approx?'<span class="approx">近似動作示範</span>':''}</div>`;
+}
+function tutHTML(ex){
+  if(!ex.img&&!ex.cues.length) return `<div class="links"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">YouTube 英文教學</a></div>`;
+  return `<details class="tut" ${state.settings.showTut?'open':''} data-tut><summary><span>動作教學</span><span class="muted" style="font-size:13px">${state.settings.showTut?'收起':'展開'}</span></summary>
+    <div class="tut-grid">${demoHTML(ex)||'<div></div>'}<ol class="cues">${ex.cues.map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>
+    ${ex.mistake?`<div class="warn" style="margin-top:10px">${esc(ex.mistake)}</div>`:''}
+    <div class="links" style="margin-top:10px"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">英文教學</a></div></details>`;
+}
+function tutFull(ex){
+  return `${demoHTML(ex)}
+   ${ex.cues.length?`<div><div class="eyebrow" style="margin-bottom:6px">動作要點</div><ol class="cues" style="font-size:14px">${ex.cues.map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>`:''}
+   ${ex.mistake?`<div class="warn">${esc(ex.mistake)}</div>`:''}
+   <div class="links"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">YouTube 英文教學</a></div>`;
+}
+
+/* ---------- account UI ---------- */
+function accountHTML(){
+  if(!SB) return '';
+  if(user) return `<section class="card stack"><div class="eyebrow">帳號</div><div class="row between"><div class="grow"><div class="ex-name" style="word-break:break-all">${esc(user.email)}</div><div class="ex-sub">計畫和紀錄會同步到這個帳號，換手機登入就能接著用。</div></div></div><button class="btn sm" data-act="logout" style="align-self:flex-start">登出</button></section>`;
+  return `<section class="card stack"><div class="eyebrow">帳號</div><div class="ex-sub">目前只存在這支手機。登入後資料會同步到帳號，換手機也不會不見。</div><button class="btn sm primary" data-act="goLogin" style="align-self:flex-start">登入或註冊</button></section>`;
+}
+function renderAuth(){
+  const a=ui.auth,reset=ui.screen==='reset',su=a.mode==='signup';
+  return `<div class="full"><div class="wrap"><div class="stack" style="gap:18px">
+   <div class="hero-mark" aria-hidden="true"></div>
+   <div><div class="brand">IRON CYCLE</div><h1 style="font-size:34px">鐵週期</h1><p class="lead">${reset?'設定新的密碼':'每個人用自己的帳號，紀錄各自保存'}</p></div>
+   ${reset?'':`<div class="seg"><button class="${su?'':'on'}" data-act="authMode" data-k="login">登入</button><button class="${su?'on':''}" data-act="authMode" data-k="signup">註冊新帳號</button></div>`}
+   <form id="authForm" class="stack" style="gap:12px">
+    ${reset?'':`<div class="field"><label for="au-email">Email</label><input id="au-email" type="email" autocomplete="email" inputmode="email" required></div>`}
+    <div class="field"><label for="au-pw">${reset?'新密碼':'密碼'}</label><input id="au-pw" type="password" autocomplete="${su||reset?'new-password':'current-password'}" minlength="6" required placeholder="至少 6 個字"></div>
+    ${a.msg?`<div class="msg">${esc(a.msg)}</div>`:''}
+    <button class="btn primary big" type="submit" ${a.busy?'disabled':''}>${a.busy?'處理中…':reset?'更新密碼':su?'建立帳號':'登入'}</button>
+   </form>
+   ${reset?'':`<div class="row between" style="flex-wrap:wrap">${su?'<span></span>':'<button class="linkbtn" data-act="authForgot">忘記密碼</button>'}<button class="linkbtn" data-act="authGuest">先不登入，只存在這支手機</button></div>`}
+  </div></div></div>`;
+}
+
+/* ---------- onboarding ---------- */
+function newOb(){const n=state.plan&&state.onboarded?Math.min(6,Math.max(2,state.plan.days.length)):3;return {step:1,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
+function renderOnboard(){
+  const o=ui.ob,steps=`<div class="steps">${[1,2,3,4].map(i=>`<i class="${i<=o.step?'on':''}"></i>`).join('')}</div>`;
+  let body='',next='下一步',ok=true;
+  if(o.step===1){
+    body=`<div class="big-q">一週想練幾天？</div><p class="lead">之後隨時可以在「編輯計畫」改。</p>
+    <div class="tiles5">${[2,3,4,5,6].map(n=>`<button class="${o.n===n?'on':''}" data-act="obN" data-n="${n}">${n}<small>天</small></button>`).join('')}</div>`;
+  }else if(o.step===2){
+    ok=o.wds.length===o.n;
+    body=`<div class="big-q">哪幾天去健身房？</div><p class="lead">選 ${o.n} 天，已選 <b class="num" style="font-size:18px;color:var(--text)">${o.wds.length}</b> / ${o.n}</p>
+    <div class="wdpick">${[1,2,3,4,5,6,0].map(w=>`<button class="${o.wds.includes(w)?'on':''}" data-act="obWd" data-w="${w}">週${WD[w]}</button>`).join('')}</div>
+    ${o.wds.length>o.n?'<div class="msg">選太多天了，取消幾天</div>':''}`;
+  }else if(o.step===3){
+    const wdsSorted=sortWds(o.wds);
+    body=`<div class="big-q">選一份菜單</div><p class="lead">依一週 ${o.n} 天推薦，重量之後在訓練中調整。</p>
+    <div class="stack" style="gap:10px">${REC[o.n].map((r,i)=>`<button class="opt ${o.rec===i?'on':''}" data-act="obRec" data-i="${i}"><b>${r.name}</b><span>${r.desc}</span>
+      <span class="days">${r.days.map((k,j)=>`<span class="chip">週${WD[wdsSorted[j]]} ${T[k][0]}</span>`).join('')}</span></button>`).join('')}
+      <button class="opt ${o.rec==='custom'?'on':''}" data-act="obRec" data-i="custom"><b>自訂菜單</b><span>先建立 ${o.n} 個空白訓練日，再從動作庫挑動作</span></button></div>`;
+  }else{
+    next=o.redo?'套用新計畫':'開始使用';
+    body=`<div class="big-q">要用五週週期嗎？</div>
+    <div class="stack" style="gap:10px">
+     <button class="opt ${o.periodize?'on':''}" data-act="obPer" data-k="1"><b>五週循環</b><span>基礎週 → 負荷週 → 預備高峰週 → 高峰週 → 減量週，重量和次數每週自動調整</span>
+       <span class="days">${PHASES.map(p=>`<span class="chip" style="color:${p.color}">${p.name}</span>`).join('')}</span></button>
+     <button class="opt ${o.periodize?'':'on'}" data-act="obPer" data-k="0"><b>固定菜單</b><span>每週都一樣，每組都做到目標次數上限就自動加重</span></button></div>
+    ${o.redo?'<div class="msg">會取代目前的計畫，訓練紀錄不受影響。</div>':''}`;
+  }
+  return `<div class="full"><div class="wrap"><div class="stack" style="gap:18px">
+    <div class="row between"><div class="brand">IRON CYCLE · 設定計畫</div>${o.redo?'<button class="linkbtn" data-act="obCancel">取消</button>':''}</div>
+    ${steps}${body}
+    <div class="row">${o.step>1?'<button class="btn" data-act="obBack" style="flex:1;height:52px">上一步</button>':''}<button class="btn primary" data-act="obNext" style="flex:2;height:52px" ${ok?'':'disabled style="flex:2;height:52px;opacity:.4"'}>${next}</button></div>
+  </div></div></div>`;
+}
+const sortWds=w=>w.slice().sort((a,b)=>((a+6)%7)-((b+6)%7));
+function sheetExitSess(){
+  const a=state.active,done=a.items.reduce((t,it)=>t+it.sets.filter(s=>s.done).length,0);
+  return sheetHead('要離開訓練嗎？',`已完成 ${done} 組 · ${hms(Date.now()-a.startedAt)}`)+`<div class="sheet-b">
+   <button class="opt" data-act="leaveSess"><b>先離開，等一下回來</b><span>訓練保留、計時繼續，回到首頁按「繼續」</span></button>
+   ${done?'<button class="opt" data-act="saveSess"><b>結束並儲存</b><span>只記錄已打勾的組</span></button>':''}
+   <button class="opt" data-act="discardSess" style="border-color:rgba(255,107,107,.4)"><b style="color:var(--danger)">刪除這次訓練</b><span>不留任何紀錄，計時停止</span></button>
+  </div>`;
+}
+async function boot(){
+  let session=null;
+  if(SB){
+    try{const {data}=await SB.auth.getSession();session=data.session}catch(e){}
+    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){ui.screen='reset';ui.auth.msg='';render()}});
+  }
+  if(session) user={id:session.user.id,email:session.user.email};
+  loadLocal();
+  if(SB&&!user&&!LS.get('ic.guest')) ui.screen='auth';
+  ui.inSession=!!state.active;checkStale();render();
+  if(user) Cloud.pull();
+}
+document.addEventListener('submit',async e=>{
+  if(e.target.id!=='authForm') return;
+  e.preventDefault();if(!SB||ui.auth.busy) return;
+  const em=document.getElementById('au-email'),pw=document.getElementById('au-pw').value;const email=em?em.value.trim():'';
+  ui.auth.busy=true;ui.auth.msg='';render();
+  try{
+    if(ui.screen==='reset'){const {error}=await SB.auth.updateUser({password:pw});if(error)throw error;
+      ui.auth={mode:'login',msg:'',busy:false};const {data}=await SB.auth.getSession();if(data.session){await afterLogin(data.session);toast('密碼已更新');return}ui.screen='auth';ui.auth.msg='密碼已更新，請重新登入';}
+    else if(ui.auth.mode==='signup'){const {data,error}=await SB.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;
+      if(data.session){ui.auth.busy=false;await afterLogin(data.session);return}
+      ui.auth.mode='login';ui.auth.msg='確認信已寄到 '+email+'，點信裡的連結後回來登入。';}
+    else{const {data,error}=await SB.auth.signInWithPassword({email,password:pw});if(error)throw error;ui.auth.busy=false;await afterLogin(data.session);return}
+  }catch(err){ui.auth.msg=authMsg(err)}
+  ui.auth.busy=false;render();
+  if(em){const e2=document.getElementById('au-email');if(e2)e2.value=email}
+});
+document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[data-tut]')&&state.settings.showTut!==e.target.open){state.settings.showTut=e.target.open;const sp=e.target.querySelector('summary .muted');if(sp)sp.textContent=e.target.open?'收起':'展開';save()}},true);
+
 /* ---------- boot ---------- */
 try{if(navigator.standalone||matchMedia('(display-mode: standalone)').matches)document.documentElement.classList.add('standalone')}catch(e){}
-ui.inSession=!!state.active;
-checkStale();
-render();
+boot();
 function checkStale(){
   const a=state.active;if(!a||Date.now()-a.startedAt<6*36e5) return;
   ui.inSession=false;
@@ -1122,8 +1344,7 @@ function checkStale(){
     ?{title:'上次的訓練忘了結束',msg:'要把已完成的組存成紀錄嗎？時間會算到最後完成的那一組。',ok:'儲存紀錄',danger:false,onOk:finishSession}
     :{title:'上次的訓練忘了結束',msg:'這次訓練沒有完成任何一組，要放棄嗎？',ok:'放棄',danger:true,onOk:()=>{state.active=null;save();render()}};
 }
-document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!ui.dialog&&state.active&&Date.now()-state.active.startedAt>=6*36e5){checkStale();render()}});
-Cloud.init();
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&!state.active&&ui.screen==null)Cloud.pull();if(document.visibilityState==='visible'&&!ui.dialog&&state.active&&Date.now()-state.active.startedAt>=6*36e5){checkStale();render()}});
 </script>
 <style>.field input,.field select,.search input,textarea{font-size:16px}</style>
 <script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
