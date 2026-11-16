@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <meta name="apple-mobile-web-app-title" content="鐵週期">
 <meta name="theme-color" content="#0D1015">
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <link rel="manifest" href="manifest.webmanifest">
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}input,textarea{font-size:16px}</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}</style>
 </head>
 <body>
 <title>鐵週期</title>
@@ -163,7 +163,7 @@ textarea{width:100%;min-height:120px;background:var(--surface2);border:1px solid
 /* session */
 .sess{position:fixed;inset:0;z-index:40;background:var(--bg);display:flex;flex-direction:column;padding-top:env(safe-area-inset-top,0px)}
 .sess-top{flex:none;border-bottom:1px solid var(--line);background:var(--bg)}
-.sess-top .in{max-width:520px;margin:0 auto;padding:10px max(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px}
+.sess-top .in{max-width:520px;margin:0 auto;padding:14pxmax(16px,env(safe-area-inset-right,0px)) 10px max(16px,env(safe-area-inset-left,0px));display:flex;align-items:center;gap:10px}
 .stats{flex:1;display:grid;grid-template-columns:repeat(3,1fr);text-align:center}
 .stats small{display:block;font-size:11px;color:var(--muted);font-weight:700}
 .stats .num{font-size:20px;font-weight:600;line-height:1.1}
@@ -811,13 +811,18 @@ function startSession(date){
   state.active={id:uid(),date:TODAY(),planDate:date,dayId:r.day.id,dayName:r.day.name,phaseIdx:ph.idx,cycle:ph.cycle,startedAt:Date.now(),idx:0,items:r.exercises.map(pe=>makeItem(pe,P)),rest:null};
   ui.inSession=true;save();keepAwake();render();
 }
+function sessionEnd(a){
+  const now=Date.now();if(now-a.startedAt<6*36e5) return now;
+  let last=0;a.items.forEach(it=>it.sets.forEach(s=>{if(s.done&&s.at)last=Math.max(last,s.at)}));
+  return last?Math.min(now,last+2*6e4):a.startedAt+60*6e4;
+}
 function finishSession(){
   const a=state.active;
   const items=a.items.map(it=>({exId:it.exId,sets:it.sets.filter(s=>s.done).map(s=>({w:+s.w||0,r:+s.r||0}))})).filter(it=>it.sets.length);
   if(!items.length){ui.dialog={title:'還沒有完成任何一組',msg:'要直接放棄這次訓練嗎？不會留下紀錄。',ok:'放棄訓練',danger:true,onOk:()=>{state.active=null;ui.inSession=false;save();render()}};render();return}
   const volume=items.reduce((t,it)=>t+it.sets.reduce((x,s)=>x+s.w*s.r,0),0);
   const reps=items.reduce((t,it)=>t+it.sets.reduce((x,s)=>x+s.r,0),0);
-  const log={id:uid(),date:a.date,dayName:a.dayName,phaseIdx:a.phaseIdx,cycle:a.cycle,start:a.startedAt,end:Date.now(),items,volume,reps};
+  const log={id:uid(),date:a.date,dayName:a.dayName,phaseIdx:a.phaseIdx,cycle:a.cycle,start:a.startedAt,end:sessionEnd(a),items,volume,reps};
   // PRs vs previous history
   const prs=[];items.forEach(it=>{const b=bestOf(it.exId);const top=Math.max(...it.sets.map(s=>s.w));if(top>0&&(!b||top>b.top.w))prs.push(EX(it.exId).name+' '+fw(top)+' kg')});
   // auto progression on base/load weeks
@@ -1036,7 +1041,7 @@ const A={
    if(s.done){s.done=false;save();rerenderSession();return}
    if(s.r===''||s.r==null) s.r=it.rmax;
    if(s.w===''||s.w==null) s.w=it.sugg||0;
-   s.done=true;
+   s.done=true;s.at=Date.now();
    // carry weight forward to next undone sets if user changed it
    startRest(it.exId);save();rerenderSession();
  },
@@ -1103,10 +1108,20 @@ document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.f)
 
 /* ---------- boot ---------- */
 ui.inSession=!!state.active;
+checkStale();
 render();
+function checkStale(){
+  const a=state.active;if(!a||Date.now()-a.startedAt<6*36e5) return;
+  ui.inSession=false;
+  const done=a.items.some(it=>it.sets.some(s=>s.done));
+  ui.dialog=done
+    ?{title:'上次的訓練忘了結束',msg:'要把已完成的組存成紀錄嗎？時間會算到最後完成的那一組。',ok:'儲存紀錄',danger:false,onOk:finishSession}
+    :{title:'上次的訓練忘了結束',msg:'這次訓練沒有完成任何一組，要放棄嗎？',ok:'放棄',danger:true,onOk:()=>{state.active=null;save();render()}};
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&!ui.dialog&&state.active&&Date.now()-state.active.startedAt>=6*36e5){checkStale();render()}});
 Cloud.init();
 </script>
-<script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
 <style>.field input,.field select,.search input,textarea{font-size:16px}</style>
+<script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
 </body>
 </html>
