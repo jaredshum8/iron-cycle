@@ -564,7 +564,9 @@ const ui={tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:
 /* ---------- accounts & cloud sync (Firebase: Google sign-in + Firestore) ---------- */
 const CFG=window.IC_CONFIG||{};
 let FB=null,AUTH=null,DB=null;
-try{if(CFG.firebase&&CFG.firebase.apiKey&&window.firebase){FB=firebase.initializeApp(CFG.firebase);AUTH=firebase.auth();DB=firebase.firestore()}}catch(e){FB=null}
+const NEW_URL='https://iron-cycle-a19ef.firebaseapp.com/';
+const OLD_HOST=location.hostname.endsWith('github.io');
+try{if(!OLD_HOST&&CFG.firebase&&CFG.firebase.apiKey&&window.firebase){FB=firebase.initializeApp(CFG.firebase);AUTH=firebase.auth();DB=firebase.firestore()}}catch(e){FB=null}
 const userDoc=()=>DB.collection('users').doc(user.id);
 const Cloud={status:'local',chain:Promise.resolve(),timer:null,hadRemote:false,
   async pull(){
@@ -674,7 +676,7 @@ function render(){
   if(state.active&&ui.inSession){app.innerHTML=renderSession();bindSessionScroll()}
   else{
     const view={today:renderToday,library:renderLibrary,progress:renderProgress,settings:renderSettings}[ui.tab]();
-    app.innerHTML=`<div class="wrap">${view}</div>${renderTabbar()}`;
+    app.innerHTML=`<div class="wrap">${OLD_HOST?movedHTML():''}${view}</div>${renderTabbar()}`;
   }
   renderLayer();
 }
@@ -1256,6 +1258,11 @@ function accountHTML(){
   if(!AUTH) return '';
   if(user) return `<section class="card stack"><div class="eyebrow">帳號</div><div class="row between"><div class="grow"><div class="ex-name" style="word-break:break-all">${esc(user.name||user.email)}</div>${user.name?`<div class="ex-sub" style="word-break:break-all">${esc(user.email)}</div>`:''}<div class="ex-sub">計畫和紀錄會同步到這個帳號，換手機登入就能接著用。</div></div></div><button class="btn sm" data-act="logout" style="align-self:flex-start">登出</button></section>`;
   return `<section class="card stack"><div class="eyebrow">帳號</div><div class="ex-sub">目前只存在這支手機。登入後資料會同步到帳號，換手機也不會不見。</div><button class="btn sm primary" data-act="goLogin" style="align-self:flex-start">使用 Google 登入</button></section>`;
+}
+function movedHTML(){
+  return `<section class="card stack" style="border-color:var(--phase);margin-bottom:12px"><div class="ex-name">網站搬家了，新版可以用 Google 帳號登入</div>
+   <div class="ex-sub">搬紀錄：先在這裡「設定 → 複製備份」，到新網址用 Google 登入後，「設定 → 貼上還原」。之後把新網址加入主畫面，舊的圖示可以刪掉。</div>
+   <a class="btn primary" href="${NEW_URL}" target="_blank" rel="noopener">前往新網址</a></section>`;
 }
 function renderAuth(){
   const a=ui.auth;
