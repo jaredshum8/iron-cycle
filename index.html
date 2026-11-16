@@ -1230,7 +1230,7 @@ const A={
  resetAll:()=>confirmDlg('清除全部資料？','計畫、紀錄、設定都會刪除，無法復原。','全部清除',()=>{const old=logs;state=freshState();state.updatedAt=Date.now();logs=[];old.forEach(l=>Cloud.delLog(l.id));save();saveLogs();rebuildEx();render()}),
  // session
  exitSess:()=>{ui.sheet={type:'exitSess'};render()},
- leaveSess:()=>{ui.sheet=null;ui.inSession=false;render()},
+ leaveSess:()=>{ui.sheet=null;ui.inSession=false;render();if(updateReady)checkUpdate()},
  saveSess:()=>{ui.sheet=null;A.finish()},
  prevEx:()=>{const a=state.active;if(a.idx>0){a.idx--;save();rerenderSession(false);document.getElementById('sessBody').scrollTop=0}},
  nextEx:()=>{const a=state.active;if(a.idx<a.items.length-1){a.idx++;save();rerenderSession(false);document.getElementById('sessBody').scrollTop=0}},
@@ -1308,7 +1308,7 @@ const A={
    ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0;save();
    if(custom){ui.sheet={type:'plan'};render();toast('幫每個訓練日加入動作')}else{render();toast('計畫建立好了')}},
  // generic
- closeSheet:()=>{const back=ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:(ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan'?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
+ closeSheet:()=>{if(updateReady&&!(state.active&&ui.inSession))setTimeout(checkUpdate,300);const back=ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:(ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan'?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
  scrim:(el,e)=>{if(e.target===el) A.closeSheet()},
  dlgNo:()=>{ui.dialog=null;renderLayer()},
  dlgOk:()=>{const f=ui.dialog.onOk;ui.dialog=null;renderLayer();f&&f()},
@@ -1542,9 +1542,25 @@ async function boot(){
 }
 document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[data-tut]')&&state.settings.showTut!==e.target.open){state.settings.showTut=e.target.open;const sp=e.target.querySelector('summary .muted');if(sp)sp.textContent=e.target.open?'收起':'展開';save()}},true);
 
+/* ---------- auto update ----------
+   deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
+   and a newer version is live, reload right away (or after the workout if one is running). */
+const APP_V='20261116185241';
+let updateReady=false;
+async function checkUpdate(){
+  if(APP_V==='dev') return;
+  try{
+    const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;
+    const {v}=await r.json();if(!v||v===APP_V) return;
+    if(state&&state.active&&ui.inSession){if(!updateReady){updateReady=true;toast('有新版本，練完回到首頁就會更新')}return}
+    await Cloud.chain.catch(()=>{});location.reload();
+  }catch(e){}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible')checkUpdate()});
+setInterval(()=>{if(document.visibilityState==='visible')checkUpdate()},5*60*1000);
 /* ---------- boot ---------- */
 try{if(navigator.standalone||matchMedia('(display-mode: standalone)').matches)document.documentElement.classList.add('standalone')}catch(e){}
-boot();
+boot().then(checkUpdate);
 function checkStale(){
   const a=state.active;if(!a||Date.now()-a.startedAt<6*36e5) return;
   ui.inSession=false;

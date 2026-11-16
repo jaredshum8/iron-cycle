@@ -9,11 +9,12 @@
       ".git/**",
       ".firebase/**",
       "**/.*",
-      "**/node_modules/**"
+      "**/node_modules/**",
+      "deploy.sh"
     ],
     "headers": [
       {
-        "source": "**/*.@(html|js)",
+        "source": "**/*.@(html|js|json|webmanifest)",
         "headers": [
           {
             "key": "Cache-Control",
