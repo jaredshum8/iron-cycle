@@ -373,6 +373,22 @@ a.btn{text-decoration:none}
 .chk.pop{animation:pop .35s ease}
 @keyframes pop{40%{transform:scale(1.18)}}
 .haptic{position:absolute;opacity:0;pointer-events:none;width:1px;height:1px}
+.bw-row{display:flex;gap:8px}
+.bw-row input{flex:1;min-width:0;height:48px;border-radius:14px;background:var(--surface2);border:0;padding:0 14px;font-family:var(--f-num);font-weight:800;font-size:20px;outline:0}
+.cmp{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.cmp figure{margin:0;position:relative;border-radius:16px;overflow:hidden;background:var(--surface2);aspect-ratio:3/4;max-width:100%}
+.cmp img{width:100%;height:100%;object-fit:cover;display:block}
+.cmp figcaption{position:absolute;left:0;right:0;bottom:0;padding:18px 10px 8px;background:linear-gradient(transparent,rgba(20,14,40,.7));color:#fff;font-size:12px;font-weight:700}
+.cmp figcaption b{font-family:var(--f-num);font-size:18px;display:block}
+.cmp .tag{position:absolute;left:8px;top:8px;background:rgba(255,255,255,.9);color:#2B2540;font-size:11px;font-weight:800;padding:2px 8px;border-radius:999px;letter-spacing:.04em}
+.pgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.pgrid button{position:relative;aspect-ratio:3/4;border-radius:12px;overflow:hidden;background:var(--surface2);max-width:100%}
+.pgrid img{width:100%;height:100%;object-fit:cover;display:block}
+.pgrid span{position:absolute;left:0;right:0;bottom:0;font-size:10px;font-weight:700;color:#fff;background:linear-gradient(transparent,rgba(20,14,40,.65));padding:10px 4px 3px;text-align:center}
+.pgrid .add{display:grid;place-items:center;color:var(--accent);background:var(--accent-soft);font-size:12px;font-weight:700}
+.pgrid .add svg{width:22px;height:22px}
+.diff{display:flex;justify-content:center;gap:16px;font-size:13px;color:var(--muted)}
+.diff b{font-family:var(--f-num);font-size:18px;color:var(--text)}
 @keyframes up{from{transform:translateY(40px);opacity:.3}}
 @keyframes fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -806,7 +822,7 @@ async function googleSignIn(){
 async function afterLogin(fu){
   if(user&&user.id===fu.uid) return;
   const guestState=LS.get('ic.state'),guestLogs=LS.get('ic.logs')||[];
-  user={id:fu.uid,email:fu.email||'',name:fu.displayName||''};LS.del('ic.guest');
+  user={id:fu.uid,email:fu.email||'',name:fu.displayName||''};LS.del('ic.guest');photos=null;
   loadLocal();ui.screen=null;ui.auth.busy=false;ui.inSession=!!state.active;render();
   await Cloud.pull();
   if(!Cloud.hadRemote&&!state.updatedAt&&guestState&&guestState.onboarded){
@@ -973,6 +989,7 @@ function renderProgress(){
   let h=`<div class="topbar"><div><div class="brand">WORKOUT</div><h1>進度</h1></div></div>
   <div class="seg">${[['7','7 天'],['30','30 天'],['180','6 個月'],['all','全部']].map(([k,l])=>`<button class="${range===k?'on':''}" data-act="range" data-k="${k}">${l}</button>`).join('')}</div>
   <div class="tiles"><div class="tile"><div class="num">${inRange.length}</div><small>訓練次數</small></div><div class="tile"><div class="num">${hrs.toFixed(hrs<10?1:0)}</div><small>訓練時數</small></div><div class="tile"><div class="num">${kfmt(vol)}</div><small>總重量 kg</small></div></div>
+  ${bodyHTML()}
   <section class="card stack"><div class="row between"><h2>${y} 年 ${m} 月</h2><div class="row" style="gap:6px"><button class="icon-btn" style="width:34px;height:34px" data-act="cal" data-d="-1" aria-label="上個月">${ICON.left}</button><button class="icon-btn" style="width:34px;height:34px" data-act="cal" data-d="1" aria-label="下個月">${ICON.right}</button></div></div>
    <div class="cal">${WD.map(w=>`<div class="h">${w}</div>`).join('')}${'<div></div>'.repeat(startPad)}${[...Array(nDays)].map((_,i)=>{const d=`${y}-${String(m).padStart(2,'0')}-${String(i+1).padStart(2,'0')}`;const has=byDate[d];const c=has?PH(has[0].phaseIdx).color:'';
      return `<button class="${has?'has':''} ${d===TODAY()?'today':''} ${ui.calSel===d?'sel':''}" data-act="calSel" data-d="${d}">${i+1}${has?`<i style="background:${c}"></i>`:''}</button>`}).join('')}</div>
@@ -1169,7 +1186,7 @@ function renderLayer(){
   const L=document.getElementById('layer');let h='';
   const s=ui.sheet;
   if(s){
-    const fn={share:sheetShare,shareDone:sheetShareDone,importPreview:sheetImportPreview,profile:sheetProfile,exitSess:sheetExitSess,customize:sheetCustomize,picker:sheetPicker,exDetail:sheetExDetail,plan:sheetPlan,newEx:sheetNewEx,summary:sheetSummary,exList:sheetExList,restEdit:sheetRestEdit}[s.type];
+    const fn={photoNew:sheetPhotoNew,photoView:sheetPhotoView,share:sheetShare,shareDone:sheetShareDone,importPreview:sheetImportPreview,profile:sheetProfile,exitSess:sheetExitSess,customize:sheetCustomize,picker:sheetPicker,exDetail:sheetExDetail,plan:sheetPlan,newEx:sheetNewEx,summary:sheetSummary,exList:sheetExList,restEdit:sheetRestEdit}[s.type];
     h+=`<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">${fn(s)}</div></div>`;
   }
   if(ui.dialog){const d=ui.dialog;h+=`<div class="dialog"><div class="box"><h2>${esc(d.title)}</h2><div class="muted">${esc(d.msg)}</div><div class="row"><button class="btn" data-act="dlgNo">取消</button><button class="btn ${d.danger?'danger':'primary'}" data-act="dlgOk">${esc(d.ok)}</button></div></div></div>`}
@@ -1427,7 +1444,7 @@ const A={
   authGuest:()=>{LS.set('ic.guest',1);ui.screen=null;user=null;loadLocal();render()},
  googleLogin:()=>googleSignIn(),
  goLogin:()=>{ui.screen='auth';ui.auth={msg:'',busy:false};render()},
- logout:()=>confirmDlg('登出？','這支手機會回到登入畫面，資料都留在帳號裡。','登出',async()=>{try{await Cloud.chain;await AUTH.signOut()}catch(e){}user=null;ui.screen='auth';ui.auth={msg:'',busy:false};ui.tab='today';state=freshState();logs=[];render()},false),
+ logout:()=>confirmDlg('登出？','這支手機會回到登入畫面，資料都留在帳號裡。','登出',async()=>{try{await Cloud.chain;await AUTH.signOut()}catch(e){}user=null;photos=null;ui.screen='auth';ui.auth={msg:'',busy:false};ui.tab='today';state=freshState();logs=[];render()},false),
  setTheme:el=>{state.settings.theme=el.dataset.k;save();render()},
  togglePeriod:()=>{const s=state.settings;s.periodize=!s.periodize;if(s.periodize)s.cycleStart=mondayOf(TODAY());save();render();toast(s.periodize?'已開啟五週循環，本週為基礎週':'已改為固定菜單')},
  redoSetup:()=>{ui.sheet=null;ui.ob=newOb();ui.screen='onboard';render()},
@@ -1436,6 +1453,16 @@ const A={
  obRec:el=>{ui.ob.rec=el.dataset.i==='custom'?'custom':+el.dataset.i;render()},
  obPer:el=>{ui.ob.periodize=el.dataset.k==='1';render()},
  obBack:()=>{ui.ob.step--;render()},
+ addWeight:()=>{const i=document.getElementById('bwIn');const w=parseFloat(i&&i.value);if(!(w>=25&&w<=300)){toast('請輸入體重（kg）');return}logWeight(TODAY(),w);save();render();toast('已記錄體重 '+fw(w)+' kg')},
+ delWeight:el=>{state.bodyLog=(state.bodyLog||[]).filter(x=>x.date!==el.dataset.d);save();render()},
+ photoPick:()=>{const i=document.getElementById('photoIn');if(i){i.value='';i.click()}},
+ photoSave:async()=>{const s=ui.sheet,w=parseFloat(document.getElementById('phW').value),date=document.getElementById('phD').value||TODAY();
+   const p={id:uid(),date,w:w>=25&&w<=300?w:null,data:s.data,at:Date.now()};
+   if(p.w)logWeight(date,p.w);save();ui.sheet=null;render();
+   try{await savePhoto(p);toast('照片已儲存')}catch(e){toast(e.message||'儲存失敗')}render()},
+ photoOpen:el=>{ui.sheet={type:'photoView',id:el.dataset.id};render()},
+ photoAs:el=>{ui.cmp=ui.cmp||{};ui.cmp[el.dataset.k]=ui.sheet.id;ui.sheet=null;render();toast(el.dataset.k==='a'?'已設為 Before':'已設為 After')},
+ photoDel:()=>{const id=ui.sheet.id;confirmDlg('刪除這張照片？','刪除後無法復原。','刪除',async()=>{ui.sheet=null;await delPhoto(id);render()})},
  installApp:async()=>{if(!installEvt)return;installEvt.prompt();try{const r=await installEvt.userChoice;if(r.outcome==='accepted')LS.set('ic.a2hs','done')}catch(e){}installEvt=null;render()},
  a2hsClose:()=>{LS.set('ic.a2hs','closed');render()},
  obCode:()=>{ui.sheet={type:'share',code:'',fromOb:true};render()},
@@ -1800,6 +1827,64 @@ function bodyMapHTML(side,sel,pre){
    ${sel?`<div class="row between"><h2>${MUS[sel]}</h2><button class="btn sm ghost" data-act="${act}" data-m="${sel}">清除</button></div>`:''}`;
 }
 
+/* ---------- body weight & progress photos ----------
+   Photos are shrunk to ~900px JPEG and kept in the person's own Firestore space (users/{uid}/photos);
+   without an account they stay on this phone only. */
+let photos=null;
+function logWeight(date,w){const L=state.bodyLog||(state.bodyLog=[]);const i=L.findIndex(x=>x.date===date);if(i>=0)L[i].w=w;else L.push({date,w});L.sort((a,b)=>a.date<b.date?-1:1);
+  if(state.profile&&date>=L[L.length-1].date) state.profile.w=w}
+async function loadPhotos(){
+  if(photos) return;photos=[];
+  try{if(DB&&user){const q=await userDoc().collection('photos').get();photos=q.docs.map(d=>d.data())}else photos=LS.get(key('photos'))||[]}catch(e){photos=[]}
+  photos.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.at-b.at);render();
+}
+async function savePhoto(p){
+  photos=photos||[];photos.push(p);photos.sort((a,b)=>a.date<b.date?-1:a.date>b.date?1:a.at-b.at);
+  if(DB&&user){await userDoc().collection('photos').doc(p.id).set(p);return}
+  try{localStorage.setItem(key('photos'),JSON.stringify(photos))}catch(e){photos=photos.filter(x=>x.id!==p.id);throw new Error('這支手機的空間不夠了，用 Google 登入後照片會存到雲端')}
+}
+async function delPhoto(id){
+  photos=(photos||[]).filter(x=>x.id!==id);if(ui.cmp){if(ui.cmp.a===id)delete ui.cmp.a;if(ui.cmp.b===id)delete ui.cmp.b}
+  try{if(DB&&user)await userDoc().collection('photos').doc(id).delete();else localStorage.setItem(key('photos'),JSON.stringify(photos))}catch(e){toast('刪除失敗，請再試一次')}
+}
+function shrinkImage(file){return new Promise((res,rej)=>{const img=new Image(),url=URL.createObjectURL(file);
+  img.onload=()=>{const m=900,sc=Math.min(1,m/Math.max(img.width,img.height)),c=document.createElement('canvas');c.width=Math.round(img.width*sc);c.height=Math.round(img.height*sc);
+    c.getContext('2d').drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(url);res(c.toDataURL('image/jpeg',.72))};
+  img.onerror=()=>{URL.revokeObjectURL(url);rej(new Error('讀不到這張照片'))};img.src=url})}
+document.addEventListener('change',async e=>{if(e.target.id!=='photoIn'||!e.target.files||!e.target.files[0])return;
+  try{const data=await shrinkImage(e.target.files[0]);const L=state.bodyLog||[];ui.sheet={type:'photoNew',data,w:L.length?L[L.length-1].w:(state.profile&&state.profile.w)||''};render()}catch(err){toast(err.message)}});
+const daysBetween=(a,b)=>Math.round((pd(b)-pd(a))/864e5);
+function bodyHTML(){
+  if(photos===null) setTimeout(loadPhotos,0);
+  const L=state.bodyLog||[],last=L[L.length-1],first=L[0],ph=photos||[];
+  const a=ph.find(x=>x.id===(ui.cmp&&ui.cmp.a))||ph[0],b=ph.find(x=>x.id===(ui.cmp&&ui.cmp.b))||(ph.length>1?ph[ph.length-1]:null);
+  const fig=(p,tag)=>p?`<figure><img src="${p.data}" alt="${tag} ${p.date}"><span class="tag">${tag}</span><figcaption><b>${p.w?fw(p.w)+' kg':'—'}</b>${p.date.replace(/-/g,'/')}</figcaption></figure>`:`<figure style="display:grid;place-items:center;color:var(--muted);font-size:13px;text-align:center;padding:10px">${tag==='BEFORE'?'上傳第一張照片':'再上傳一張就能對比'}</figure>`;
+  const dW=a&&b&&a.w&&b.w?b.w-a.w:null;
+  return `<section class="card stack"><div class="row between"><h2>身體變化</h2>${last?`<span class="ex-sub">最新 <b class="num" style="font-size:17px;color:var(--text)">${fw(last.w)}</b> kg</span>`:''}</div>
+   <div class="bw-row"><input id="bwIn" inputmode="decimal" placeholder="今天體重 kg" aria-label="今天體重"><button class="btn primary" data-act="addWeight">記錄</button></div>
+   ${L.length>1?`<div>${sparkSVG(L.map(x=>x.w))}<div class="diff"><span>${first.date.replace(/-/g,'/')} 起</span><span><b>${(last.w-first.w>0?'+':'')+fw(last.w-first.w)}</b> kg</span><span>共 ${L.length} 筆</span></div></div>`:L.length?'<div class="ex-sub">再記一次就會出現體重走勢</div>':''}
+   <div class="eyebrow" style="margin-top:4px">Before &amp; After</div>
+   <div class="cmp">${fig(a,'BEFORE')}${fig(b,'AFTER')}</div>
+   ${a&&b?`<div class="diff"><span>相隔 <b>${daysBetween(a.date,b.date)}</b> 天</span>${dW!=null?`<span>體重 <b>${(dW>0?'+':'')+fw(dW)}</b> kg</span>`:''}</div>`:''}
+   <div class="pgrid"><button class="add" data-act="photoPick">${ICON.plus}新增照片</button>${ph.slice().reverse().map(p=>`<button data-act="photoOpen" data-id="${p.id}"><img src="${p.data}" alt="${p.date}" loading="lazy"><span>${p.date.slice(5).replace('-','/')}${p.w?' · '+fw(p.w):''}</span></button>`).join('')}</div>
+   <input type="file" id="photoIn" accept="image/*" hidden>
+   <div class="ex-sub">點照片可以設成 Before 或 After。${user?'照片只存在你的帳號裡，別人看不到。':'目前照片只存在這支手機，用 Google 登入後才會存到雲端。'}</div>
+  </section>`;
+}
+function sheetPhotoNew(s){
+  return sheetHead('新增進度照片')+`<div class="sheet-b">
+   <div class="cmp" style="grid-template-columns:1fr"><figure style="aspect-ratio:auto;max-height:46vh"><img src="${s.data}" alt="預覽" style="max-height:46vh;object-fit:contain"></figure></div>
+   <div class="grid2"><div class="field"><label for="phD">日期</label><input id="phD" type="date" value="${TODAY()}" max="${TODAY()}"></div>
+    <div class="field"><label for="phW">當天體重 kg</label><input id="phW" inputmode="decimal" value="${s.w?fw(s.w):''}" placeholder="例如 62.5"></div></div>
+  </div><div class="sheet-f"><button class="btn" data-act="closeSheet">取消</button><button class="btn primary" data-act="photoSave">儲存</button></div>`;
+}
+function sheetPhotoView(s){
+  const p=(photos||[]).find(x=>x.id===s.id);if(!p) return sheetHead('照片')+'<div class="sheet-b"><div class="empty">找不到這張照片</div></div>';
+  return sheetHead(p.date.replace(/-/g,'/'),p.w?fw(p.w)+' kg':'')+`<div class="sheet-b">
+   <img src="${p.data}" alt="${p.date}" style="width:100%;border-radius:18px;max-height:56vh;object-fit:contain;background:var(--surface2)">
+  </div><div class="sheet-f"><button class="btn danger" data-act="photoDel">刪除</button><button class="btn" data-act="photoAs" data-k="a">設為 Before</button><button class="btn primary" data-act="photoAs" data-k="b">設為 After</button></div>`;
+}
+
 /* ---------- thumbnails ---------- */
 function thumbHTML(ex,cls=''){
   if(ex&&ex.img) return `<span class="thumb ${cls}"><img src="img/${ex.img}/0.jpg" alt="" loading="lazy"></span>`;
@@ -2015,7 +2100,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261116194133';
+const APP_V='20261116194331';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
