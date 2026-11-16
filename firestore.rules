@@ -5,5 +5,14 @@ service cloud.firestore {
     match /users/{uid}/{document=**} {
       allow read, write: if request.auth != null && request.auth.uid == uid;
     }
+    // 分享的計畫：知道代碼就能讀；只有登入的人能建立，只有建立者能改或刪
+    match /shared/{code} {
+      allow read: if true;
+      allow create: if request.auth != null
+        && request.resource.data.owner == request.auth.uid
+        && request.resource.data.json is string
+        && request.resource.data.json.size() < 200000;
+      allow update, delete: if request.auth != null && resource.data.owner == request.auth.uid;
+    }
   }
 }
