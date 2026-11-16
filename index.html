@@ -341,6 +341,27 @@ a.btn{text-decoration:none}
 .glabels{display:grid;grid-template-columns:repeat(5,1fr);gap:2px;font-size:10px;color:var(--muted);text-align:center}
 .codebox{font-family:var(--f-num);font-weight:800;font-size:40px;letter-spacing:.18em;text-align:center;padding:14px 8px;border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm);user-select:all;-webkit-user-select:all}
 #codeIn{text-transform:uppercase;letter-spacing:.2em;font-family:var(--f-num);font-weight:800;font-size:22px;text-align:center}
+.eqgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.eqgrid .opt{padding:12px 14px}
+.eqgrid.sm .opt{padding:10px 12px;text-align:center}
+.eqgrid.sm .opt b{font-size:14px}
+.eqchips{display:flex;gap:6px;flex-wrap:wrap}
+.eqchips button{height:30px;padding:0 12px;border-radius:999px;font-size:12px;font-weight:700;color:var(--muted);background:var(--surface);box-shadow:var(--shadow-sm);display:inline-flex;align-items:center;gap:4px}
+.eqchips button.on{background:var(--accent-soft);color:var(--accent);box-shadow:inset 0 0 0 1.5px var(--accent)}
+.eqchips .lbl{font-size:12px;color:var(--muted);font-weight:700;align-self:center;margin-right:2px}
+.bodymap{background:linear-gradient(160deg,var(--accent-soft),var(--surface) 70%);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:10px 8px 4px;position:relative}
+.bodymap svg{width:100%;height:auto;display:block;max-height:62vh}
+.bodymap .side{position:absolute;left:10px;top:10px;width:120px}
+.bm-base{fill:var(--surface);stroke:var(--line2);stroke-width:1.5}
+.bm-mus{fill:var(--accent);opacity:.2;transition:opacity .15s}
+.bm-mus.on{opacity:.9}
+.bm-hit{cursor:pointer}
+.bm-hit:hover .bm-mus{opacity:.45}
+.bm-hit:hover .bm-mus.on{opacity:.9}
+.bm-lbl{font-family:var(--f-body);font-size:14px;font-weight:700;fill:var(--text)}
+.bm-lbl.on{fill:var(--accent)}
+.bm-line{stroke:var(--faint);stroke-width:1;stroke-dasharray:3 3;fill:none}
+.bm-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
 @keyframes up{from{transform:translateY(40px);opacity:.3}}
 @keyframes fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
@@ -548,13 +569,43 @@ band_glute_bridge|彈力帶臀橋|臀|彈力帶|c
 band_monster_walk|彈力帶怪獸走路|臀|彈力帶|i
 band_kickback|彈力帶後踢腿|臀|彈力帶|i
 band_pallof|彈力帶抗旋轉推|核心|彈力帶|i
-bw_glute_bridge|徒手臀橋|臀|自體重|c`;
-const GROUPS=['胸','背','肩','二頭','三頭','前臂','股四頭','腿後','臀','小腿','核心','全身'];
+bw_glute_bridge|徒手臀橋|臀|自體重|c
+m_decline_press|下斜胸推機|胸|器械|c
+m_iso_chest|分動式胸推機|胸|器械|c
+cb_chest_press|繩索站姿胸推|胸|繩索|c
+m_tbar_chest|T 槓胸靠划船機|背|器械|c
+m_pullover|仰臥拉舉機|背|器械|i
+m_back_ext_machine|坐姿背部伸展機|背|器械|i
+m_shrug|聳肩機|背|器械|i
+m_lever_dl|槓桿硬舉機|背|器械|c
+m_bicep_curl|二頭彎舉機|二頭|器械|i
+m_v_squat|V 型深蹲機|股四頭|器械|c
+m_donkey_calf|驢式提踵機|小腿|器械|i
+m_rotary|轉體機|核心|器械|i
+bw_incline_pushup|上斜伏地挺身|胸|自體重|c
+bw_pike_pushup|派克伏地挺身|肩|自體重|c
+bw_superman|超人式|背|自體重|i
+bw_towel_row|毛巾門把划船|背|自體重|c
+bw_lunge|徒手弓箭步|股四頭|自體重|c
+bw_split_squat|徒手分腿蹲|股四頭|自體重|c
+bw_wall_sit|靠牆深蹲（秒）|股四頭|自體重|i
+bw_single_glute_bridge|單腳臀橋|臀|自體重|c
+bw_calf|徒手提踵|小腿|自體重|i
+bw_mountain|登山者|核心|自體重|c
+c_treadmill|跑步機|有氧|器械|c
+c_walk_incline|跑步機爬坡走|有氧|器械|c
+c_bike|健身車|有氧|器械|c
+c_recumbent|臥式健身車|有氧|器械|c
+c_elliptical|滑步機|有氧|器械|c
+c_rower|划船機|有氧|器械|c
+c_stairs|樓梯機|有氧|器械|c
+c_jump_rope|跳繩|有氧|自體重|c`;
+const GROUPS=['胸','背','肩','二頭','三頭','前臂','股四頭','腿後','臀','小腿','核心','全身','有氧'];
 const EQUIPS=['槓鈴','啞鈴','器械','繩索','史密斯','EZ槓','壺鈴','彈力帶','自體重'];
 const HOME_EQ=['啞鈴','彈力帶','自體重'];
 const INC={'彈力帶':1,'槓鈴':2.5,'EZ槓':2.5,'史密斯':2.5,'器械':2.5,'繩索':2.5,'啞鈴':2,'壺鈴':4,'自體重':2.5};
 const EXD=window.EXDATA||{};
-const BASE_EX=EX_RAW.split('\n').map(l=>{const [id,name,group,equip,t]=l.split('|');const x=EXD[id]||{};return {id,name,group,equip,compound:t==='c',en:x.en||'',img:x.img||'',approx:!!x.approx,cues:x.cues||[],mistake:x.mistake||''}});
+const BASE_EX=EX_RAW.split('\n').map(l=>{const [id,name,group,equip,t]=l.split('|');const x=EXD[id]||{};return {id,name,group,equip,compound:t==='c',unit:name.includes('（秒）')?'秒':group==='有氧'?'分鐘':'次',wunit:group==='有氧'?'級':'kg',en:x.en||'',img:x.img||'',approx:!!x.approx,cues:x.cues||[],mistake:x.mistake||''}});
 
 /* ---------- Five-week cycle ---------- */
 const PHASES=[
@@ -688,7 +739,7 @@ function migrate(){
   const st=state.settings;if(st.periodize==null)st.periodize=true;if(st.showTut==null)st.showTut=true;
 }
 function loadLocal(){state=LS.get(key('state'))||freshState();logs=LS.get(key('logs'))||[];migrate();if(typeof rebuildEx==='function')rebuildEx()}
-const ui={tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null,screen:null,auth:{msg:'',busy:false},ob:null};
+const ui={libView:'list',libSide:'front',libMus:null,libEq:[],tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null,screen:null,auth:{msg:'',busy:false},ob:null};
 
 /* ---------- accounts & cloud sync (Firebase: Google sign-in + Firestore) ---------- */
 const CFG=window.IC_CONFIG||{};
@@ -757,7 +808,7 @@ const allEx=()=>BASE_EX.concat((state&&state.customEx)||[]);
 let EXMAP={};const rebuildEx=()=>{EXMAP={};allEx().forEach(e=>EXMAP[e.id]=e)};rebuildEx();
 const EX=id=>EXMAP[id]||{id,name:'未知動作',group:'全身',equip:'器械',compound:false};
 const incOf=ex=>INC[ex.equip]||2.5;
-const restOf=exId=>state.restByEx[exId]??(EX(exId).compound?state.settings.restCompound:state.settings.restIso);
+const restOf=exId=>state.restByEx[exId]??(EX(exId).group==='有氧'?60:EX(exId).compound?state.settings.restCompound:state.settings.restIso);
 function phaseAt(date){
   if(!state.settings.periodize) return {idx:-1,cycle:0,week:0};
   const w=Math.max(0,Math.floor(between(state.settings.cycleStart,date)/7));
@@ -857,7 +908,7 @@ function renderToday(){
         return `<button class="ex-row" data-act="customize" data-pe="${pe.id}" data-date="${sel}">
           ${thumbHTML(ex)}
           <span class="grow"><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}
-          <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> 次${p.w?` · <span class="num">${fw(p.w)}</span> kg`:''} · ${ex.group}</div></span>${ICON.chev}</button>`}).join('')}
+          <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> ${ex.unit||'次'}${p.w?` · <span class="num">${fw(p.w)}</span> ${ex.wunit||'kg'}`:''} · ${ex.group}</div></span>${ICON.chev}</button>`}).join('')}
         ${list.length?'':'<div class="empty">這天還沒有動作</div>'}
       </div>
       <div class="row"><button class="btn sm ghost" data-act="addExToDay" data-date="${sel}">${ICON.plus}新增動作</button>
@@ -872,13 +923,13 @@ function renderToday(){
 }
 
 /* ---------- Library ---------- */
+function libFilter(){return {g:ui.libView==='body'?'全部':ui.libGroup,q:ui.libQ.trim().toLowerCase(),eq:ui.libEq,mus:ui.libView==='body'?ui.libMus:null}}
 function renderLibrary(){
-  const q=ui.libQ.trim().toLowerCase();
-  const list=allEx().filter(e=>grpMatch(e,ui.libGroup)&&exMatch(e,q));
+  const f=libFilter(),list=filterEx(f);
   let h=`<div class="topbar"><div><div class="brand">WORKOUT</div><h1>動作庫</h1></div><button class="btn sm" data-act="newEx">${ICON.plus}自訂動作</button></div>
-  <label class="search">${ICON.search}<input id="libQ" placeholder="搜尋 ${allEx().length} 個動作" value="${esc(ui.libQ)}" autocomplete="off"></label>
-  <div class="chips">${['全部','居家',...GROUPS].map(g=>`<button class="${ui.libGroup===g?'on':''}" data-act="libGroup" data-g="${g}">${g==='居家'?'居家可做':g}</button>`).join('')}</div>
-  <div id="libList">${libListHTML(list,'exDetail')}</div>`;
+  <label class="search">${ICON.search}<input id="libQ" placeholder="搜尋 ${allEx().length} 個動作（中文或英文）" value="${esc(ui.libQ)}" autocomplete="off"></label>
+  ${pickerControls({view:ui.libView,side:ui.libSide,mus:ui.libMus,g:ui.libGroup,eq:ui.libEq},'lib')}
+  <div id="libList">${ui.libView==='body'&&!ui.libMus?'<div class="empty">點身體上的部位，看可以練它的動作</div>':libListHTML(list,'exDetail')}</div>`;
   return `<div class="stack">${h}</div>`;
 }
 function libListHTML(list,act){
@@ -934,6 +985,10 @@ function renderSettings(){
   <section class="card stack"><div class="eyebrow">外觀</div>
    <div class="themes">${THEMES.map(([k,l,g])=>`<button class="${(s.theme||'auto')===k?'on':''}" data-act="setTheme" data-k="${k}"><i style="background:${g||'linear-gradient(90deg,#F6F4FB 50%,#1C1926 50%)'}"></i>${l}</button>`).join('')}</div>
   </section>
+  <section class="card stack"><div class="eyebrow">我的器材</div>
+   <div class="eqgrid sm">${EQ_OPTS.map(([k,l])=>`<button class="opt ${myEqRaw().includes(k)?'on':''}" data-act="eqSet" data-k="${k}"><b>${l}</b></button>`).join('')}</div>
+   <button class="btn sm" data-act="adaptMine" style="align-self:flex-start">把計畫裡做不到的動作換掉</button>
+  </section>
   <section class="card"><div class="eyebrow" style="margin-bottom:6px">訓練週期</div>
    <div class="set-item"><div><div class="ex-name">五週循環</div><div class="ex-sub">${s.periodize?'基礎、負荷、預備高峰、高峰、減量輪流':'已關閉：每週都用一樣的重量與次數'}</div></div><button class="toggle ${s.periodize?'on':''}" data-act="togglePeriod" aria-label="五週循環"></button></div>
    ${s.periodize?`
@@ -961,7 +1016,7 @@ function renderSettings(){
 }
 
 /* ---------- Session ---------- */
-function sessionTotals(){let v=0,r=0;state.active.items.forEach(it=>it.sets.forEach(s=>{if(s.done){v+=(+s.w||0)*(+s.r||0);r+=+s.r||0}}));return {v,r}}
+function sessionTotals(){let v=0,r=0;state.active.items.forEach(it=>{const c=EX(it.exId).group==='有氧';it.sets.forEach(s=>{if(s.done&&!c){v+=(+s.w||0)*(+s.r||0);r+=+s.r||0}})});return {v,r}}
 function renderSession(){
   const a=state.active,it=a.items[a.idx],P=PH(a.phaseIdx);
   const tot=sessionTotals();
@@ -984,8 +1039,8 @@ function renderSession(){
     body+=`<div class="target"><span>目標</span><span class="num">${it.sets.length}</span>組 ×<span class="num">${it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax}</span>次 <span class="grow"></span><button class="btn sm ghost" data-act="restEdit" data-ex="${it.exId}">${ICON.timer}休息 ${mmss(restOf(it.exId))}</button></div>
     <div class="sets">${it.sets.map((s,i)=>{const ls=last&&(last[i]||last[last.length-1]);
       return `<div class="set ${s.done?'done':''}" data-i="${i}"><div class="set-n">${s.done&&s.pr?`<span class="crown" title="${s.pr==='w'?'重量新高':'這個重量次數新高'}">${ICON.crown}</span>`:''}${i+1}</div>
-       <label class="fld"><span class="in-row"><input inputmode="decimal" data-f="w" data-i="${i}" value="${s.w===''?'':fw(s.w)}" placeholder="0" aria-label="第${i+1}組重量"><span class="u">kg</span></span><small>${ls?'上次 '+fw(ls.w):'建議 '+fw(it.sugg)}</small></label>
-       <label class="fld"><span class="in-row"><input inputmode="numeric" data-f="r" data-i="${i}" value="${esc(s.r)}" placeholder="${it.rmax}" aria-label="第${i+1}組次數"><span class="u">次</span></span><small>${ls?'上次 '+ls.r:'目標 '+(it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax)}</small></label>
+       <label class="fld"><span class="in-row"><input inputmode="decimal" data-f="w" data-i="${i}" value="${s.w===''?'':fw(s.w)}" placeholder="0" aria-label="第${i+1}組重量"><span class="u">${ex.wunit||'kg'}</span></span><small>${ls?'上次 '+fw(ls.w):'建議 '+fw(it.sugg)}</small></label>
+       <label class="fld"><span class="in-row"><input inputmode="numeric" data-f="r" data-i="${i}" value="${esc(s.r)}" placeholder="${it.rmax}" aria-label="第${i+1}組次數"><span class="u">${ex.unit||'次'}</span></span><small>${ls?'上次 '+ls.r:'目標 '+(it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax)}</small></label>
        <button class="chk" data-act="setDone" data-i="${i}" aria-label="完成第${i+1}組">${ICON.check}</button></div>`}).join('')}</div>
     <div class="row"><button class="btn sm" data-act="addSet">${ICON.plus}加一組</button>${it.sets.length>1?'<button class="btn sm ghost" data-act="rmSet">減一組</button>':''}<span class="grow"></span><button class="btn sm" data-act="customizeSess">${ICON.edit}調整動作</button></div>
     ${allDone?strengthHTML(it):''}
@@ -1068,7 +1123,7 @@ function finishSession(){
   const a=state.active;
   const items=a.items.map(it=>({exId:it.exId,sets:it.sets.filter(s=>s.done).map(s=>Object.assign({w:+s.w||0,r:+s.r||0},s.pr?{pr:s.pr}:{}))})).filter(it=>it.sets.length);
   if(!items.length){ui.dialog={title:'還沒有完成任何一組',msg:'要直接放棄這次訓練嗎？不會留下紀錄。',ok:'放棄訓練',danger:true,onOk:()=>{state.active=null;ui.inSession=false;save();render()}};render();return}
-  const volume=items.reduce((t,it)=>t+it.sets.reduce((x,s)=>x+s.w*s.r,0),0);
+  const volume=items.reduce((t,it)=>t+(EX(it.exId).group==='有氧'?0:it.sets.reduce((x,s)=>x+s.w*s.r,0)),0);
   const reps=items.reduce((t,it)=>t+it.sets.reduce((x,s)=>x+s.r,0),0);
   const log={id:uid(),date:a.date,dayName:a.dayName,phaseIdx:a.phaseIdx,cycle:a.cycle,start:a.startedAt,end:sessionEnd(a),items,volume,reps};
   // PRs vs previous history
@@ -1114,12 +1169,12 @@ function sheetCustomize(s){
 }
 function czPreview(d,P){const p=prescribe(d,P);return `本週（${P.name}）：<b class="num" style="font-size:18px">${p.sets}</b> 組 × <b class="num" style="font-size:18px">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</b> 次${p.w?` · <b class="num" style="font-size:18px">${fw(p.w)}</b> kg`:''}`}
 
+function pickFilter(s){return {g:s.view==='body'?'全部':(s.g||'全部'),q:(s.q||'').trim().toLowerCase(),eq:s.eq||[],mus:s.view==='body'?s.mus:null}}
 function sheetPicker(s){
-  const q=(s.q||'').trim().toLowerCase(),g=s.g||'全部';
-  const list=allEx().filter(e=>grpMatch(e,g)&&exMatch(e,q));
-  return sheetHead('選擇動作')+`<div class="sheet-b"><label class="search">${ICON.search}<input id="pickQ" placeholder="搜尋動作" value="${esc(s.q||'')}" autocomplete="off"></label>
-  <div class="chips">${['全部','居家',...GROUPS].map(x=>`<button class="${g===x?'on':''}" data-act="pickGroup" data-g="${x}">${x==='居家'?'居家可做':x}</button>`).join('')}</div>
-  <div id="pickList">${libListHTML(list,'pickEx')}</div></div>`;
+  const list=filterEx(pickFilter(s));
+  return sheetHead('選擇動作')+`<div class="sheet-b"><label class="search">${ICON.search}<input id="pickQ" placeholder="搜尋動作（中文或英文）" value="${esc(s.q||'')}" autocomplete="off"></label>
+  ${pickerControls({view:s.view||'list',side:s.side||'front',mus:s.mus,g:s.g||'全部',eq:s.eq||[]},'pick')}
+  <div id="pickList">${s.view==='body'&&!s.mus?'<div class="empty">點身體上的部位，看可以練它的動作</div>':libListHTML(list,'pickEx')}</div></div>`;
 }
 function sheetExDetail(s){
   const ex=EX(s.exId),h=history(s.exId),best=bestOf(s.exId);
@@ -1253,6 +1308,17 @@ const A={
  addExToDay:el=>openCustomize({mode:'preview',date:el.dataset.date,isNew:true}),
  openPlan:()=>{ui.sheet={type:'plan'};render()},
  libGroup:el=>{ui.libGroup=el.dataset.g;render()},
+ libView:el=>{ui.libView=el.dataset.k;render()},
+ libSide:el=>{ui.libSide=el.dataset.k;render()},
+ libMus:el=>{ui.libMus=ui.libMus===el.dataset.m?null:el.dataset.m;render()},
+ libEq:el=>{const k=el.dataset.k;ui.libEq=ui.libEq.includes(k)?ui.libEq.filter(x=>x!==k):[...ui.libEq,k];render()},
+ pickView:el=>{ui.sheet.view=el.dataset.k;ui.keepSheetScroll=true;render()},
+ pickSide:el=>{ui.sheet.side=el.dataset.k;ui.keepSheetScroll=true;render()},
+ pickMus:el=>{ui.sheet.mus=ui.sheet.mus===el.dataset.m?null:el.dataset.m;ui.keepSheetScroll=true;render()},
+ pickEq:el=>{const s=ui.sheet,k=el.dataset.k,a=s.eq||[];s.eq=a.includes(k)?a.filter(x=>x!==k):[...a,k];ui.keepSheetScroll=true;render()},
+ eqSet:el=>{state.settings.equip=toggleEq(myEqRaw(),el.dataset.k);save();ui.keepSheetScroll=true;render()},
+ obEq:el=>{ui.ob.eq=toggleEq(ui.ob.eq,el.dataset.k);render()},
+ adaptMine:()=>{const n=adaptPlan(state.plan,myEq());state.plan.days.forEach(d=>d.exercises.forEach(pe=>{if(pe._new){const last=lastSets(pe.exId);pe.weight=last?Math.max(...last.map(x=>x.w)):estimateW(pe.exId);delete pe._new}}));save();render();toast(n?`已把 ${n} 個做不到的動作換掉`:'目前計畫的動作你都能做')},
  exDetail:el=>{ui.sheet={type:'exDetail',exId:el.dataset.ex};render()},
  newEx:()=>{ui.sheet={type:'newEx'};render()},
  saveNewEx:()=>{const n=document.getElementById('nx-name').value.trim();if(!n){toast('請輸入動作名稱');return}
@@ -1371,11 +1437,14 @@ const A={
  obNext:()=>{const o=ui.ob;
    if(o.step===2&&o.wds.length!==o.n){toast(`請選剛好 ${o.n} 天`);return}
    if(o.step===0){const pf=o.prof;pf.h=+pf.h;pf.w=+pf.w;pf.age=+pf.age;if(!(pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250&&pf.age>=10&&pf.age<=100)){toast('請填年齡、身高（cm）和體重（kg）');return}}
-   if(o.step<4){o.step++;render();window.scrollTo(0,0);return}
+   if(o.step===3&&!o.eq.length){toast('至少選一項，沒有器材就選「只有徒手」');return}
+   if(o.step<5){o.step++;render();window.scrollTo(0,0);return}
    const wds=sortWds(o.wds),custom=o.rec==='custom';
    state.profile=clone(o.prof);
+   state.settings.equip=o.eq.slice();
    state.plan=buildPlan(wds,custom?null:REC[o.n][o.rec].days);
-   state.plan.days.forEach(d=>d.exercises.forEach(pe=>{pe.weight=estimateW(pe.exId)}));
+   adaptPlan(state.plan,myEq());
+   state.plan.days.forEach(d=>d.exercises.forEach(pe=>{delete pe._new;pe.weight=estimateW(pe.exId)}));
    state.overrides={};state.settings.periodize=o.periodize;state.settings.cycleStart=mondayOf(TODAY());state.onboarded=true;
    ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0;save();
    if(custom){ui.sheet={type:'plan'};render();toast('幫每個訓練日加入動作')}else{render();toast('計畫建立好了')}},
@@ -1394,8 +1463,8 @@ document.addEventListener('click',e=>{
 });
 document.addEventListener('input',e=>{
   const t=e.target;
-  if(t.id==='libQ'){ui.libQ=t.value;const q=t.value.trim().toLowerCase();document.getElementById('libList').innerHTML=libListHTML(allEx().filter(x=>grpMatch(x,ui.libGroup)&&exMatch(x,q)),'exDetail');return}
-  if(t.id==='pickQ'){ui.sheet.q=t.value;const q=t.value.trim().toLowerCase(),g=ui.sheet.g||'全部';document.getElementById('pickList').innerHTML=libListHTML(allEx().filter(x=>grpMatch(x,g)&&exMatch(x,q)),'pickEx');return}
+  if(t.id==='libQ'){ui.libQ=t.value;document.getElementById('libList').innerHTML=libListHTML(filterEx(libFilter()),'exDetail');return}
+  if(t.id==='pickQ'){ui.sheet.q=t.value;document.getElementById('pickList').innerHTML=libListHTML(filterEx(pickFilter(ui.sheet)),'pickEx');return}
   if(t.dataset.f&&state.active){const it=state.active.items[state.active.idx],s=it.sets[+t.dataset.i];
     const v=t.value.trim();s[t.dataset.f]=v===''?'':(t.dataset.f==='w'?parseFloat(v)||0:parseInt(v)||0);
     // weight typed on an undone set carries to following undone sets
@@ -1478,6 +1547,7 @@ function sheetImportPreview(s){
 /* ---------- personal records (crowns) ---------- */
 // 'w' = heaviest weight ever for this exercise, 'r' = most reps ever at this exact weight
 function prCheck(it,idx){
+  if(EX(it.exId).group==='有氧') return null;
   const s=it.sets[idx],w=+s.w||0,r=+s.r||0;let had=false,maxW=0,maxR=-1;
   const scan=x=>{had=true;if(x.w>maxW)maxW=x.w;if(x.w===w&&x.r>maxR)maxR=x.r};
   logs.forEach(l=>l.items.forEach(i=>{if(i.exId===it.exId)i.sets.forEach(x=>scan({w:+x.w,r:+x.r}))}));
@@ -1524,6 +1594,7 @@ function strengthOf(exId,e1){
   return {kg,pct,lvl,e1};
 }
 function strengthHTML(it){
+  if(EX(it.exId).group==='有氧') return '';
   const done=it.sets.filter(s=>s.done&&+s.w>0);if(!done.length) return '';
   const e1=Math.max(...done.map(s=>e1rm(+s.w,+s.r||1)));
   const st=strengthOf(it.exId,e1);if(!st) return '';
@@ -1556,6 +1627,111 @@ function a2hsHTML(){
   return `<section class="card stack a2hs"><div class="row between"><div class="row" style="gap:10px"><img src="app-icon/workout-192.png" alt="" width="40" height="40" style="border-radius:11px"><div class="ex-name">把 WorkOut 加到主畫面</div></div><button class="icon-btn" style="width:32px;height:32px" data-act="a2hsClose" aria-label="關閉">${ICON.x}</button></div>${body}</section>`;
 }
 
+/* ---------- equipment ---------- */
+const EQ_OPTS=[['gym','健身房','各種器械、繩索、槓鈴都有'],['db','啞鈴','可調式或固定啞鈴'],['bb','槓鈴＋架子','家裡有槓鈴和深蹲架'],['kb','壺鈴','一顆以上壺鈴'],['band','彈力帶','長條或環狀彈力帶'],['bar','單槓','門框單槓或公園單槓'],['none','只有徒手','什麼器材都沒有']];
+const EQKEY={'槓鈴':'bb','EZ槓':'bb','啞鈴':'db','壺鈴':'kb','彈力帶':'band','器械':'gym','繩索':'gym','史密斯':'gym','自體重':null};
+const NEEDS={bw_pullup:'bar',bw_chinup:'bar',bw_hanging_leg:'bar',bw_hanging_knee:'bar',bw_dead_hang:'bar',band_assist_pullup:'bar',bw_dip:'gym',bw_dip_chest:'gym',m_captain:'gym',m_back_ext:'gym',m_ghr:'gym',sled_push:'gym',battle_rope:'gym'};
+const myEqRaw=()=>state.settings.equip||['gym'];
+const myEq=()=>myEqRaw().filter(k=>k!=='none');
+function toggleEq(arr,k){
+  if(k==='gym'||k==='none') return arr.includes(k)?[]:[k];
+  const a=arr.filter(x=>x!=='gym'&&x!=='none');return a.includes(k)?a.filter(x=>x!==k):[...a,k];
+}
+function availEx(ex,eq){
+  if(!eq||eq.includes('gym')) return true;
+  const need=NEEDS[ex.id];if(need) return eq.includes(need);
+  const k=EQKEY[ex.equip];return k==null?true:eq.includes(k);
+}
+const PREF=['db','kb','band','bb',null];
+const HARD=new Set(['bw_nordic','m_ghr','bw_sissy','bw_pike_pushup','bw_vup','bw_ab_wheel','bw_box_jump','bw_burpee']);
+const REL={'腿後':['臀'],'臀':['腿後'],'肩':['背'],'二頭':['背'],'前臂':['背'],'小腿':['股四頭']};
+const coreName=n=>n.replace(/啞鈴|槓鈴|彈力帶|繩索|史密斯|徒手|器械|機|（.*?）|\s/g,'');
+function substitute(exId,eq,used){
+  const ex=EX(exId),m0=musclesOf(ex)[0],sec=ex.unit==='秒',cn=coreName(ex.name),groups=[ex.group,...(REL[ex.group]||[])];
+  const pool=BASE_EX.filter(e=>e.id!==exId&&!used.has(e.id)&&groups.includes(e.group)&&e.group!=='有氧'&&availEx(e,eq));
+  const shared=e=>{const c=coreName(e.name);let k=0;for(const ch of new Set(c))if(cn.includes(ch))k++;return k};
+  const score=e=>(e.group===ex.group?0:4)+(e.compound===ex.compound?0:6)+(musclesOf(e)[0]===m0?0:4)+PREF.indexOf(EQKEY[e.equip]??null)*.5+((e.unit==='秒')!==sec?3:0)+(HARD.has(e.id)?7:0)-shared(e);
+  pool.sort((a,b)=>score(a)-score(b));
+  return pool[0]||null;
+}
+// swap every exercise the equipment can't support for the closest one it can; returns how many changed
+function adaptPlan(plan,eq){
+  let n=0;
+  plan.days.forEach(d=>{const used=new Set(d.exercises.map(e=>e.exId));
+    d.exercises=d.exercises.map(pe=>{const ex=EX(pe.exId);if(availEx(ex,eq)) return pe;
+      const sub=substitute(pe.exId,eq,used);n++;if(!sub) return null;used.add(sub.id);
+      const toBw=sub.equip==='自體重'&&ex.equip!=='自體重';
+      return {...pe,exId:sub.id,_new:true,repMin:sub.unit==='秒'?20:toBw?8:pe.repMin,repMax:sub.unit==='秒'?45:toBw?15:pe.repMax};
+    }).filter(Boolean)});
+  return n;
+}
+function recVisible(n,eq){const gym=!eq.length||eq.includes('gym');return REC[n].map((r,i)=>i).filter(i=>gym||REC[n][i].home)}
+function recSwaps(r,eq){if(!eq.length||eq.includes('gym')) return 0;const e=eq.filter(k=>k!=='none');let c=0;r.days.forEach(k=>T[k][1].forEach(([id])=>{if(!availEx(EX(id),e))c++}));return c}
+
+/* ---------- muscles & body map ---------- */
+const MUS={chest:'胸',shoulders:'肩膀',biceps:'二頭肌',forearms:'前臂',abs:'腹肌',obliques:'腹斜肌',quads:'股四頭',adductors:'大腿內側',traps:'斜方肌',triceps:'三頭肌',lats:'背闊肌',lowerback:'下背',glutes:'臀部',abductors:'臀側／外展',hamstrings:'腿後',calves:'小腿',cardio:'有氧'};
+const G2M={'胸':['chest'],'背':['lats'],'肩':['shoulders'],'二頭':['biceps'],'三頭':['triceps'],'前臂':['forearms'],'股四頭':['quads'],'腿後':['hamstrings'],'臀':['glutes'],'小腿':['calves'],'核心':['abs'],'全身':['quads','glutes'],'有氧':['cardio']};
+const MUS_OVR={bb_shrug:['traps'],db_shrug:['traps'],m_shrug:['traps'],bb_upright:['shoulders','traps'],db_upright:['shoulders','traps'],cb_face_pull:['shoulders','traps'],band_face_pull:['shoulders','traps'],band_pull_apart:['shoulders','traps'],db_rear_fly:['shoulders','traps'],m_rear_delt:['shoulders','traps'],
+ m_back_ext:['lowerback'],m_back_ext_machine:['lowerback'],bw_superman:['lowerback'],m_reverse_hyper:['lowerback','glutes'],bb_good_morning:['hamstrings','lowerback'],band_good_morning:['hamstrings','lowerback'],bb_deadlift:['lowerback','hamstrings','glutes'],m_lever_dl:['lowerback','glutes'],bb_rack_pull:['lowerback','traps'],
+ bb_rdl:['hamstrings','glutes','lowerback'],db_rdl:['hamstrings','glutes'],m_adductor:['adductors'],m_abductor:['abductors'],band_monster_walk:['abductors'],db_sumo_squat:['adductors','glutes'],bb_sumo_dl:['glutes','adductors'],
+ bw_russian:['obliques'],cb_woodchop:['obliques'],bw_side_plank:['obliques'],cb_pallof:['obliques'],band_pallof:['obliques'],m_rotary:['obliques'],
+ bb_power_clean:['traps','glutes'],bb_clean:['traps','quads'],bb_snatch:['traps','shoulders'],bb_thruster:['quads','shoulders'],kb_swing:['glutes','hamstrings'],kb_tgu:['shoulders','abs'],bw_burpee:['cardio','quads'],sled_push:['quads','glutes'],battle_rope:['cardio','shoulders'],db_farmer:['forearms','traps'],
+ bb_squat:['quads','glutes'],bb_front_squat:['quads'],db_bulgarian:['quads','glutes'],bb_hip_thrust:['glutes','hamstrings'],bw_mountain:['abs','cardio'],c_jump_rope:['cardio','calves'],bw_pullup:['lats','biceps'],bw_chinup:['lats','biceps'],bb_cgbp:['triceps','chest'],bw_dip:['triceps','chest'],bw_dip_chest:['chest','triceps'],bw_diamond:['triceps','chest']};
+const musclesOf=ex=>MUS_OVR[ex.id]||G2M[ex.group]||[];
+const filterEx=f=>allEx().filter(e=>grpMatch(e,f.g||'全部')&&exMatch(e,f.q||'')&&eqMatch(e,f.eq)&&(!f.mus||musclesOf(e).includes(f.mus)));
+const EQF=[['bb','槓鈴'],['db','啞鈴'],['machine','器械'],['cable','繩索'],['smith','史密斯'],['kb','壺鈴'],['band','彈力帶'],['bw','徒手']];
+const fkey=e=>({'槓鈴':'bb','EZ槓':'bb','啞鈴':'db','器械':'machine','繩索':'cable','史密斯':'smith','壺鈴':'kb','彈力帶':'band','自體重':'bw'})[e.equip]||'machine';
+const eqMatch=(e,eq)=>!eq||!eq.length||eq.includes(fkey(e));
+function pickerControls(c,pre){
+  const view=c.view||'list';
+  return `<div class="seg"><button class="${view==='list'?'on':''}" data-act="${pre}View" data-k="list">依分類</button><button class="${view==='body'?'on':''}" data-act="${pre}View" data-k="body">依身體部位</button></div>
+  ${view==='body'?bodyMapHTML(c.side||'front',c.mus,pre):`<div class="chips">${['全部','居家',...GROUPS].map(g=>`<button class="${c.g===g?'on':''}" data-act="${pre==='lib'?'libGroup':'pickGroup'}" data-g="${g}">${g==='居家'?'我的器材可做':g}</button>`).join('')}</div>`}
+  <div class="eqchips"><span class="lbl">器材</span>${EQF.map(([k,l])=>`<button class="${(c.eq||[]).includes(k)?'on':''}" data-act="${pre}Eq" data-k="${k}">${l}</button>`).join('')}</div>`;
+}
+// stylised figure: shared silhouette + tappable muscle shapes, labels with dashed leader lines
+const BM_BASE=`<circle cx="180" cy="50" r="27"/><rect x="167" y="72" width="26" height="24" rx="9"/>
+ <path d="M124 100 Q180 86 236 100 Q252 112 250 140 Q246 214 228 300 L132 300 Q114 214 110 140 Q108 112 124 100Z"/>
+ <rect x="89" y="110" width="30" height="108" rx="15" transform="rotate(9 104 110)"/><rect x="241" y="110" width="30" height="108" rx="15" transform="rotate(-9 256 110)"/>
+ <rect x="73" y="208" width="26" height="102" rx="13" transform="rotate(11 86 208)"/><rect x="261" y="208" width="26" height="102" rx="13" transform="rotate(-11 274 208)"/>
+ <circle cx="64" cy="318" r="12"/><circle cx="296" cy="318" r="12"/>
+ <path d="M132 294 L228 294 L238 352 L180 366 L122 352Z"/>
+ <rect x="127" y="338" width="50" height="134" rx="25" transform="rotate(3 152 338)"/><rect x="183" y="338" width="50" height="134" rx="25" transform="rotate(-3 208 338)"/>
+ <rect x="135" y="466" width="34" height="78" rx="17"/><rect x="191" y="466" width="34" height="78" rx="17"/>
+ <ellipse cx="150" cy="549" rx="21" ry="9"/><ellipse cx="210" cy="549" rx="21" ry="9"/>`;
+const BM_SHAPES={
+ front:{shoulders:'<ellipse cx="116" cy="121" rx="19" ry="17"/><ellipse cx="244" cy="121" rx="19" ry="17"/>',
+  chest:'<ellipse cx="155" cy="138" rx="25" ry="17"/><ellipse cx="205" cy="138" rx="25" ry="17"/>',
+  biceps:'<ellipse cx="106" cy="166" rx="11" ry="28" transform="rotate(9 106 166)"/><ellipse cx="254" cy="166" rx="11" ry="28" transform="rotate(-9 254 166)"/>',
+  forearms:'<ellipse cx="85" cy="252" rx="10" ry="32" transform="rotate(11 85 252)"/><ellipse cx="275" cy="252" rx="10" ry="32" transform="rotate(-11 275 252)"/>',
+  abs:'<rect x="163" y="166" width="34" height="104" rx="12"/>',
+  obliques:'<ellipse cx="141" cy="218" rx="10" ry="36"/><ellipse cx="219" cy="218" rx="10" ry="36"/>',
+  quads:'<ellipse cx="149" cy="398" rx="17" ry="50"/><ellipse cx="211" cy="398" rx="17" ry="50"/>',
+  adductors:'<ellipse cx="170" cy="372" rx="7" ry="28"/><ellipse cx="190" cy="372" rx="7" ry="28"/>',
+  calves:'<ellipse cx="152" cy="500" rx="11" ry="30"/><ellipse cx="208" cy="500" rx="11" ry="30"/>'},
+ back:{traps:'<path d="M180 82 L214 104 L198 160 L180 170 L162 160 L146 104Z"/>',
+  shoulders:'<ellipse cx="116" cy="121" rx="19" ry="17"/><ellipse cx="244" cy="121" rx="19" ry="17"/>',
+  triceps:'<ellipse cx="106" cy="168" rx="11" ry="28" transform="rotate(9 106 168)"/><ellipse cx="254" cy="168" rx="11" ry="28" transform="rotate(-9 254 168)"/>',
+  lats:'<ellipse cx="146" cy="190" rx="17" ry="42" transform="rotate(-10 146 190)"/><ellipse cx="214" cy="190" rx="17" ry="42" transform="rotate(10 214 190)"/>',
+  lowerback:'<rect x="163" y="230" width="34" height="56" rx="12"/>',
+  forearms:'<ellipse cx="85" cy="252" rx="10" ry="32" transform="rotate(11 85 252)"/><ellipse cx="275" cy="252" rx="10" ry="32" transform="rotate(-11 275 252)"/>',
+  glutes:'<ellipse cx="160" cy="324" rx="22" ry="23"/><ellipse cx="200" cy="324" rx="22" ry="23"/>',
+  abductors:'<ellipse cx="133" cy="322" rx="8" ry="19"/><ellipse cx="227" cy="322" rx="8" ry="19"/>',
+  hamstrings:'<ellipse cx="151" cy="408" rx="16" ry="46"/><ellipse cx="209" cy="408" rx="16" ry="46"/>',
+  calves:'<ellipse cx="152" cy="498" rx="14" ry="34"/><ellipse cx="208" cy="498" rx="14" ry="34"/>'}};
+const BM_LABELS={
+ front:[['shoulders','L',112,116,121],['chest','L',158,155,138],['forearms','L',250,85,252],['obliques','L',212,141,218],['adductors','L',372,170,372],['cardio','R',40,0,0],['biceps','R',166,254,166],['abs','R',228,180,228],['quads','R',398,211,398],['calves','R',500,208,500]],
+ back:[['traps','L',112,180,112],['triceps','L',168,106,168],['forearms','L',250,85,252],['abductors','L',322,133,322],['hamstrings','L',408,151,408],['cardio','R',40,0,0],['lats','R',190,214,190],['lowerback','R',258,180,258],['glutes','R',324,200,324],['calves','R',498,208,498]]};
+function bodyMapHTML(side,sel,pre){
+  const act=pre+'Mus',sh=BM_SHAPES[side],labels=BM_LABELS[side];
+  const mus=Object.entries(sh).map(([k,v])=>`<g class="bm-hit" data-act="${act}" data-m="${k}"><g class="bm-mus ${sel===k?'on':''}">${v}</g></g>`).join('');
+  const lab=labels.map(([k,lr,y,dx,dy])=>{const on=sel===k,L=lr==='L',tx=L?6:354,lx=L?6:354;
+    if(k==='cardio') return `<g class="bm-hit" data-act="${act}" data-m="cardio"><path d="M${L?14:322} ${y-8} c-6-8-18-2-12 6 l12 11 l12-11 c6-8-6-14-12-6z" transform="translate(${L?0:10},0)" fill="var(--accent)" opacity="${on?1:.75}"/><text class="bm-lbl ${on?'on':''}" x="${tx}" y="${y+2}" text-anchor="${L?'start':'end'}" dx="${L?40:-40}">${MUS[k]}</text></g>`;
+    return `<g class="bm-hit" data-act="${act}" data-m="${k}"><polyline class="bm-line" points="${lx},${y+7} ${dx},${y+7} ${dx},${dy}"/><circle class="bm-dot" cx="${dx}" cy="${dy}" r="5"/><rect x="${L?0:280}" y="${y-14}" width="80" height="26" fill="transparent"/><text class="bm-lbl ${on?'on':''}" x="${tx}" y="${y+2}" text-anchor="${L?'start':'end'}">${MUS[k]}</text></g>`}).join('');
+  return `<div class="bodymap"><div class="seg side"><button class="${side==='front'?'on':''}" data-act="${pre}Side" data-k="front">正面</button><button class="${side==='back'?'on':''}" data-act="${pre}Side" data-k="back">背面</button></div>
+   <svg viewBox="0 0 360 566" role="img" aria-label="人體肌肉圖，點部位篩選動作"><g class="bm-base">${BM_BASE}</g>${mus}${lab}</svg></div>
+   ${sel?`<div class="row between"><h2>${MUS[sel]}</h2><button class="btn sm ghost" data-act="${act}" data-m="${sel}">清除</button></div>`:''}`;
+}
+
 /* ---------- thumbnails ---------- */
 function thumbHTML(ex,cls=''){
   if(ex&&ex.img) return `<span class="thumb ${cls}"><img src="img/${ex.img}/0.jpg" alt="" loading="lazy"></span>`;
@@ -1581,7 +1757,7 @@ const DEF_R={'彈力帶':[0,0],'槓鈴':[.5,.25],'啞鈴':[.15,.08],'器械':[.5
 const UPPER=['胸','背','肩','二頭','三頭','前臂'];
 function estimateW(exId){
   const ex=EX(exId),p=state.profile;
-  if(!p||!p.w||ex.equip==='自體重') return 0;
+  if(!p||!p.w||ex.equip==='自體重'||ex.group==='有氧') return 0;
   let r=RATIO[exId];if(r==null){const d=DEF_R[ex.equip]||[.3,.15];r=d[ex.compound?0:1]}
   if(!r) return 0;
   const h=(+p.h||170)/100,eff=Math.min(+p.w,25*h*h); // extra body fat adds little strength
@@ -1607,6 +1783,7 @@ function progress(a){
     const done=it.sets.filter(s=>s.done);
     if(!pe||!done.length) return;
     const ex=EX(it.exId),inc=incOf(ex);
+    if(ex.group==='有氧') return;
     if(!adjustable){out.push({exId:it.exId,kind:'hold',tag:'不調整',why:P.name+'只照表操課，基準重量等基礎／負荷週再調整'});return}
     const w=Math.max(...done.map(s=>+s.w||0));
     const work=done.filter(s=>(+s.w||0)>=w*.97),reps=work.map(s=>+s.r||0);
@@ -1647,7 +1824,7 @@ function sheetProfile(s){
 }
 
 /* ---------- names & tutorials ---------- */
-const grpMatch=(e,g)=>g==='全部'||(g==='居家'?HOME_EQ.includes(e.equip):e.group===g);
+const grpMatch=(e,g)=>g==='全部'||(g==='居家'?availEx(e,myEq()):e.group===g);
 const exMatch=(e,q)=>!q||e.name.toLowerCase().includes(q)||(e.en||'').toLowerCase().includes(q)||e.equip.includes(q);
 const enLine=ex=>ex&&ex.en?`<div class="en">${esc(ex.en)}</div>`:'';
 const ytEn=ex=>'https://www.youtube.com/results?search_query='+encodeURIComponent((ex.en||ex.name)+' proper form tutorial');
@@ -1694,9 +1871,9 @@ function renderAuth(){
 }
 
 /* ---------- onboarding ---------- */
-function newOb(){const n=state.plan&&state.onboarded?(state.plan.rotate?1:Math.min(6,Math.max(1,state.plan.days.length))):3;const pf=state.profile||{h:'',w:'',sex:'m',lvl:'beg'};return {prof:clone(pf),step:0,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
+function newOb(){const n=state.plan&&state.onboarded?(state.plan.rotate?1:Math.min(6,Math.max(1,state.plan.days.length))):3;const pf=state.profile||{h:'',w:'',sex:'m',lvl:'beg'};return {eq:(state.settings.equip||['gym']).slice(),prof:clone(pf),step:0,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
 function renderOnboard(){
-  const o=ui.ob,steps=`<div class="steps">${[0,1,2,3,4].map(i=>`<i class="${i<=o.step?'on':''}"></i>`).join('')}</div>`;
+  const o=ui.ob,steps=`<div class="steps">${[0,1,2,3,4,5].map(i=>`<i class="${i<=o.step?'on':''}"></i>`).join('')}</div>`;
   let body='',next='下一步',ok=true;
   if(o.step===0){
     const pf=o.prof;ok=pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250&&pf.age>=10&&pf.age<=100;
@@ -1715,10 +1892,15 @@ function renderOnboard(){
     <div class="wdpick">${[1,2,3,4,5,6,0].map(w=>`<button class="${o.wds.includes(w)?'on':''}" data-act="obWd" data-w="${w}">週${WD[w]}</button>`).join('')}</div>
     ${o.wds.length>o.n?'<div class="msg">選太多天了，取消幾天</div>':''}`;
   }else if(o.step===3){
-    const wdsSorted=sortWds(o.wds);
-    body=`<div class="big-q">選一份菜單</div><p class="lead">依一週 ${o.n} 天推薦，重量之後在訓練中調整。</p>
-    <div class="stack" style="gap:10px">${REC[o.n].map((r,i)=>`<button class="opt ${o.rec===i?'on':''}" data-act="obRec" data-i="${i}"><b>${r.name}</b><span>${r.desc}</span>
-      <span class="days">${r.days.map((k,j)=>`<span class="chip">${o.n===1?`第 ${j+1} 週`:'週'+WD[wdsSorted[j]]} ${T[k][0]}</span>`).join('')}</span></button>`).join('')}
+    ok=o.eq.length>0;
+    body=`<div class="big-q">你有哪些器材？</div><p class="lead">可以複選。推薦菜單會換成你做得到的動作。</p>
+    <div class="eqgrid">${EQ_OPTS.map(([k,l,d])=>`<button class="opt ${o.eq.includes(k)?'on':''}" data-act="obEq" data-k="${k}"><b>${l}</b><span>${d}</span></button>`).join('')}</div>`;
+  }else if(o.step===4){
+    const wdsSorted=sortWds(o.wds),vis=recVisible(o.n,o.eq);
+    if(o.rec!=='custom'&&!vis.includes(o.rec)) o.rec=vis[0];
+    body=`<div class="big-q">選一份菜單</div><p class="lead">依一週 ${o.n} 天${o.eq.includes('gym')?'':'和你的器材'}推薦，重量會依你的身體資料估算。</p>
+    <div class="stack" style="gap:10px">${vis.map(i=>{const r=REC[o.n][i],sw=recSwaps(r,o.eq);return `<button class="opt ${o.rec===i?'on':''}" data-act="obRec" data-i="${i}"><b>${r.name}</b><span>${r.desc}${sw?`（已依你的器材換掉 ${sw} 個動作）`:''}</span>
+      <span class="days">${r.days.map((k,j)=>`<span class="chip">${o.n===1?`第 ${j+1} 週`:'週'+WD[wdsSorted[j]]} ${T[k][0]}</span>`).join('')}</span></button>`}).join('')}
       <button class="opt ${o.rec==='custom'?'on':''}" data-act="obRec" data-i="custom"><b>自訂菜單</b><span>先建立 ${o.n} 個空白訓練日，再從動作庫挑動作</span></button>
       <button class="opt" data-act="obCode"><b>我有計畫代碼</b><span>別人幫你寫好的計畫，輸入代碼直接套用</span></button></div>`;
   }else{
@@ -1765,7 +1947,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261116191313';
+const APP_V='20261116193000';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
