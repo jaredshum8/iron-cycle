@@ -223,6 +223,16 @@ textarea{width:100%;min-height:120px;background:var(--surface2);border:1px solid
 .sheet{width:100%;max-width:560px;max-height:90%;background:var(--surface);border-radius:24px 24px 0 0;border:1px solid var(--line);border-bottom:0;display:flex;flex-direction:column;animation:up .22s ease;padding-bottom:env(safe-area-inset-bottom,0px)}
 .sheet-h{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:16px max(18px,env(safe-area-inset-right,0px)) 10px max(18px,env(safe-area-inset-left,0px))}
 .sheet-b{overflow-y:auto;padding:4px max(18px,env(safe-area-inset-right,0px)) 18px max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.sheet-b>*{flex-shrink:0}
+.thumb{width:58px;height:44px;border-radius:10px;background:#fff;overflow:hidden;flex:none;display:grid;place-items:center;border:1px solid var(--line2)}
+.thumb img{width:100%;height:100%;object-fit:cover}
+.thumb.ph{background:var(--surface2);color:var(--muted);font-weight:900;font-size:16px}
+.thumb.sm{width:34px;height:26px;border-radius:7px}
+.thumb.cur{outline:2px solid var(--phase);outline-offset:1px}
+.verdict{display:flex;gap:10px;align-items:center;padding:8px 0;border-top:1px solid var(--line)}
+.verdict:first-child{border-top:0}
+.vtag{font-size:12px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+.vtag.up{background:var(--phase-soft);color:var(--phase)}.vtag.hold{background:var(--surface2);color:var(--muted)}.vtag.down{background:rgba(255,107,107,.12);color:var(--danger)}
 .sheet-f{padding:10px max(18px,env(safe-area-inset-right,0px)) 14px max(18px,env(safe-area-inset-left,0px));display:flex;gap:10px;border-top:1px solid var(--line)}
 .sheet-f .btn{flex:1}
 .dialog{position:fixed;inset:0;z-index:90;background:rgba(0,0,0,.6);display:grid;place-items:center;padding:20px}
@@ -695,6 +705,7 @@ function renderToday(){
   const doneOn=d=>logs.some(l=>l.date===d);
   let h=`<div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>訓練</h1></div>
     <button class="btn sm" data-act="openPlan">${ICON.edit}編輯計畫</button></div>`;
+  if(!state.profile) h+=`<section class="card stack" style="border-color:var(--phase)"><div class="ex-name">填一下身高體重</div><div class="ex-sub">新加入的動作會依你的身體資料自動估算起始重量。</div><button class="btn sm primary" data-act="editProfile" style="align-self:flex-start">填寫身體資料</button></section>`;
   if(state.active) h+=`<button class="banner" data-act="resume"><div class="grow"><div style="font-size:13px;opacity:.75">訓練進行中 · ${esc(state.active.dayName)}</div><div class="num" id="bannerClock">${hms(Date.now()-state.active.startedAt)}</div></div><span>繼續 →</span></button>`;
   if(ph.idx<0) h+=`<section class="phase-card"><div class="plate"></div><div class="eyebrow">每週相同</div><div class="phase-name" style="margin-top:6px">固定菜單</div><div class="muted" style="font-size:13px;margin-top:6px;max-width:75%">${FIXED.desc}</div></section>`;
   else h+=`<section class="phase-card"><div class="plate"></div>
@@ -719,7 +730,7 @@ function renderToday(){
       <div class="meta"><span><b>${list.length}</b>動作</span><span><b>${nSets}</b>組</span><span><b>${estMinutes(list,selPh)}</b>分鐘</span></div>
       <div class="ex-list">${list.map((pe,i)=>{const ex=EX(pe.exId),p=prescribe(pe,selPh);
         return `<button class="ex-row" data-act="customize" data-pe="${pe.id}" data-date="${sel}">
-          <span class="ex-badge">${i+1}</span>
+          ${thumbHTML(ex)}
           <span class="grow"><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}
           <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> 次${p.w?` · <span class="num">${fw(p.w)}</span> kg`:''} · ${ex.group}</div></span>${ICON.chev}</button>`}).join('')}
         ${list.length?'':'<div class="empty">這天還沒有動作</div>'}
@@ -749,7 +760,7 @@ function libListHTML(list,act){
   if(!list.length) return '<div class="empty">找不到動作，可以按「自訂動作」新增</div>';
   const by={};list.forEach(e=>(by[e.group]=by[e.group]||[]).push(e));
   return GROUPS.filter(g=>by[g]).map(g=>`<div class="group-h">${g} · ${by[g].length}</div><div class="card" style="padding:4px 14px">${by[g].map(e=>{const b=bestOf(e.id);
-    return `<button class="ex-row" data-act="${act}" data-ex="${e.id}"><span class="grow"><div class="ex-name">${esc(e.name)}</div>${enLine(e)}<div class="ex-sub">${e.equip} · ${e.compound?'複合':'孤立'}${b?` · 最佳 <span class="num">${fw(b.top.w)}</span> kg × ${b.top.r}`:''}</div></span>${ICON.chev}</button>`}).join('')}</div>`).join('');
+    return `<button class="ex-row" data-act="${act}" data-ex="${e.id}">${thumbHTML(e)}<span class="grow"><div class="ex-name">${esc(e.name)}</div>${enLine(e)}<div class="ex-sub">${e.equip} · ${e.compound?'複合':'孤立'}${b?` · 最佳 <span class="num">${fw(b.top.w)}</span> kg × ${b.top.r}`:''}</div></span>${ICON.chev}</button>`}).join('')}</div>`).join('');
 }
 
 /* ---------- Progress ---------- */
@@ -782,7 +793,7 @@ function logHTML(l){
   return `<div class="log"><button class="row" style="width:100%;text-align:left" data-act="toggleLog" data-id="${l.id}">
     <span class="grow"><div class="ex-name">${esc(l.dayName)} <span class="chip" style="color:${P.color};margin-left:4px">${P.name}</span></div>
     <div class="ex-sub">${pd(l.date).getMonth()+1}/${pd(l.date).getDate()} · ${Math.round((l.end-l.start)/6e4)} 分 · <span class="num">${kfmt(l.volume)}</span> kg · ${l.items.length} 動作</div></span>${ICON.chev}</button>
-    ${open?`<div class="log-sets">${l.items.map(it=>`<div><b>${esc(EX(it.exId).name)}</b>　${it.sets.map(s=>`${fw(s.w)}×${s.r}`).join('、')}</div>`).join('')}
+    ${open?`<div class="log-sets">${l.items.map(it=>`<div class="row" style="gap:8px;align-items:center">${thumbHTML(EX(it.exId),'sm')}<span class="grow"><b>${esc(EX(it.exId).name)}</b>　${it.sets.map(s=>`${fw(s.w)}×${s.r}`).join('、')}</span></div>`).join('')}
     <div style="margin-top:6px"><button class="btn sm danger ghost" data-act="delLog" data-id="${l.id}">刪除這筆紀錄</button></div></div>`:''}</div>`;
 }
 
@@ -791,6 +802,10 @@ function renderSettings(){
   const s=state.settings,ph=phaseAt(TODAY());
   return `<div class="stack"><div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>設定</h1></div><span class="sync ${Cloud.status==='cloud'?'on':''}"><i></i>${Cloud.status==='cloud'?'已同步到你的帳號':Cloud.status==='offline'?'暫時連不上雲端，先存在此裝置':'資料存在此裝置'}</span></div>
   ${accountHTML()}
+  <section class="card stack"><div class="eyebrow">身體資料</div>
+   <div class="row between"><div class="ex-sub" style="margin:0">${state.profile?`${state.profile.h} cm · ${state.profile.w} kg · ${state.profile.sex==='f'?'女':'男'} · ${{beg:'剛開始',mid:'半年以上',adv:'兩年以上'}[state.profile.lvl]}`:'還沒填，起始重量無法估算'}</div><button class="btn sm" data-act="editProfile">${state.profile?'修改':'填寫'}</button></div>
+   <button class="btn sm ghost" data-act="reEstimate" style="align-self:flex-start">依身體資料重新估算計畫重量</button>
+  </section>
   <section class="card"><div class="eyebrow" style="margin-bottom:6px">訓練週期</div>
    <div class="set-item"><div><div class="ex-name">五週循環</div><div class="ex-sub">${s.periodize?'基礎、負荷、預備高峰、高峰、減量輪流':'已關閉：每週都用一樣的重量與次數'}</div></div><button class="toggle ${s.periodize?'on':''}" data-act="togglePeriod" aria-label="五週循環"></button></div>
    ${s.periodize?`
@@ -928,16 +943,7 @@ function finishSession(){
   const log={id:uid(),date:a.date,dayName:a.dayName,phaseIdx:a.phaseIdx,cycle:a.cycle,start:a.startedAt,end:sessionEnd(a),items,volume,reps};
   // PRs vs previous history
   const prs=[];items.forEach(it=>{const b=bestOf(it.exId);const top=Math.max(...it.sets.map(s=>s.w));if(top>0&&(!b||top>b.top.w))prs.push(EX(it.exId).name+' '+fw(top)+' kg')});
-  // auto progression on base/load weeks
-  const ups=[];
-  if(['base','load','fixed'].includes(PH(a.phaseIdx).key)){
-    a.items.forEach(it=>{
-      const day=state.plan.days.find(d=>d.id===a.dayId);const pe=day&&day.exercises.find(x=>x.id===it.peId);
-      if(!pe||!pe.weight) return;
-      const ok=it.sets.length&&it.sets.every(s=>s.done&&(+s.r||0)>=it.rmax&&(+s.w||0)>=it.sugg);
-      if(ok){const inc=incOf(EX(it.exId));pe.weight=Math.round((pe.weight+inc)*100)/100;ups.push(EX(it.exId).name+' +'+inc+' kg')}
-    });
-  }
+  const ups=progress(a);
   logs.unshift(log);saveLogs();Cloud.putLog(log);
   state.active=null;ui.inSession=false;save();
   ui.sheet={type:'summary',log,prs,ups};render();
@@ -948,7 +954,7 @@ function renderLayer(){
   const L=document.getElementById('layer');let h='';
   const s=ui.sheet;
   if(s){
-    const fn={exitSess:sheetExitSess,customize:sheetCustomize,picker:sheetPicker,exDetail:sheetExDetail,plan:sheetPlan,newEx:sheetNewEx,summary:sheetSummary,exList:sheetExList,restEdit:sheetRestEdit}[s.type];
+    const fn={profile:sheetProfile,exitSess:sheetExitSess,customize:sheetCustomize,picker:sheetPicker,exDetail:sheetExDetail,plan:sheetPlan,newEx:sheetNewEx,summary:sheetSummary,exList:sheetExList,restEdit:sheetRestEdit}[s.type];
     h+=`<div class="scrim" data-act="scrim"><div class="sheet" role="dialog" aria-modal="true">${fn(s)}</div></div>`;
   }
   if(ui.dialog){const d=ui.dialog;h+=`<div class="dialog"><div class="box"><h2>${esc(d.title)}</h2><div class="muted">${esc(d.msg)}</div><div class="row"><button class="btn" data-act="dlgNo">取消</button><button class="btn ${d.danger?'danger':'primary'}" data-act="dlgOk">${esc(d.ok)}</button></div></div></div>`}
@@ -961,10 +967,10 @@ const sheetHead=(t,sub)=>`<div class="sheet-h"><div class="grow"><h2>${t}</h2>${
 function sheetCustomize(s){
   const d=s.draft,ex=EX(d.exId),P=PH(s.phaseIdx),p=prescribe(d,P);
   return sheetHead(s.isNew?'新增動作':'調整動作',s.isNew?'':esc(EX(s.origExId).name))+`<div class="sheet-b">
-   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace"><span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span><span class="chip">${s.isNew?'選擇':'更換'}</span></button>
+   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace">${d.exId?thumbHTML(ex):''}<span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span><span class="chip">${s.isNew?'選擇':'更換'}</span></button>
    <div class="grid2">
     <div class="field"><label for="cz-sets">組數</label><input id="cz-sets" inputmode="numeric" data-cz="sets" value="${d.sets}"></div>
-    <div class="field"><label for="cz-w">基準重量 kg（基礎週）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>
+    <div class="field"><label for="cz-w">重量 kg（已自動估算）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>
     <div class="field"><label for="cz-min">最少次數</label><input id="cz-min" inputmode="numeric" data-cz="repMin" value="${d.repMin}"></div>
     <div class="field"><label for="cz-max">最多次數</label><input id="cz-max" inputmode="numeric" data-cz="repMax" value="${d.repMax}"></div>
    </div>
@@ -1001,7 +1007,7 @@ function sheetPlan(s){
    ${p.days.map(d=>`<div class="card stack" style="padding:14px">
      <div class="row"><input class="grow" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 10px;font-weight:700;outline:0" data-dayname="${d.id}" value="${esc(d.name)}" aria-label="菜單名稱">
       <select data-daywd="${d.id}" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${d.wd===w?'selected':''}>週${WD[w]}</option>`).join('')}</select></div>
-     <div class="ex-list">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row" style="padding:8px 0"><span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight?' · '+fw(pe.weight)+' kg':''}</div></span>
+     <div class="ex-list">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row" style="padding:8px 0">${thumbHTML(ex)}<span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight?' · '+fw(pe.weight)+' kg':''}</div></span>
        <button class="icon-btn" style="width:32px;height:32px" data-act="peMove" data-day="${d.id}" data-i="${i}" data-d="-1" aria-label="上移">↑</button>
        <button class="icon-btn" style="width:32px;height:32px" data-act="planEditPe" data-day="${d.id}" data-pe="${pe.id}" aria-label="編輯">${ICON.edit}</button></div>`}).join('')}</div>
      <div class="row"><button class="btn sm" data-act="planAddPe" data-day="${d.id}">${ICON.plus}加動作</button><span class="grow"></span>${p.days.length>1?`<button class="btn sm ghost danger" data-act="planDelDay" data-day="${d.id}">刪除這天</button>`:''}</div>
@@ -1022,14 +1028,14 @@ function sheetSummary(s){
   return sheetHead('訓練完成',esc(l.dayName)+' · '+PH(l.phaseIdx).name)+`<div class="sheet-b">
    <div class="tiles"><div class="tile"><div class="num">${Math.round((l.end-l.start)/6e4)}</div><small>分鐘</small></div><div class="tile"><div class="num">${kfmt(l.volume)}</div><small>總重量 kg</small></div><div class="tile"><div class="num">${l.items.reduce((a,i)=>a+i.sets.length,0)}</div><small>完成組數</small></div></div>
    ${s.prs.length?`<div class="card"><div class="eyebrow" style="color:var(--phase)">新紀錄</div><div style="margin-top:6px">${s.prs.map(esc).join('<br>')}</div></div>`:''}
-   ${s.ups.length?`<div class="card"><div class="eyebrow">達標，下次自動加重</div><div style="margin-top:6px">${s.ups.map(esc).join('<br>')}</div></div>`:''}
+   ${s.ups.length?`<div class="card"><div class="eyebrow" style="margin-bottom:4px">下次的重量</div>${s.ups.map(u=>`<div class="verdict">${thumbHTML(EX(u.exId),'sm')}<span class="grow" style="font-size:14px"><b style="font-weight:700">${esc(EX(u.exId).name)}</b><div class="ex-sub">${esc(u.why)}</div></span><span class="vtag ${u.kind}">${esc(u.tag)}</span></div>`).join('')}</div>`:''}
    <div class="muted" style="font-size:13px">紀錄已存到「進度」。</div>
   </div><div class="sheet-f"><button class="btn primary" data-act="closeSheet">好</button></div>`;
 }
 function sheetExList(){
   const a=state.active;
   return sheetHead('今天的動作')+`<div class="sheet-b"><div class="ex-list">${a.items.map((it,i)=>{const d=it.sets.filter(s=>s.done).length;
-    return `<button class="ex-row" data-act="jumpEx" data-i="${i}"><span class="ex-badge" style="${i===a.idx?'color:var(--phase);border-color:var(--phase)':''}">${d===it.sets.length&&d?'✓':i+1}</span><span class="grow"><div class="ex-name">${esc(EX(it.exId).name)}</div>${enLine(EX(it.exId))}<div class="ex-sub">${d}/${it.sets.length} 組</div></span>${ICON.chev}</button>`}).join('')}</div>
+    return `<button class="ex-row" data-act="jumpEx" data-i="${i}">${thumbHTML(EX(it.exId),i===a.idx?'cur':'')}<span class="grow"><div class="ex-name">${esc(EX(it.exId).name)}</div>${enLine(EX(it.exId))}<div class="ex-sub">${d===it.sets.length&&d?'✓ 完成':d+'/'+it.sets.length+' 組'}</div></span>${ICON.chev}</button>`}).join('')}</div>
    <button class="btn" data-act="sessAddEx">${ICON.plus}新增動作</button>
    <button class="btn danger ghost" data-act="discardSess">放棄這次訓練</button></div>`;
 }
@@ -1165,7 +1171,7 @@ const A={
  pickReplace:()=>{ui.pending=ui.sheet;ui.sheet={type:'picker',after:'custom'};render()},
  pickGroup:el=>{ui.sheet.g=el.dataset.g;render()},
  pickEx:el=>{const id=el.dataset.ex;const s=ui.pending;ui.pending=null;s.draft.exId=id;s.draft.rest=restOf(id);
-   if(s.isNew||s.origExId!==id){const last=lastSets(id);const ex=EX(id);s.draft.weight=last?Math.max(...last.map(x=>x.w)):0;if(s.isNew){s.draft.repMin=ex.compound?6:10;s.draft.repMax=ex.compound?10:15}}
+   if(s.isNew||s.origExId!==id){const last=lastSets(id);const ex=EX(id);s.draft.weight=last?Math.max(...last.map(x=>x.w)):estimateW(id);if(s.isNew){s.draft.repMin=ex.compound?6:10;s.draft.repMax=ex.compound?10:15}}
    ui.sheet=s;render()},
  czScope:el=>{ui.sheet.scope=el.dataset.k;ui.keepSheetScroll=true;render()},
  czRest:el=>{const d=ui.sheet.draft;d.rest=Math.max(15,Math.min(900,d.rest+(+el.dataset.d)));ui.keepSheetScroll=true;render()},
@@ -1190,12 +1196,22 @@ const A={
  obRec:el=>{ui.ob.rec=el.dataset.i==='custom'?'custom':+el.dataset.i;render()},
  obPer:el=>{ui.ob.periodize=el.dataset.k==='1';render()},
  obBack:()=>{ui.ob.step--;render()},
+ pfSet:el=>{ui.ob.prof[el.dataset.k]=el.dataset.v;render()},
+ editProfile:()=>{ui.sheet={type:'profile',prof:clone(state.profile||{h:'',w:'',sex:'m',lvl:'beg'})};render()},
+ saveProfile:()=>{const pf=ui.sheet.prof;pf.h=+pf.h;pf.w=+pf.w;if(!(pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250)){toast('請填身高（cm）和體重（kg）');return}
+   state.profile=pf;save();ui.sheet=null;render();toast('已更新身體資料')},
+ sheetPf:el=>{ui.sheet.prof[el.dataset.k]=el.dataset.v;ui.keepSheetScroll=true;render()},
+ reEstimate:()=>confirmDlg('依身體資料重新估算？','計畫裡所有動作的基準重量會重新估算，已經練過的動作會改用你最近一次的實際重量。','重新估算',()=>{
+   state.plan.days.forEach(d=>d.exercises.forEach(pe=>{const last=lastSets(pe.exId);pe.weight=last?Math.max(...last.map(x=>x.w)):estimateW(pe.exId)}));save();render();toast('已重新估算')},false),
  obCancel:()=>{ui.ob=null;ui.screen=null;render()},
  obNext:()=>{const o=ui.ob;
    if(o.step===2&&o.wds.length!==o.n){toast(`請選剛好 ${o.n} 天`);return}
+   if(o.step===0){const pf=o.prof;pf.h=+pf.h;pf.w=+pf.w;if(!(pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250)){toast('請填身高（cm）和體重（kg）');return}}
    if(o.step<4){o.step++;render();window.scrollTo(0,0);return}
    const wds=sortWds(o.wds),custom=o.rec==='custom';
+   state.profile=clone(o.prof);
    state.plan=buildPlan(wds,custom?null:REC[o.n][o.rec].days);
+   state.plan.days.forEach(d=>d.exercises.forEach(pe=>{pe.weight=estimateW(pe.exId)}));
    state.overrides={};state.settings.periodize=o.periodize;state.settings.cycleStart=mondayOf(TODAY());state.onboarded=true;
    ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0;save();
    if(custom){ui.sheet={type:'plan'};render();toast('幫每個訓練日加入動作')}else{render();toast('計畫建立好了')}},
@@ -1223,12 +1239,103 @@ document.addEventListener('input',e=>{
     clearTimeout(A._t);A._t=setTimeout(save,600);return}
   if(t.dataset.cz&&ui.sheet&&ui.sheet.draft){ui.sheet.draft[t.dataset.cz]=t.value;const d={...ui.sheet.draft};['sets','repMin','repMax'].forEach(k=>d[k]=Math.max(1,parseInt(d[k])||1));d.weight=parseFloat(d.weight)||0;if(d.repMax<d.repMin)d.repMax=d.repMin;
     const pv=document.getElementById('czPreview');if(pv&&d.exId)pv.innerHTML=czPreview(d,PH(ui.sheet.phaseIdx));return}
+  if(t.dataset.pf&&ui.ob){ui.ob.prof[t.dataset.pf]=t.value;const b=document.querySelector('[data-act="obNext"]');const pf=ui.ob.prof;const ok=+pf.h>=120&&+pf.h<=230&&+pf.w>=30&&+pf.w<=250;if(b){b.disabled=!ok;b.style.opacity=ok?1:.4}return}
+  if(t.dataset.spf&&ui.sheet&&ui.sheet.prof){ui.sheet.prof[t.dataset.spf]=t.value;return}
   if(t.dataset.dayname){const d=state.plan.days.find(x=>x.id===t.dataset.dayname);d.name=t.value||'菜單';clearTimeout(A._t);A._t=setTimeout(save,600)}
 });
 document.addEventListener('change',e=>{const t=e.target;
   if(t.dataset.daywd){const d=state.plan.days.find(x=>x.id===t.dataset.daywd);const w=+t.value;const clash=state.plan.days.find(x=>x.id!==d.id&&x.wd===w);if(clash)clash.wd=d.wd;d.wd=w;save();ui.keepSheetScroll=true;render();if(clash)toast(`已和「${clash.name}」對調星期`)}
 });
 document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.f)setTimeout(()=>e.target.select(),0)});
+
+/* ---------- thumbnails ---------- */
+function thumbHTML(ex,cls=''){
+  if(ex&&ex.img) return `<span class="thumb ${cls}"><img src="img/${ex.img}/0.jpg" alt="" loading="lazy"></span>`;
+  return `<span class="thumb ph ${cls}">${esc(ex?ex.group[0]:'?')}</span>`;
+}
+
+/* ---------- starting-weight estimate from body data ----------
+   Ratios = typical working weight for ~8–12 reps as a fraction of body weight,
+   for a male who has just started lifting (dumbbells: per hand). */
+const RATIO={bb_bench:.6,bb_incline:.5,bb_decline:.6,db_bench:.2,db_incline:.18,db_decline:.2,db_fly:.1,db_incline_fly:.09,db_pullover:.2,sm_bench:.55,sm_incline:.45,m_chest_press:.55,m_incline_press:.45,pl_chest_press:.55,m_pec_deck:.4,cb_crossover:.12,cb_mid_fly:.12,cb_low_fly:.1,m_dip:0,m_assist_pullup:0,
+ bb_deadlift:.9,bb_row:.5,bb_pendlay:.5,tbar_row:.45,bb_rack_pull:1,db_row:.22,db_chest_row:.17,cb_lat_pd:.55,cb_lat_pd_close:.55,cb_lat_pd_rev:.55,cb_single_pd:.25,cb_seated_row:.55,cb_single_row:.25,cb_straight_pd:.25,m_lat_pd:.55,m_row:.55,pl_row:.55,pl_hi_row:.55,sm_row:.45,bb_shrug:.8,db_shrug:.28,
+ bb_ohp:.35,bb_seated_ohp:.33,bb_push_press:.45,bb_landmine_press:.25,db_ohp:.14,db_arnold:.12,db_lateral:.07,db_front:.08,db_rear_fly:.06,db_upright:.12,bb_upright:.3,sm_ohp:.35,m_shoulder_press:.4,pl_shoulder:.4,m_lateral:.2,m_rear_delt:.25,cb_lateral:.05,cb_face_pull:.25,cb_rear_fly:.08,cb_front:.08,
+ bb_curl:.25,ez_curl:.25,ez_preacher:.2,db_curl:.1,db_hammer:.11,db_incline_curl:.08,db_conc:.09,db_preacher:.08,db_spider:.08,cb_curl:.22,cb_rope_hammer:.22,cb_bayesian:.08,m_preacher:.25,
+ bb_cgbp:.5,ez_skull:.2,db_skull:.08,db_oh_ext:.18,db_kickback:.06,cb_pushdown:.3,cb_rope_pd:.25,cb_oh_ext:.22,cb_single_tpd:.1,m_tri_ext:.3,m_dip_tri:.6,
+ bb_wrist_curl:.25,bb_rev_wrist:.15,bb_rev_curl:.2,db_farmer:.3,
+ bb_squat:.75,bb_front_squat:.55,sm_squat:.7,m_hack:.8,m_leg_press:1.5,m_pendulum:.7,m_belt_squat:.7,m_leg_ext:.45,db_goblet:.22,db_bulgarian:.14,db_lunge:.15,db_walk_lunge:.14,bb_lunge:.4,db_stepup:.14,sm_split:.4,m_adductor:.5,
+ bb_rdl:.65,db_rdl:.25,sm_rdl:.6,db_single_rdl:.15,bb_sldl:.6,bb_good_morning:.35,m_lying_curl:.35,m_seated_curl:.4,m_standing_curl:.15,
+ bb_hip_thrust:.8,sm_hip_thrust:.8,m_hip_thrust:.8,bb_glute_bridge:.7,bb_sumo_dl:.85,db_sumo_squat:.3,kb_swing:.2,cb_pull_through:.35,cb_kickback:.1,m_glute_kick:.3,m_abductor:.5,m_reverse_hyper:.2,
+ m_standing_calf:.8,m_seated_calf:.5,m_leg_press_calf:1.2,sm_calf:.7,db_calf:.2,
+ cb_crunch:.35,m_ab_crunch:.4,cb_woodchop:.15,cb_pallof:.15,
+ bb_power_clean:.5,bb_clean:.5,bb_snatch:.35,bb_thruster:.35,kb_tgu:.12,kb_goblet_swing:.2,sled_push:.8};
+const DEF_R={'槓鈴':[.5,.25],'啞鈴':[.15,.08],'器械':[.5,.35],'繩索':[.45,.2],'史密斯':[.5,.3],'EZ槓':[.25,.2],'壺鈴':[.2,.15],'自體重':[0,0]};
+const UPPER=['胸','背','肩','二頭','三頭','前臂'];
+function estimateW(exId){
+  const ex=EX(exId),p=state.profile;
+  if(!p||!p.w||ex.equip==='自體重') return 0;
+  let r=RATIO[exId];if(r==null){const d=DEF_R[ex.equip]||[.3,.15];r=d[ex.compound?0:1]}
+  if(!r) return 0;
+  const h=(+p.h||170)/100,eff=Math.min(+p.w,25*h*h); // extra body fat adds little strength
+  const sexF=p.sex==='f'?(UPPER.includes(ex.group)?.55:.7):1;
+  const lvlF={beg:1,mid:1.3,adv:1.6}[p.lvl]||1;
+  const inc=incOf(ex);let w=Math.floor(eff*r*sexF*lvlF/inc)*inc;
+  if(ex.equip==='槓鈴'&&ex.compound) w=Math.max(20,w);
+  return Math.max(inc,w);
+}
+
+/* ---------- progression: double progression for hypertrophy ----------
+   Work inside the rep range. Every working set at the top of the range -> add load.
+   Inside the range -> same load, beat last time's reps. Below the range twice in a row -> drop ~10%.
+   When reps land far outside the range (first sessions, bad estimate), jump straight to the load
+   that an estimated 1RM (Epley) predicts for the middle of the range. */
+function progress(a){
+  const P=PH(a.phaseIdx),out=[];
+  const day=state.plan.days.find(d=>d.id===a.dayId);
+  const adjustable=['base','load','fixed'].includes(P.key);
+  a.items.forEach(it=>{
+    const pe=day&&day.exercises.find(x=>x.id===it.peId);
+    const done=it.sets.filter(s=>s.done);
+    if(!pe||!done.length) return;
+    const ex=EX(it.exId),inc=incOf(ex);
+    if(!adjustable){out.push({exId:it.exId,kind:'hold',tag:'不調整',why:P.name+'只照表操課，基準重量等基礎／負荷週再調整'});return}
+    const w=Math.max(...done.map(s=>+s.w||0));
+    const work=done.filter(s=>(+s.w||0)>=w*.97),reps=work.map(s=>+s.r||0);
+    const mid=(it.rmin+it.rmax)/2,allDone=done.length>=it.sets.length;
+    if(w===0){
+      const top=allDone&&reps.every(r=>r>=it.rmax);
+      out.push({exId:it.exId,kind:top?'up':'hold',tag:top?'可加負重':'維持',why:top?'每組都做到上限，下次可以負重或放慢速度':'下次每組多做 1 下'});return;
+    }
+    const e1=Math.max(...work.map(s=>e1rm(+s.w,+s.r)));
+    const fit=Math.floor(e1/(1+mid/30)/inc)*inc;
+    let next=w,kind='hold',tag='維持',why='';
+    const farAbove=reps[0]>=it.rmax+3, farBelow=reps.some(r=>r<=it.rmin-3);
+    if(farAbove||farBelow){
+      next=Math.min(w*1.3,Math.max(w*.7,fit));next=Math.max(inc,Math.round(next/inc)*inc);
+      kind=next>w?'up':next<w?'down':'hold';
+      why=farAbove?`做了 ${reps[0]} 下，比目標多很多，直接調到適合 ${it.rmin}-${it.rmax} 下的重量`:`次數離目標太遠，直接調到做得完 ${it.rmin}-${it.rmax} 下的重量`;
+      pe.miss=0;
+    }else if(allDone&&reps.every(r=>r>=it.rmax)){
+      next=Math.max(w+inc,Math.min(fit,w+inc*2));kind='up';why=`每組都做到 ${it.rmax} 下，加重繼續進步`;pe.miss=0;
+    }else if(reps.some(r=>r<it.rmin)){
+      pe.miss=(pe.miss||0)+1;
+      if(pe.miss>=2){next=Math.max(inc,Math.floor(w*.9/inc)*inc);kind='down';why='連續兩次沒達到最低次數，先減重把次數做足';pe.miss=0}
+      else why=`有組沒到 ${it.rmin} 下，下次同重量再挑戰`;
+    }else{pe.miss=0;why=`在 ${it.rmin}-${it.rmax} 下之間，同重量每組多做 1 下`}
+    tag=kind==='up'?'+'+fw(next-w)+' kg':kind==='down'?'−'+fw(w-next)+' kg':'維持';
+    pe.weight=Math.round(next/P.mult*100)/100;
+    out.push({exId:it.exId,kind,tag,why:why+(kind!=='hold'?`（${fw(w)} → ${fw(next)} kg）`:'')});
+  });
+  return out;
+}
+function sheetProfile(s){
+  const pf=s.prof;
+  return sheetHead('身體資料','用來估算新動作的起始重量')+`<div class="sheet-b">
+   <div class="grid2"><div class="field"><label for="sp-h">身高 cm</label><input id="sp-h" inputmode="numeric" data-spf="h" value="${esc(pf.h)}"></div><div class="field"><label for="sp-w">體重 kg</label><input id="sp-w" inputmode="decimal" data-spf="w" value="${esc(pf.w)}"></div></div>
+   <div class="field"><label>性別</label><div class="seg"><button class="${pf.sex==='m'?'on':''}" data-act="sheetPf" data-k="sex" data-v="m">男</button><button class="${pf.sex==='f'?'on':''}" data-act="sheetPf" data-k="sex" data-v="f">女</button></div></div>
+   <div class="field"><label>重訓經驗</label><div class="seg"><button class="${pf.lvl==='beg'?'on':''}" data-act="sheetPf" data-k="lvl" data-v="beg">剛開始</button><button class="${pf.lvl==='mid'?'on':''}" data-act="sheetPf" data-k="lvl" data-v="mid">半年以上</button><button class="${pf.lvl==='adv'?'on':''}" data-act="sheetPf" data-k="lvl" data-v="adv">兩年以上</button></div></div>
+  </div><div class="sheet-f"><button class="btn primary" data-act="saveProfile">儲存</button></div>`;
+}
 
 /* ---------- names & tutorials ---------- */
 const exMatch=(e,q)=>!q||e.name.toLowerCase().includes(q)||(e.en||'').toLowerCase().includes(q)||e.equip.includes(q);
@@ -1276,11 +1383,18 @@ function renderAuth(){
 }
 
 /* ---------- onboarding ---------- */
-function newOb(){const n=state.plan&&state.onboarded?Math.min(6,Math.max(2,state.plan.days.length)):3;return {step:1,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
+function newOb(){const n=state.plan&&state.onboarded?Math.min(6,Math.max(2,state.plan.days.length)):3;const pf=state.profile||{h:'',w:'',sex:'m',lvl:'beg'};return {prof:clone(pf),step:0,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
 function renderOnboard(){
-  const o=ui.ob,steps=`<div class="steps">${[1,2,3,4].map(i=>`<i class="${i<=o.step?'on':''}"></i>`).join('')}</div>`;
+  const o=ui.ob,steps=`<div class="steps">${[0,1,2,3,4].map(i=>`<i class="${i<=o.step?'on':''}"></i>`).join('')}</div>`;
   let body='',next='下一步',ok=true;
-  if(o.step===1){
+  if(o.step===0){
+    const pf=o.prof;ok=pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250;
+    body=`<div class="big-q">先認識一下你</div><p class="lead">用來估算每個動作第一次的建議重量，之後會依你實際做的次數自動調整。</p>
+    <div class="grid2"><div class="field"><label for="pf-h">身高 cm</label><input id="pf-h" inputmode="numeric" data-pf="h" value="${esc(pf.h)}" placeholder="例如 175"></div>
+     <div class="field"><label for="pf-w">體重 kg</label><input id="pf-w" inputmode="decimal" data-pf="w" value="${esc(pf.w)}" placeholder="例如 70"></div></div>
+    <div class="field"><label>性別</label><div class="seg"><button class="${pf.sex==='m'?'on':''}" data-act="pfSet" data-k="sex" data-v="m">男</button><button class="${pf.sex==='f'?'on':''}" data-act="pfSet" data-k="sex" data-v="f">女</button></div></div>
+    <div class="field"><label>重訓經驗</label><div class="seg"><button class="${pf.lvl==='beg'?'on':''}" data-act="pfSet" data-k="lvl" data-v="beg">剛開始</button><button class="${pf.lvl==='mid'?'on':''}" data-act="pfSet" data-k="lvl" data-v="mid">半年以上</button><button class="${pf.lvl==='adv'?'on':''}" data-act="pfSet" data-k="lvl" data-v="adv">兩年以上</button></div></div>`;
+  }else if(o.step===1){
     body=`<div class="big-q">一週想練幾天？</div><p class="lead">之後隨時可以在「編輯計畫」改。</p>
     <div class="tiles5">${[2,3,4,5,6].map(n=>`<button class="${o.n===n?'on':''}" data-act="obN" data-n="${n}">${n}<small>天</small></button>`).join('')}</div>`;
   }else if(o.step===2){
@@ -1306,7 +1420,7 @@ function renderOnboard(){
   return `<div class="full"><div class="wrap"><div class="stack" style="gap:18px">
     <div class="row between"><div class="brand">IRON CYCLE · 設定計畫</div>${o.redo?'<button class="linkbtn" data-act="obCancel">取消</button>':''}</div>
     ${steps}${body}
-    <div class="row">${o.step>1?'<button class="btn" data-act="obBack" style="flex:1;height:52px">上一步</button>':''}<button class="btn primary" data-act="obNext" style="flex:2;height:52px" ${ok?'':'disabled style="flex:2;height:52px;opacity:.4"'}>${next}</button></div>
+    <div class="row">${o.step>0?'<button class="btn" data-act="obBack" style="flex:1;height:52px">上一步</button>':''}<button class="btn primary" data-act="obNext" style="flex:2;height:52px" ${ok?'':'disabled style="flex:2;height:52px;opacity:.4"'}>${next}</button></div>
   </div></div></div>`;
 }
 const sortWds=w=>w.slice().sort((a,b)=>((a+6)%7)-((b+6)%7));
