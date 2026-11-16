@@ -309,7 +309,7 @@ a.btn{text-decoration:none}
 .steps i{flex:1;height:5px;border-radius:3px;background:var(--line2)}
 .steps i.on{background:var(--grad)}
 .big-q{font-size:26px;font-weight:700;line-height:1.3;text-wrap:balance}
-.tiles5{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tiles5{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
 .tiles5 button,.wdpick button{height:74px;border-radius:18px;background:var(--surface);box-shadow:var(--shadow-sm);font-family:var(--f-num);font-size:30px;font-weight:800;color:var(--text)}
 .tiles5 button small{display:block;font-family:var(--f-body);font-size:11px;color:var(--muted);font-weight:500}
 .tiles5 button.on,.wdpick button.on{background:var(--grad);color:var(--on-accent);box-shadow:0 8px 18px -8px var(--accent)}
@@ -554,7 +554,8 @@ function applyTheme(){
   const t=pref==='auto'?(dark?'night':'soft'):pref;
   document.documentElement.dataset.theme=t;
   const pal=PH_PAL[t==='night'?'dark':'light'];
-  PHASES.forEach((p,i)=>{p.color=pal[i];p.soft=hexA(pal[i],.14)});FIXED.color=pal[5];FIXED.soft=hexA(pal[5],.14);
+  PHASES.forEach((p,i)=>{p.color=pal[i];p.soft=hexA(pal[i],.14)});
+  const acc={soft:'#8B7CF6',peach:'#F0866A',night:'#A797FF'}[t];FIXED.color=acc;FIXED.soft=hexA(acc,.14); // fixed plans follow the theme accent
   const bg={soft:'#F6F4FB',peach:'#FBF6F2',night:'#13111B'}[t];
   const m=document.querySelector('meta[name="theme-color"]');if(m)m.content=bg;
 }
@@ -573,8 +574,9 @@ const T={
  FB:['全身 B',[['bb_deadlift',3,4,6,100],['bb_ohp',3,6,8,40],['cb_lat_pd',3,10,12,50],['db_incline',3,8,10,22],['db_curl',3,10,12,10],['m_standing_calf',3,12,15,60]]],
 };
 T.FC=['全身 C',[['m_leg_press',3,10,12,120],['db_bench',3,8,10,22],['cb_seated_row',3,10,12,50],['db_bulgarian',3,8,10,14],['cb_face_pull',3,15,20,20],['bw_plank',3,30,60,0]]];
-const DEFAULT_WD={2:[1,4],3:[1,3,5],4:[1,2,4,5],5:[1,2,3,5,6],6:[1,2,3,4,5,6]};
+const DEFAULT_WD={1:[6],2:[1,4],3:[1,3,5],4:[1,2,4,5],5:[1,2,3,5,6],6:[1,2,3,4,5,6]};
 const REC={
+ 1:[{name:'全身輪替 A → B → C（長輩友善）',desc:'每週練一次，三週輪一圈。以器械和自身體重為主，動作穩定好上手',days:['SA','SB','SC']},{name:'全身輪替 A → B → C',desc:'每週練一次全身，三週輪一圈',days:['FA','FB','FC']}],
  2:[{name:'全身 A / B',desc:'每次練全身，適合剛開始或時間少',days:['FA','FB']}],
  3:[{name:'推 / 拉 / 腿',desc:'最經典的三分化',days:['PU','PL','LG']},{name:'全身 A / B / C',desc:'每個部位一週練三次，新手進步快',days:['FA','FB','FC']}],
  4:[{name:'上下肢分化 ×2',desc:'每個部位一週兩次，增肌效率高',days:['UA','LA','UB','LB']},{name:'推 / 拉 / 腿 / 上肢',desc:'推拉腿再加一天上半身',days:['PU','PL','LG','UA']}],
@@ -591,6 +593,10 @@ T.HL2=['居家下肢 B',[['db_sumo_squat',3,10,12,0],['band_good_morning',3,12,1
 T.HP=['居家推',[['bw_pushup',3,8,15,0],['band_chest_press',3,10,15,0],['band_ohp',3,10,12,0],['db_lateral',4,15,20,0],['band_fly',3,12,15,0],['band_pushdown',3,12,15,0],['band_oh_ext',3,12,15,0]]];
 T.HQ=['居家拉',[['db_row',4,10,12,0],['band_row',3,10,15,0],['band_lat_pd',3,12,15,0],['band_face_pull',3,15,20,0],['db_rear_fly',3,15,20,0],['db_curl',3,10,12,0],['db_hammer',3,10,12,0]]];
 T.HG=['居家腿',[['db_goblet',4,10,12,0],['db_rdl',3,10,12,0],['db_stepup',3,10,12,0],['band_ham_curl',3,12,15,0],['band_glute_bridge',3,12,15,0],['band_monster_walk',3,12,15,0],['db_calf',3,12,15,0]]];
+T.SA=['全身 A（長輩友善）',[['m_leg_press',3,10,15,0],['m_chest_press',2,10,15,0],['m_lat_pd',2,10,15,0],['bw_glute_bridge',2,12,15,0],['m_seated_calf',2,12,15,0],['cb_pallof',2,10,12,0]]];
+T.SB=['全身 B（長輩友善）',[['bw_squat',2,10,15,0],['m_row',2,10,15,0],['m_shoulder_press',2,10,15,0],['m_seated_curl',2,10,15,0],['m_standing_calf',2,12,15,0],['bw_deadbug',2,8,10,0]]];
+T.SC=['全身 C（長輩友善）',[['m_leg_ext',2,12,15,0],['db_stepup',2,8,10,0],['m_incline_press',2,10,15,0],['cb_seated_row',2,10,15,0],['cb_face_pull',2,12,15,0],['m_abductor',2,12,15,0],['bw_plank',2,15,30,0]]];
+REC[1].push({name:'居家全身輪替 A → B → C',desc:'只用徒手、啞鈴、彈力帶，每週練一次，三週輪一圈',days:['HA','HB','HC'],home:true});
 const HOME_DESC='只用徒手、啞鈴、彈力帶，在家或飯店都能練';
 REC[2].push({name:'居家：啞鈴＋彈力帶 全身 A / B',desc:HOME_DESC,days:['HA','HB'],home:true});
 REC[3].push({name:'居家：啞鈴＋彈力帶 全身 A / B / C',desc:HOME_DESC,days:['HA','HB','HC'],home:true});
@@ -599,6 +605,11 @@ REC[5].push({name:'居家：啞鈴＋彈力帶 推 / 拉 / 腿 / 上 / 下',desc
 REC[6].push({name:'居家：啞鈴＋彈力帶 推 / 拉 / 腿 ×2',desc:HOME_DESC,days:['HP','HQ','HG','HP','HQ','HG'],home:true});
 function buildPlan(wds,keys){
   const seen={};
+  // one day a week: every menu shares that weekday and they take turns week by week
+  if(wds.length===1) return {freq:1,rotate:true,start:mondayOf(TODAY()),days:(keys||[null]).map((k,i)=>{
+    if(!k) return {id:uid(),name:'訓練日 A',wd:wds[0],exercises:[]};
+    return {id:uid(),name:T[k][0],wd:wds[0],exercises:T[k][1].map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}))};
+  })};
   return {freq:wds.length,days:wds.map((wd,i)=>{
     if(!keys) return {id:uid(),name:'訓練日 '+'ABCDEF'[i],wd,exercises:[]};
     const k=keys[i];seen[k]=(seen[k]||0)+1;
@@ -739,9 +750,13 @@ function prescribe(pe,ph){
   const w=pe.weight>0?Math.max(inc,roundTo(pe.weight*ph.mult,inc)):0;
   return {sets,rmin,rmax,w};
 }
+function rotIdx(date){const P=state.plan,n=P.days.length;if(!n)return 0;const w=Math.floor(between(P.start||mondayOf(TODAY()),date)/7);return ((w%n)+n)%n}
 function dayFor(date){
   const ov=state.overrides[date];
-  const day=ov?state.plan.days.find(d=>d.id===ov.dayId):state.plan.days.find(d=>d.wd===pd(date).getDay());
+  const P=state.plan;let day;
+  if(ov) day=P.days.find(d=>d.id===ov.dayId);
+  else if(P.rotate){day=P.days.length&&P.days[0].wd===pd(date).getDay()?P.days[rotIdx(date)]:null}
+  else day=P.days.find(d=>d.wd===pd(date).getDay());
   if(!day) return null;
   return {day,exercises:ov&&ov.exercises?ov.exercises:day.exercises,ov};
 }
@@ -891,7 +906,7 @@ function renderSettings(){
   return `<div class="stack"><div class="topbar"><div><div class="brand">IRON CYCLE</div><h1>設定</h1></div><span class="sync ${Cloud.status==='cloud'?'on':''}"><i></i>${Cloud.status==='cloud'?'已同步到你的帳號':Cloud.status==='offline'?'暫時連不上雲端，先存在此裝置':'資料存在此裝置'}</span></div>
   ${accountHTML()}
   <section class="card stack"><div class="eyebrow">身體資料</div>
-   <div class="row between"><div class="ex-sub" style="margin:0">${state.profile?`${state.profile.h} cm · ${state.profile.w} kg · ${state.profile.sex==='f'?'女':'男'} · ${{beg:'剛開始',mid:'半年以上',adv:'兩年以上'}[state.profile.lvl]}`:'還沒填，起始重量無法估算'}</div><button class="btn sm" data-act="editProfile">${state.profile?'修改':'填寫'}</button></div>
+   <div class="row between"><div class="ex-sub" style="margin:0">${state.profile?`${state.profile.age?state.profile.age+' 歲 · ':''}${state.profile.h} cm · ${state.profile.w} kg · ${state.profile.sex==='f'?'女':'男'} · ${{beg:'剛開始',mid:'半年以上',adv:'兩年以上'}[state.profile.lvl]}`:'還沒填，起始重量無法估算'}</div><button class="btn sm" data-act="editProfile">${state.profile?'修改':'填寫'}</button></div>
    <button class="btn sm ghost" data-act="reEstimate" style="align-self:flex-start">依身體資料重新估算計畫重量</button>
   </section>
   <section class="card stack"><div class="eyebrow">外觀</div>
@@ -1095,9 +1110,11 @@ function sheetPlan(s){
   const p=state.plan;
   return sheetHead('編輯計畫','每週固定菜單，五週循環自動調整重量')+`<div class="sheet-b">
    <button class="btn" data-act="redoSetup">重新設定天數、星期與菜單</button>
-   ${p.days.map(d=>`<div class="card stack" style="padding:14px">
+   ${p.rotate?`<div class="card stack" style="padding:14px"><div class="row between"><div><div class="ex-name">每週練一天，菜單輪流</div><div class="ex-sub">這週是第 ${rotIdx(TODAY())+1} 份，共 ${p.days.length} 份</div></div>
+     <select data-rotwd="1" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${p.days[0]&&p.days[0].wd===w?'selected':''}>每週${WD[w]}</option>`).join('')}</select></div></div>`:''}
+   ${p.days.map((d,di)=>`<div class="card stack" style="padding:14px">
      <div class="row"><input class="grow" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 10px;font-weight:700;outline:0" data-dayname="${d.id}" value="${esc(d.name)}" aria-label="菜單名稱">
-      <select data-daywd="${d.id}" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${d.wd===w?'selected':''}>週${WD[w]}</option>`).join('')}</select></div>
+      ${p.rotate?`<span class="chip">第 ${di+1} 週</span>`:`<select data-daywd="${d.id}" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${d.wd===w?'selected':''}>週${WD[w]}</option>`).join('')}</select>`}</div>
      <div class="ex-list">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row" style="padding:8px 0">${thumbHTML(ex)}<span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight?' · '+fw(pe.weight)+' kg':''}</div></span>
        <button class="icon-btn" style="width:32px;height:32px" data-act="peMove" data-day="${d.id}" data-i="${i}" data-d="-1" aria-label="上移">↑</button>
        <button class="icon-btn" style="width:32px;height:32px" data-act="planEditPe" data-day="${d.id}" data-pe="${pe.id}" aria-label="編輯">${ICON.edit}</button></div>`}).join('')}</div>
@@ -1273,9 +1290,9 @@ const A={
  planEditPe:el=>openCustomize({mode:'plan',dayId:el.dataset.day,peId:el.dataset.pe}),
  planAddPe:el=>openCustomize({mode:'plan',dayId:el.dataset.day,isNew:true}),
  peMove:el=>{const d=state.plan.days.find(x=>x.id===el.dataset.day),i=+el.dataset.i;if(i<=0)return;[d.exercises[i-1],d.exercises[i]]=[d.exercises[i],d.exercises[i-1]];save();ui.keepSheetScroll=true;render()},
- planAddDay:()=>{const used=new Set(state.plan.days.map(d=>d.wd));const wd=[1,2,3,4,5,6,0].find(w=>!used.has(w));if(wd==null){toast('一週七天都排滿了');return}
+ planAddDay:()=>{if(state.plan.rotate){const P=state.plan;P.days.push({id:uid(),name:'訓練日 '+'ABCDEFGHIJ'[P.days.length%10],wd:P.days[0]?P.days[0].wd:6,exercises:[]});save();ui.keepSheetScroll=true;render();toast('已加入輪替');return}const used=new Set(state.plan.days.map(d=>d.wd));const wd=[1,2,3,4,5,6,0].find(w=>!used.has(w));if(wd==null){toast('一週七天都排滿了');return}
    state.plan.days.push({id:uid(),name:'新菜單',wd,exercises:[]});state.plan.freq=state.plan.days.length;save();ui.keepSheetScroll=true;render()},
- planDelDay:el=>confirmDlg('刪除這天的菜單？','','刪除',()=>{state.plan.days=state.plan.days.filter(d=>d.id!==el.dataset.day);state.plan.freq=state.plan.days.length;save();render()}),
+ planDelDay:el=>confirmDlg('刪除這天的菜單？','','刪除',()=>{state.plan.days=state.plan.days.filter(d=>d.id!==el.dataset.day);if(!state.plan.rotate)state.plan.freq=state.plan.days.length;save();render()}),
   authGuest:()=>{LS.set('ic.guest',1);ui.screen=null;user=null;loadLocal();render()},
  googleLogin:()=>googleSignIn(),
  goLogin:()=>{ui.screen='auth';ui.auth={msg:'',busy:false};render()},
@@ -1290,7 +1307,7 @@ const A={
  obBack:()=>{ui.ob.step--;render()},
  pfSet:el=>{ui.ob.prof[el.dataset.k]=el.dataset.v;render()},
  editProfile:()=>{ui.sheet={type:'profile',prof:clone(state.profile||{h:'',w:'',sex:'m',lvl:'beg'})};render()},
- saveProfile:()=>{const pf=ui.sheet.prof;pf.h=+pf.h;pf.w=+pf.w;if(!(pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250)){toast('請填身高（cm）和體重（kg）');return}
+ saveProfile:()=>{const pf=ui.sheet.prof;pf.h=+pf.h;pf.w=+pf.w;pf.age=+pf.age;if(!(pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250&&pf.age>=10&&pf.age<=100)){toast('請填年齡、身高（cm）和體重（kg）');return}
    state.profile=pf;save();ui.sheet=null;render();toast('已更新身體資料')},
  sheetPf:el=>{ui.sheet.prof[el.dataset.k]=el.dataset.v;ui.keepSheetScroll=true;render()},
  reEstimate:()=>confirmDlg('依身體資料重新估算？','計畫裡所有動作的基準重量會重新估算，已經練過的動作會改用你最近一次的實際重量。','重新估算',()=>{
@@ -1298,7 +1315,7 @@ const A={
  obCancel:()=>{ui.ob=null;ui.screen=null;render()},
  obNext:()=>{const o=ui.ob;
    if(o.step===2&&o.wds.length!==o.n){toast(`請選剛好 ${o.n} 天`);return}
-   if(o.step===0){const pf=o.prof;pf.h=+pf.h;pf.w=+pf.w;if(!(pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250)){toast('請填身高（cm）和體重（kg）');return}}
+   if(o.step===0){const pf=o.prof;pf.h=+pf.h;pf.w=+pf.w;pf.age=+pf.age;if(!(pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250&&pf.age>=10&&pf.age<=100)){toast('請填年齡、身高（cm）和體重（kg）');return}}
    if(o.step<4){o.step++;render();window.scrollTo(0,0);return}
    const wds=sortWds(o.wds),custom=o.rec==='custom';
    state.profile=clone(o.prof);
@@ -1331,11 +1348,12 @@ document.addEventListener('input',e=>{
     clearTimeout(A._t);A._t=setTimeout(save,600);return}
   if(t.dataset.cz&&ui.sheet&&ui.sheet.draft){ui.sheet.draft[t.dataset.cz]=t.value;const d={...ui.sheet.draft};['sets','repMin','repMax'].forEach(k=>d[k]=Math.max(1,parseInt(d[k])||1));d.weight=parseFloat(d.weight)||0;if(d.repMax<d.repMin)d.repMax=d.repMin;
     const pv=document.getElementById('czPreview');if(pv&&d.exId)pv.innerHTML=czPreview(d,PH(ui.sheet.phaseIdx));return}
-  if(t.dataset.pf&&ui.ob){ui.ob.prof[t.dataset.pf]=t.value;const b=document.querySelector('[data-act="obNext"]');const pf=ui.ob.prof;const ok=+pf.h>=120&&+pf.h<=230&&+pf.w>=30&&+pf.w<=250;if(b){b.disabled=!ok;b.style.opacity=ok?1:.4}return}
+  if(t.dataset.pf&&ui.ob){ui.ob.prof[t.dataset.pf]=t.value;const b=document.querySelector('[data-act="obNext"]');const pf=ui.ob.prof;const ok=+pf.h>=120&&+pf.h<=230&&+pf.w>=30&&+pf.w<=250&&+pf.age>=10&&+pf.age<=100;if(b){b.disabled=!ok;b.style.opacity=ok?1:.4}return}
   if(t.dataset.spf&&ui.sheet&&ui.sheet.prof){ui.sheet.prof[t.dataset.spf]=t.value;return}
   if(t.dataset.dayname){const d=state.plan.days.find(x=>x.id===t.dataset.dayname);d.name=t.value||'菜單';clearTimeout(A._t);A._t=setTimeout(save,600)}
 });
 document.addEventListener('change',e=>{const t=e.target;
+  if(t.dataset.rotwd){const w=+t.value;state.plan.days.forEach(d=>d.wd=w);save();ui.keepSheetScroll=true;render();toast('改成每週'+WD[w]);return}
   if(t.dataset.daywd){const d=state.plan.days.find(x=>x.id===t.dataset.daywd);const w=+t.value;const clash=state.plan.days.find(x=>x.id!==d.id&&x.wd===w);if(clash)clash.wd=d.wd;d.wd=w;save();ui.keepSheetScroll=true;render();if(clash)toast(`已和「${clash.name}」對調星期`)}
 });
 document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.f)setTimeout(()=>e.target.select(),0)});
@@ -1371,8 +1389,9 @@ function estimateW(exId){
   const h=(+p.h||170)/100,eff=Math.min(+p.w,25*h*h); // extra body fat adds little strength
   const sexF=p.sex==='f'?(UPPER.includes(ex.group)?.55:.7):1;
   const lvlF={beg:1,mid:1.3,adv:1.6}[p.lvl]||1;
-  const inc=incOf(ex);let w=Math.floor(eff*r*sexF*lvlF/inc)*inc;
-  if(ex.equip==='槓鈴'&&ex.compound) w=Math.max(20,w);
+  const age=+p.age||30,ageF=age>=75?.4:age>=65?.5:age>=55?.7:age>=45?.85:1; // older lifters start much lighter
+  const inc=incOf(ex);let w=Math.floor(eff*r*sexF*lvlF*ageF/inc)*inc;
+  if(ex.equip==='槓鈴'&&ex.compound&&ageF>=.85) w=Math.max(20,w);
   return Math.max(inc,w);
 }
 
@@ -1423,7 +1442,7 @@ function progress(a){
 function sheetProfile(s){
   const pf=s.prof;
   return sheetHead('身體資料','用來估算新動作的起始重量')+`<div class="sheet-b">
-   <div class="grid2"><div class="field"><label for="sp-h">身高 cm</label><input id="sp-h" inputmode="numeric" data-spf="h" value="${esc(pf.h)}"></div><div class="field"><label for="sp-w">體重 kg</label><input id="sp-w" inputmode="decimal" data-spf="w" value="${esc(pf.w)}"></div></div>
+   <div class="grid2"><div class="field"><label for="sp-h">身高 cm</label><input id="sp-h" inputmode="numeric" data-spf="h" value="${esc(pf.h)}"></div><div class="field"><label for="sp-age">年齡</label><input id="sp-age" inputmode="numeric" data-spf="age" value="${esc(pf.age||'')}"></div><div class="field"><label for="sp-w">體重 kg</label><input id="sp-w" inputmode="decimal" data-spf="w" value="${esc(pf.w)}"></div></div>
    <div class="field"><label>性別</label><div class="seg"><button class="${pf.sex==='m'?'on':''}" data-act="sheetPf" data-k="sex" data-v="m">男</button><button class="${pf.sex==='f'?'on':''}" data-act="sheetPf" data-k="sex" data-v="f">女</button></div></div>
    <div class="field"><label>重訓經驗</label><div class="seg"><button class="${pf.lvl==='beg'?'on':''}" data-act="sheetPf" data-k="lvl" data-v="beg">剛開始</button><button class="${pf.lvl==='mid'?'on':''}" data-act="sheetPf" data-k="lvl" data-v="mid">半年以上</button><button class="${pf.lvl==='adv'?'on':''}" data-act="sheetPf" data-k="lvl" data-v="adv">兩年以上</button></div></div>
   </div><div class="sheet-f"><button class="btn primary" data-act="saveProfile">儲存</button></div>`;
@@ -1476,20 +1495,21 @@ function renderAuth(){
 }
 
 /* ---------- onboarding ---------- */
-function newOb(){const n=state.plan&&state.onboarded?Math.min(6,Math.max(2,state.plan.days.length)):3;const pf=state.profile||{h:'',w:'',sex:'m',lvl:'beg'};return {prof:clone(pf),step:0,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
+function newOb(){const n=state.plan&&state.onboarded?(state.plan.rotate?1:Math.min(6,Math.max(1,state.plan.days.length))):3;const pf=state.profile||{h:'',w:'',sex:'m',lvl:'beg'};return {prof:clone(pf),step:0,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
 function renderOnboard(){
   const o=ui.ob,steps=`<div class="steps">${[0,1,2,3,4].map(i=>`<i class="${i<=o.step?'on':''}"></i>`).join('')}</div>`;
   let body='',next='下一步',ok=true;
   if(o.step===0){
-    const pf=o.prof;ok=pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250;
+    const pf=o.prof;ok=pf.h>=120&&pf.h<=230&&pf.w>=30&&pf.w<=250&&pf.age>=10&&pf.age<=100;
     body=`<div class="big-q">先認識一下你</div><p class="lead">用來估算每個動作第一次的建議重量，之後會依你實際做的次數自動調整。</p>
     <div class="grid2"><div class="field"><label for="pf-h">身高 cm</label><input id="pf-h" inputmode="numeric" data-pf="h" value="${esc(pf.h)}" placeholder="例如 175"></div>
      <div class="field"><label for="pf-w">體重 kg</label><input id="pf-w" inputmode="decimal" data-pf="w" value="${esc(pf.w)}" placeholder="例如 70"></div></div>
+    <div class="field"><label for="pf-age">年齡</label><input id="pf-age" inputmode="numeric" data-pf="age" value="${esc(pf.age||'')}" placeholder="例如 30"></div>
     <div class="field"><label>性別</label><div class="seg"><button class="${pf.sex==='m'?'on':''}" data-act="pfSet" data-k="sex" data-v="m">男</button><button class="${pf.sex==='f'?'on':''}" data-act="pfSet" data-k="sex" data-v="f">女</button></div></div>
     <div class="field"><label>重訓經驗</label><div class="seg"><button class="${pf.lvl==='beg'?'on':''}" data-act="pfSet" data-k="lvl" data-v="beg">剛開始</button><button class="${pf.lvl==='mid'?'on':''}" data-act="pfSet" data-k="lvl" data-v="mid">半年以上</button><button class="${pf.lvl==='adv'?'on':''}" data-act="pfSet" data-k="lvl" data-v="adv">兩年以上</button></div></div>`;
   }else if(o.step===1){
-    body=`<div class="big-q">一週想練幾天？</div><p class="lead">之後隨時可以在「編輯計畫」改。</p>
-    <div class="tiles5">${[2,3,4,5,6].map(n=>`<button class="${o.n===n?'on':''}" data-act="obN" data-n="${n}">${n}<small>天</small></button>`).join('')}</div>`;
+    body=`<div class="big-q">一週想練幾天？</div><p class="lead">之後隨時可以在「編輯計畫」改。選 1 天的話，每週會輪流練不同的菜單。</p>
+    <div class="tiles5">${[1,2,3,4,5,6].map(n=>`<button class="${o.n===n?'on':''}" data-act="obN" data-n="${n}">${n}<small>天</small></button>`).join('')}</div>`;
   }else if(o.step===2){
     ok=o.wds.length===o.n;
     body=`<div class="big-q">哪幾天去健身房？</div><p class="lead">選 ${o.n} 天，已選 <b class="num" style="font-size:18px;color:var(--text)">${o.wds.length}</b> / ${o.n}</p>
@@ -1499,7 +1519,7 @@ function renderOnboard(){
     const wdsSorted=sortWds(o.wds);
     body=`<div class="big-q">選一份菜單</div><p class="lead">依一週 ${o.n} 天推薦，重量之後在訓練中調整。</p>
     <div class="stack" style="gap:10px">${REC[o.n].map((r,i)=>`<button class="opt ${o.rec===i?'on':''}" data-act="obRec" data-i="${i}"><b>${r.name}</b><span>${r.desc}</span>
-      <span class="days">${r.days.map((k,j)=>`<span class="chip">週${WD[wdsSorted[j]]} ${T[k][0]}</span>`).join('')}</span></button>`).join('')}
+      <span class="days">${r.days.map((k,j)=>`<span class="chip">${o.n===1?`第 ${j+1} 週`:'週'+WD[wdsSorted[j]]} ${T[k][0]}</span>`).join('')}</span></button>`).join('')}
       <button class="opt ${o.rec==='custom'?'on':''}" data-act="obRec" data-i="custom"><b>自訂菜單</b><span>先建立 ${o.n} 個空白訓練日，再從動作庫挑動作</span></button></div>`;
   }else{
     next=o.redo?'套用新計畫':'開始使用';
@@ -1545,7 +1565,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261116185241';
+const APP_V='20261116185546';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
