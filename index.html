@@ -362,8 +362,10 @@ a.btn{text-decoration:none}
 .bm-lbl.on{fill:var(--accent)}
 .bm-line{stroke:var(--faint);stroke-width:1;stroke-dasharray:3 3;fill:none}
 .bm-dot{fill:var(--accent);stroke:var(--surface);stroke-width:2}
-[data-theme="soft"] .demo,[data-theme="peach"] .demo{background:var(--surface2)}
-[data-theme="soft"] .demo img,[data-theme="peach"] .demo img,[data-theme="soft"] .thumb img,[data-theme="peach"] .thumb img{mix-blend-mode:multiply}
+.demo{background:#fff}
+[data-theme="soft"] .thumb img,[data-theme="peach"] .thumb img{mix-blend-mode:multiply}
+.demo img:not(.b){animation:flipA 2.4s steps(1,end) infinite}
+@keyframes flipA{0%{opacity:1}50%{opacity:0}}
 [data-theme="soft"] .thumb,[data-theme="peach"] .thumb{background:var(--surface2)}
 .demo img{object-fit:cover}
 .dnd-row{gap:8px}
@@ -2100,7 +2102,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261116194331';
+const APP_V='20261116200144';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
