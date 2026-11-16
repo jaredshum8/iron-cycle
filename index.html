@@ -260,6 +260,7 @@ a.btn{text-decoration:none;color:var(--text)}
 .hero-mark::after{content:"";position:absolute;inset:12px;border-radius:50%;border:4px solid var(--phase)}
 .lead{font-size:15px;color:var(--muted);margin:0}
 .msg{font-size:14px;padding:10px 12px;border-radius:12px;background:var(--surface2)}
+.gbtn{background:#fff;color:#1F1F1F;border-color:#fff;letter-spacing:.02em}.gbtn svg{width:22px;height:22px}
 .linkbtn{color:var(--muted);font-size:14px;text-decoration:underline;text-underline-offset:3px;padding:6px 0}
 .steps{display:flex;gap:6px}
 .steps i{flex:1;height:4px;border-radius:2px;background:var(--line2)}
@@ -287,7 +288,9 @@ a.btn{text-decoration:none;color:var(--text)}
 
 <script src="config.js"></script>
 <script src="exdata.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <script>
 /* ---------- Exercise library ---------- */
 const EX_RAW=`bb_bench|槓鈴平板臥推|胸|槓鈴|c
@@ -556,25 +559,23 @@ function migrate(){
   const st=state.settings;if(st.periodize==null)st.periodize=true;if(st.showTut==null)st.showTut=true;
 }
 function loadLocal(){state=LS.get(key('state'))||freshState();logs=LS.get(key('logs'))||[];migrate();if(typeof rebuildEx==='function')rebuildEx()}
-const ui={tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null,screen:null,auth:{mode:'login',msg:'',busy:false},ob:null};
+const ui={tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null,screen:null,auth:{msg:'',busy:false},ob:null};
 
-/* ---------- accounts & cloud sync (Supabase) ---------- */
+/* ---------- accounts & cloud sync (Firebase: Google sign-in + Firestore) ---------- */
 const CFG=window.IC_CONFIG||{};
-let SB=null;
-try{if(CFG.supabaseUrl&&CFG.supabaseKey&&window.supabase)SB=supabase.createClient(CFG.supabaseUrl,CFG.supabaseKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}})}catch(e){SB=null}
+let FB=null,AUTH=null,DB=null;
+try{if(CFG.firebase&&CFG.firebase.apiKey&&window.firebase){FB=firebase.initializeApp(CFG.firebase);AUTH=firebase.auth();DB=firebase.firestore()}}catch(e){FB=null}
+const userDoc=()=>DB.collection('users').doc(user.id);
 const Cloud={status:'local',chain:Promise.resolve(),timer:null,hadRemote:false,
   async pull(){
-    if(!SB||!user) return;
+    if(!DB||!user) return;
     try{
-      const [r1,r2]=await Promise.all([
-        SB.from('app_state').select('state').eq('user_id',user.id).maybeSingle(),
-        SB.from('workout_logs').select('log').eq('user_id',user.id).order('ended_at',{ascending:false}).limit(3000)]);
-      if(r1.error||r2.error) throw (r1.error||r2.error);
-      const st=r1.data;this.hadRemote=!!(st&&st.state);
-      if(this.hadRemote&&(st.state.updatedAt||0)>(state.updatedAt||0)){state=st.state;migrate();LS.set(key('state'),state)}
+      const [d,ls]=await Promise.all([userDoc().get(),userDoc().collection('logs').orderBy('end','desc').limit(3000).get()]);
+      const remote=d.exists&&d.data().json?JSON.parse(d.data().json):null;this.hadRemote=!!remote;
+      if(remote&&(remote.updatedAt||0)>(state.updatedAt||0)){state=remote;migrate();LS.set(key('state'),state)}
       else if(state.updatedAt) this.queueState(true);
-      const rl=(r2.data||[]).map(r=>r.log).filter(Boolean);const ids=new Set(rl.map(l=>l.id));
-      const localOnly=logs.filter(l=>!ids.has(l.id));
+      const rl=ls.docs.map(x=>{try{return JSON.parse(x.data().json)}catch(e){return null}}).filter(Boolean);
+      const ids=new Set(rl.map(l=>l.id));const localOnly=logs.filter(l=>!ids.has(l.id));
       logs=[...rl,...localOnly].sort((a,b)=>b.end-a.end);saveLogs();
       localOnly.forEach(l=>this.putLog(l));
       this.status='cloud';rebuildEx();
@@ -583,22 +584,36 @@ const Cloud={status:'local',chain:Promise.resolve(),timer:null,hadRemote:false,
   },
   run(fn){this.chain=this.chain.then(fn).then(()=>{this.status='cloud'}).catch(()=>{this.status='offline'})},
   queueState(now){
-    if(!SB||!user) return;
+    if(!DB||!user) return;
     clearTimeout(this.timer);
-    this.timer=setTimeout(()=>{const snap=clone(state),u=user.id;
-      this.run(async()=>{const {error}=await SB.from('app_state').upsert({user_id:u,state:snap,updated_at:new Date().toISOString()});if(error)throw error})},now?0:900);
+    this.timer=setTimeout(()=>{const json=JSON.stringify(state),ref=userDoc();this.run(()=>ref.set({json,updatedAt:state.updatedAt||Date.now()}))},now?0:900);
   },
-  putLog(l){if(!SB||!user)return;const u=user.id;this.run(async()=>{const {error}=await SB.from('workout_logs').upsert({id:l.id,user_id:u,log:l,ended_at:l.end});if(error)throw error})},
-  delLog(id){if(!SB||!user)return;this.run(async()=>{const {error}=await SB.from('workout_logs').delete().eq('id',id);if(error)throw error})},
+  putLog(l){if(!DB||!user)return;const ref=userDoc().collection('logs').doc(l.id);this.run(()=>ref.set({json:JSON.stringify(l),end:l.end}))},
+  delLog(id){if(!DB||!user)return;const ref=userDoc().collection('logs').doc(id);this.run(()=>ref.delete())},
 };
 function save(){state.updatedAt=Date.now();LS.set(key('state'),state);Cloud.queueState()}
 function saveLogs(){LS.set(key('logs'),logs)}
-const AUTH_ERR={'Invalid login credentials':'Email 或密碼不對','User already registered':'這個 Email 已經註冊過，請直接登入','Email not confirmed':'還沒完成 Email 驗證，請先點信裡的確認連結','Password should be at least 6 characters.':'密碼至少要 6 個字'};
-const authMsg=e=>AUTH_ERR[e.message]||(/password/i.test(e.message)&&/6/.test(e.message)?'密碼至少要 6 個字':/rate limit/i.test(e.message)?'嘗試太多次，請稍後再試':'發生錯誤：'+e.message);
-async function afterLogin(session){
+const authMsg=e=>{const c=e&&e.code||'';
+  if(c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request') return '登入已取消';
+  if(c==='auth/popup-blocked') return '瀏覽器擋住了登入視窗，請再按一次';
+  if(c==='auth/network-request-failed') return '網路連不上，請確認網路後再試';
+  if(c==='auth/unauthorized-domain') return '這個網址還沒加入 Firebase 的授權網域';
+  return '登入失敗：'+(e&&e.message||c);};
+const isStandalone=()=>{try{return navigator.standalone||matchMedia('(display-mode: standalone)').matches}catch(e){return false}};
+async function googleSignIn(){
+  const prov=new firebase.auth.GoogleAuthProvider();prov.setCustomParameters({prompt:'select_account'});
+  ui.auth.busy=true;ui.auth.msg='';render();
+  try{
+    // Redirect sign-in only works reliably when the page is served from the auth domain itself (Firebase Hosting)
+    if(location.hostname===CFG.firebase.authDomain){await AUTH.signInWithRedirect(prov);return}
+    await AUTH.signInWithPopup(prov);
+  }catch(e){ui.auth.msg=authMsg(e);ui.auth.busy=false;render()}
+}
+async function afterLogin(fu){
+  if(user&&user.id===fu.uid) return;
   const guestState=LS.get('ic.state'),guestLogs=LS.get('ic.logs')||[];
-  user={id:session.user.id,email:session.user.email};LS.del('ic.guest');
-  loadLocal();ui.screen=null;render();
+  user={id:fu.uid,email:fu.email||'',name:fu.displayName||''};LS.del('ic.guest');
+  loadLocal();ui.screen=null;ui.auth.busy=false;ui.inSession=!!state.active;render();
   await Cloud.pull();
   if(!Cloud.hadRemote&&!state.updatedAt&&guestState&&guestState.onboarded){
     state=guestState;migrate();const ids=new Set(logs.map(l=>l.id));logs=[...logs,...guestLogs.filter(l=>!ids.has(l.id))].sort((a,b)=>b.end-a.end);
@@ -654,7 +669,7 @@ function applyPhase(){
 function render(){
   applyPhase();
   const app=document.getElementById('app');
-  if(ui.screen==='auth'||ui.screen==='reset'){app.innerHTML=renderAuth();renderLayer();return}
+  if(ui.screen==='auth'){app.innerHTML=renderAuth();renderLayer();return}
   if(!state.onboarded||ui.screen==='onboard'){if(!ui.ob)ui.ob=newOb();app.innerHTML=renderOnboard();renderLayer();return}
   if(state.active&&ui.inSession){app.innerHTML=renderSession();bindSessionScroll()}
   else{
@@ -1162,12 +1177,10 @@ const A={
  planAddDay:()=>{const used=new Set(state.plan.days.map(d=>d.wd));const wd=[1,2,3,4,5,6,0].find(w=>!used.has(w));if(wd==null){toast('一週七天都排滿了');return}
    state.plan.days.push({id:uid(),name:'新菜單',wd,exercises:[]});state.plan.freq=state.plan.days.length;save();ui.keepSheetScroll=true;render()},
  planDelDay:el=>confirmDlg('刪除這天的菜單？','','刪除',()=>{state.plan.days=state.plan.days.filter(d=>d.id!==el.dataset.day);state.plan.freq=state.plan.days.length;save();render()}),
- authMode:el=>{ui.auth.mode=el.dataset.k;ui.auth.msg='';render()},
- authGuest:()=>{LS.set('ic.guest',1);ui.screen=null;user=null;loadLocal();render()},
- authForgot:async()=>{const em=document.getElementById('au-email');const email=em&&em.value.trim();if(!email){ui.auth.msg='先在上面填 Email，再按忘記密碼';render();return}
-   try{const {error}=await SB.auth.resetPasswordForEmail(email,{redirectTo:location.origin+location.pathname});if(error)throw error;ui.auth.msg='重設密碼的信已寄到 '+email}catch(e){ui.auth.msg=authMsg(e)}render();const e2=document.getElementById('au-email');if(e2)e2.value=email},
- goLogin:()=>{ui.screen='auth';ui.auth={mode:'login',msg:'',busy:false};render()},
- logout:()=>confirmDlg('登出？','這支手機會回到登入畫面，資料都留在帳號裡。','登出',async()=>{try{await Cloud.chain;await SB.auth.signOut()}catch(e){}user=null;ui.screen='auth';ui.auth={mode:'login',msg:'',busy:false};ui.tab='today';state=freshState();logs=[];render()},false),
+  authGuest:()=>{LS.set('ic.guest',1);ui.screen=null;user=null;loadLocal();render()},
+ googleLogin:()=>googleSignIn(),
+ goLogin:()=>{ui.screen='auth';ui.auth={msg:'',busy:false};render()},
+ logout:()=>confirmDlg('登出？','這支手機會回到登入畫面，資料都留在帳號裡。','登出',async()=>{try{await Cloud.chain;await AUTH.signOut()}catch(e){}user=null;ui.screen='auth';ui.auth={msg:'',busy:false};ui.tab='today';state=freshState();logs=[];render()},false),
  togglePeriod:()=>{const s=state.settings;s.periodize=!s.periodize;if(s.periodize)s.cycleStart=mondayOf(TODAY());save();render();toast(s.periodize?'已開啟五週循環，本週為基礎週':'已改為固定菜單')},
  redoSetup:()=>{ui.sheet=null;ui.ob=newOb();ui.screen='onboard';render()},
  obN:el=>{const o=ui.ob;o.n=+el.dataset.n;o.wds=DEFAULT_WD[o.n].slice();o.rec=0;render()},
@@ -1240,23 +1253,18 @@ function tutFull(ex){
 
 /* ---------- account UI ---------- */
 function accountHTML(){
-  if(!SB) return '';
-  if(user) return `<section class="card stack"><div class="eyebrow">帳號</div><div class="row between"><div class="grow"><div class="ex-name" style="word-break:break-all">${esc(user.email)}</div><div class="ex-sub">計畫和紀錄會同步到這個帳號，換手機登入就能接著用。</div></div></div><button class="btn sm" data-act="logout" style="align-self:flex-start">登出</button></section>`;
-  return `<section class="card stack"><div class="eyebrow">帳號</div><div class="ex-sub">目前只存在這支手機。登入後資料會同步到帳號，換手機也不會不見。</div><button class="btn sm primary" data-act="goLogin" style="align-self:flex-start">登入或註冊</button></section>`;
+  if(!AUTH) return '';
+  if(user) return `<section class="card stack"><div class="eyebrow">帳號</div><div class="row between"><div class="grow"><div class="ex-name" style="word-break:break-all">${esc(user.name||user.email)}</div>${user.name?`<div class="ex-sub" style="word-break:break-all">${esc(user.email)}</div>`:''}<div class="ex-sub">計畫和紀錄會同步到這個帳號，換手機登入就能接著用。</div></div></div><button class="btn sm" data-act="logout" style="align-self:flex-start">登出</button></section>`;
+  return `<section class="card stack"><div class="eyebrow">帳號</div><div class="ex-sub">目前只存在這支手機。登入後資料會同步到帳號，換手機也不會不見。</div><button class="btn sm primary" data-act="goLogin" style="align-self:flex-start">使用 Google 登入</button></section>`;
 }
 function renderAuth(){
-  const a=ui.auth,reset=ui.screen==='reset',su=a.mode==='signup';
+  const a=ui.auth;
   return `<div class="full"><div class="wrap"><div class="stack" style="gap:18px">
    <div class="hero-mark" aria-hidden="true"></div>
-   <div><div class="brand">IRON CYCLE</div><h1 style="font-size:34px">鐵週期</h1><p class="lead">${reset?'設定新的密碼':'每個人用自己的帳號，紀錄各自保存'}</p></div>
-   ${reset?'':`<div class="seg"><button class="${su?'':'on'}" data-act="authMode" data-k="login">登入</button><button class="${su?'on':''}" data-act="authMode" data-k="signup">註冊新帳號</button></div>`}
-   <form id="authForm" class="stack" style="gap:12px">
-    ${reset?'':`<div class="field"><label for="au-email">Email</label><input id="au-email" type="email" autocomplete="email" inputmode="email" required></div>`}
-    <div class="field"><label for="au-pw">${reset?'新密碼':'密碼'}</label><input id="au-pw" type="password" autocomplete="${su||reset?'new-password':'current-password'}" minlength="6" required placeholder="至少 6 個字"></div>
-    ${a.msg?`<div class="msg">${esc(a.msg)}</div>`:''}
-    <button class="btn primary big" type="submit" ${a.busy?'disabled':''}>${a.busy?'處理中…':reset?'更新密碼':su?'建立帳號':'登入'}</button>
-   </form>
-   ${reset?'':`<div class="row between" style="flex-wrap:wrap">${su?'<span></span>':'<button class="linkbtn" data-act="authForgot">忘記密碼</button>'}<button class="linkbtn" data-act="authGuest">先不登入，只存在這支手機</button></div>`}
+   <div><div class="brand">IRON CYCLE</div><h1 style="font-size:34px">鐵週期</h1><p class="lead">用自己的 Google 帳號登入，計畫和紀錄各自保存，換手機也不會不見。</p></div>
+   ${a.msg?`<div class="msg">${esc(a.msg)}</div>`:''}
+   <button class="btn big gbtn" data-act="googleLogin" ${a.busy?'disabled':''}>${a.busy?'登入中…':`<svg viewBox="0 0 48 48" aria-hidden="true"><path fill="#FFC107" d="M43.6 20.5H42V20H24v8h11.3C33.7 32.7 29.2 36 24 36c-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 12.9 4 4 12.9 4 24s8.9 20 20 20 20-8.9 20-20c0-1.3-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M6.3 14.7l6.6 4.8C14.7 15.1 19 12 24 12c3.1 0 5.8 1.2 7.9 3.1l5.7-5.7C34 6.1 29.3 4 24 4 16.3 4 9.7 8.3 6.3 14.7z"/><path fill="#4CAF50" d="M24 44c5.2 0 9.9-2 13.4-5.2l-6.2-5.2C29.2 35.1 26.7 36 24 36c-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.5 39.6 16.2 44 24 44z"/><path fill="#1976D2" d="M43.6 20.5H42V20H24v8h11.3c-.8 2.2-2.2 4.2-4.1 5.6l6.2 5.2C37 39.2 44 34 44 24c0-1.3-.1-2.4-.4-3.5z"/></svg>使用 Google 登入`}</button>
+   <button class="linkbtn" data-act="authGuest" style="align-self:center">先不登入，只存在這支手機</button>
   </div></div></div>`;
 }
 
@@ -1304,33 +1312,20 @@ function sheetExitSess(){
   </div>`;
 }
 async function boot(){
-  let session=null;
-  if(SB){
-    try{const {data}=await SB.auth.getSession();session=data.session}catch(e){}
-    SB.auth.onAuthStateChange(ev=>{if(ev==='PASSWORD_RECOVERY'){ui.screen='reset';ui.auth.msg='';render()}});
-  }
-  if(session) user={id:session.user.id,email:session.user.email};
   loadLocal();
-  if(SB&&!user&&!LS.get('ic.guest')) ui.screen='auth';
+  if(AUTH){
+    let settled=false;
+    const first=new Promise(res=>{const un=AUTH.onAuthStateChanged(fu=>{
+      if(!settled){settled=true;res(fu);return}
+      if(fu) afterLogin(fu);
+    })});
+    AUTH.getRedirectResult().catch(e=>{ui.auth.msg=authMsg(e);ui.auth.busy=false;if(ui.screen==='auth')render()});
+    const fu=await Promise.race([first,new Promise(r=>setTimeout(()=>r('timeout'),6000))]);
+    if(fu&&fu!=='timeout'){await afterLogin(fu);return}
+    if(!LS.get('ic.guest')) ui.screen='auth';
+  }
   ui.inSession=!!state.active;checkStale();render();
-  if(user) Cloud.pull();
 }
-document.addEventListener('submit',async e=>{
-  if(e.target.id!=='authForm') return;
-  e.preventDefault();if(!SB||ui.auth.busy) return;
-  const em=document.getElementById('au-email'),pw=document.getElementById('au-pw').value;const email=em?em.value.trim():'';
-  ui.auth.busy=true;ui.auth.msg='';render();
-  try{
-    if(ui.screen==='reset'){const {error}=await SB.auth.updateUser({password:pw});if(error)throw error;
-      ui.auth={mode:'login',msg:'',busy:false};const {data}=await SB.auth.getSession();if(data.session){await afterLogin(data.session);toast('密碼已更新');return}ui.screen='auth';ui.auth.msg='密碼已更新，請重新登入';}
-    else if(ui.auth.mode==='signup'){const {data,error}=await SB.auth.signUp({email,password:pw,options:{emailRedirectTo:location.origin+location.pathname}});if(error)throw error;
-      if(data.session){ui.auth.busy=false;await afterLogin(data.session);return}
-      ui.auth.mode='login';ui.auth.msg='確認信已寄到 '+email+'，點信裡的連結後回來登入。';}
-    else{const {data,error}=await SB.auth.signInWithPassword({email,password:pw});if(error)throw error;ui.auth.busy=false;await afterLogin(data.session);return}
-  }catch(err){ui.auth.msg=authMsg(err)}
-  ui.auth.busy=false;render();
-  if(em){const e2=document.getElementById('au-email');if(e2)e2.value=email}
-});
 document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[data-tut]')&&state.settings.showTut!==e.target.open){state.settings.showTut=e.target.open;const sp=e.target.querySelector('summary .muted');if(sp)sp.textContent=e.target.open?'收起':'展開';save()}},true);
 
 /* ---------- boot ---------- */

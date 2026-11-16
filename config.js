@@ -1,2 +1,2 @@
-/* 填入 Supabase 專案的 Project URL 與 anon public key */
-window.IC_CONFIG={supabaseUrl:'',supabaseKey:''};
+/* Firebase 專案設定（這些值本來就是公開的，安全性由 firestore.rules 控制） */
+window.IC_CONFIG={firebase:null};
