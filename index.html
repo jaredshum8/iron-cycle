@@ -130,6 +130,22 @@ h2{font-size:17px;font-weight:700;margin:0}
 .ex-list{display:flex;flex-direction:column}
 .ex-row{display:flex;align-items:center;gap:12px;padding:11px 2px;border-top:1px solid var(--line);text-align:left;width:100%;color:var(--text)}
 .ex-row:first-child{border-top:0}
+/* mini muscle icon */
+.mi{width:46px;height:46px;border-radius:50%;flex:none;overflow:hidden;display:block;background:radial-gradient(circle at 50% 35%,var(--surface) 0%,var(--surface2) 75%);box-shadow:inset 0 0 0 1px var(--line),0 1px 2px rgba(40,20,80,.06)}
+.mi svg{width:100%;height:100%;display:block}
+.mi.sm{width:30px;height:30px}
+.mi.lg{width:58px;height:58px}
+.mi-b{fill:var(--mi-body)}
+.mi-m{fill:var(--mi-mus);stroke:var(--mi-body);stroke-width:2}
+.mi-p{fill:url(#miG);stroke:var(--mi-body);stroke-width:2}
+.mi-s{fill:var(--accent);opacity:.42;stroke:var(--mi-body);stroke-width:2}
+:root{--mi-body:color-mix(in srgb,var(--line2) 80%,var(--surface));--mi-mus:color-mix(in srgb,var(--line2) 70%,var(--muted) 30%)}
+.mus-panel{display:flex;gap:14px;align-items:center;padding:12px;border-radius:18px;background:var(--surface2)}
+.mus-figs{display:flex;gap:4px;flex:none}
+.mus-figs>div{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;color:var(--muted)}
+.mus-figs svg{width:56px;height:88px}
+.mus-c{background:var(--surface);color:var(--muted)}.mus-c.p{background:var(--grad);color:var(--on-accent)}
+
 .ex-name{font-weight:700;font-size:15px;line-height:1.35}
 .ex-sub{font-size:13px;color:var(--muted)}
 .ex-sub .num{font-size:14px;color:var(--text)}
@@ -392,11 +408,69 @@ a.btn{text-decoration:none}
 .diff{display:flex;justify-content:center;gap:16px;font-size:13px;color:var(--muted)}
 .diff b{font-family:var(--f-num);font-size:18px;color:var(--text)}
 @keyframes up{from{transform:translateY(40px);opacity:.3}}
+/* ===== liquid glass ===== */
+:root,[data-theme="soft"]{--lg-bg:rgba(255,255,255,.58);--lg-brd:rgba(255,255,255,.85);--lg-hi:rgba(255,255,255,.95);--lg-edge:rgba(120,100,190,.10);--lg-sh:0 10px 30px -8px rgba(70,50,140,.16);--blob1:rgba(139,124,246,.30);--blob2:rgba(242,156,192,.28);--blob3:rgba(120,190,255,.20)}
+[data-theme="peach"]{--lg-bg:rgba(255,255,255,.6);--lg-brd:rgba(255,255,255,.85);--lg-hi:rgba(255,255,255,.95);--lg-edge:rgba(190,110,80,.10);--lg-sh:0 10px 30px -8px rgba(140,70,40,.16);--blob1:rgba(240,134,106,.26);--blob2:rgba(245,191,115,.28);--blob3:rgba(250,150,180,.18)}
+[data-theme="night"]{--lg-bg:rgba(38,34,54,.52);--lg-brd:rgba(255,255,255,.09);--lg-hi:rgba(255,255,255,.16);--lg-edge:rgba(0,0,0,.3);--lg-sh:0 14px 36px -10px rgba(0,0,0,.6);--blob1:rgba(167,151,255,.24);--blob2:rgba(245,155,196,.18);--blob3:rgba(90,140,255,.16)}
+body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none;background:
+ radial-gradient(38% 30% at 12% 18%,var(--blob1),transparent 70%),
+ radial-gradient(34% 28% at 92% 38%,var(--blob2),transparent 70%),
+ radial-gradient(40% 30% at 30% 88%,var(--blob3),transparent 70%);filter:blur(10px);animation:drift 28s ease-in-out infinite alternate}
+@keyframes drift{to{transform:translate3d(3%,-4%,0) scale(1.06)}}
+.card,.tile,.tut,.trend,.warm,.stats,.search,.set,.opt,.seg,.bodymap,.codebox,.chips button,.eqchips button,.tiles5 button,.wdpick button,.dialog .box{
+ background:var(--lg-bg);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);
+ box-shadow:inset 0 1px 0 var(--lg-hi),inset 0 0 0 1px var(--lg-brd),inset 0 -1px 0 var(--lg-edge),var(--lg-sh)}
+.seg button.on{background:var(--surface);box-shadow:0 3px 10px -2px rgba(40,20,90,.18),inset 0 1px 0 var(--lg-hi)}
+.chips button.on,.eqchips button.on{box-shadow:0 6px 16px -6px var(--accent)}
+.opt.on,.opt[aria-pressed="true"]{box-shadow:inset 0 0 0 2px var(--accent),var(--lg-sh)}
+/* tab bar: floating liquid glass capsule with sliding bubble */
+.tabbar .in{position:relative;border-radius:32px;padding:6px;background:var(--lg-bg);-webkit-backdrop-filter:blur(28px) saturate(2) brightness(1.04);backdrop-filter:blur(28px) saturate(2) brightness(1.04);
+ box-shadow:inset 0 1px 0 var(--lg-hi),inset 0 0 0 1px var(--lg-brd),inset 0 -8px 16px -10px rgba(255,255,255,.35),0 16px 40px -12px rgba(40,25,90,.28)}
+.tabbar .in::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;background:linear-gradient(180deg,rgba(255,255,255,.35),transparent 45%);mix-blend-mode:soft-light}
+.tabbar .pill{position:absolute;top:6px;bottom:6px;left:6px;width:calc((100% - 24px)/4);border-radius:26px;background:var(--surface);
+ box-shadow:inset 0 1px 0 var(--lg-hi),0 6px 16px -6px rgba(60,40,140,.3);transform:translateX(calc(var(--i,0) * (100% + 4px)));transition:transform .55s cubic-bezier(.34,1.45,.5,1)}
+[data-theme="night"] .tabbar .pill{background:rgba(255,255,255,.12)}
+.tabbar button{position:relative;z-index:1;transition:color .3s,transform .4s cubic-bezier(.34,1.56,.64,1)}
+.tabbar button.on{background:none}
+/* sheets: glass, spring in, swipe down */
+.sheet{background:color-mix(in srgb,var(--bg) 82%,transparent);-webkit-backdrop-filter:blur(30px) saturate(1.8);backdrop-filter:blur(30px) saturate(1.8);box-shadow:inset 0 1px 0 var(--lg-hi),0 -12px 40px rgba(20,10,50,.18);animation:sheetIn .55s cubic-bezier(.2,.95,.25,1);will-change:transform}
+.sheet-h{touch-action:none}
+.sheet::before{width:38px;height:5px;margin:8px auto 4px;background:color-mix(in srgb,var(--muted) 45%,transparent)}
+.scrim{animation:fade .3s ease}
+.layer-still .sheet,.layer-still .scrim{animation:none}
+.closing{pointer-events:none}
+.closing.scrim{animation:fadeOut .28s ease forwards}
+.closing .sheet{animation:sheetOut .3s cubic-bezier(.4,0,.8,.4) forwards}
+.closing.dialog{animation:fadeOut .2s ease forwards}
+.dialog{animation:fade .2s ease}
+.dialog .box{animation:popIn .38s cubic-bezier(.34,1.5,.5,1)}
+.layer-still .dialog,.layer-still .dialog .box{animation:none}
+@keyframes sheetIn{from{transform:translateY(100%)}}
+@keyframes sheetOut{to{transform:translateY(100%)}}
+@keyframes fadeOut{to{opacity:0}}
+@keyframes popIn{from{transform:scale(.88);opacity:0}}
+.toast{background:color-mix(in srgb,var(--text) 78%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);animation:toastIn .45s cubic-bezier(.34,1.5,.5,1)}
+@keyframes toastIn{from{transform:translate(-50%,-16px) scale(.9);opacity:0}}
+.rest .in{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.18),0 18px 40px -12px var(--accent);animation:sheetIn .5s cubic-bezier(.2,.95,.25,1)}
+.banner{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 12px 28px -10px var(--accent)}
+.btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 10px 22px -8px var(--accent)}
+/* springy press */
+button,.btn,a.btn{transition:transform .45s cubic-bezier(.34,1.56,.64,1),background-color .2s,color .2s,box-shadow .25s}
+button:active,.btn:active{transform:scale(.96);transition-duration:.1s}
+.tabbar button:active{transform:scale(.9)}
+.ex-row:active>.mi,.ex-row:active>.thumb{transform:scale(.96)}
+.mi,.thumb{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+/* page enter */
+.rise{animation:rise .6s cubic-bezier(.22,1,.36,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}}
+html{scroll-behavior:smooth}
+
 @keyframes fade{from{opacity:0}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 @media (max-width:370px){.fld input{font-size:24px}.set{grid-template-columns:20px 1fr 1fr 50px;gap:6px}.tile .num{font-size:24px}}
 </style>
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs><linearGradient id="miG" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="var(--accent)"/><stop offset="1" stop-color="var(--accent2)"/></linearGradient></defs></svg>
 <div id="app"></div>
 <div id="layer"></div>
 
@@ -895,12 +969,22 @@ function render(){
   else{
     const view={today:renderToday,library:renderLibrary,progress:renderProgress,settings:renderSettings}[ui.tab]();
     app.innerHTML=`<div class="wrap">${OLD_HOST?movedHTML():''}${view}</div>${renderTabbar()}`;
+    const pill=app.querySelector('.tabbar .pill');if(pill)requestAnimationFrame(()=>requestAnimationFrame(()=>pill.style.setProperty('--i',ui._pill)));
   }
+  enterAnim(app);
   renderLayer();
+}
+function enterAnim(app){
+  const k=ui.screen+'|'+(state.active&&ui.inSession?'sess':ui.tab)+'|'+state.onboarded;
+  if(ui._vk===k) return;ui._vk=k;
+  const root=app.querySelector('.wrap')||app.firstElementChild;if(!root) return;
+  let kids=[...root.children];const st=root.querySelector(':scope>.stack');if(st&&kids.length<=2)kids=[...st.children];
+  kids.slice(0,9).forEach((el,i)=>{el.style.animationDelay=i*45+'ms';el.classList.add('rise');el.addEventListener('animationend',()=>{el.classList.remove('rise');el.style.animationDelay=''},{once:true})});
 }
 function renderTabbar(){
   const t=[['today','訓練',ICON.dumb],['library','動作庫',ICON.book],['progress','進度',ICON.chart],['settings','設定',ICON.gear]];
-  return `<nav class="tabbar"><div class="in">${t.map(([k,l,i])=>`<button data-act="tab" data-k="${k}" class="${ui.tab===k?'on':''}" aria-label="${l}">${i}<span>${l}</span></button>`).join('')}</div></nav>`;
+  const ti=t.findIndex(x=>x[0]===ui.tab),pi=ui._pill??ti;ui._pill=ti;
+  return `<nav class="tabbar"><div class="in"><i class="pill" style="--i:${pi}"></i>${t.map(([k,l,i])=>`<button data-act="tab" data-k="${k}" class="${ui.tab===k?'on':''}" aria-label="${l}">${i}<span>${l}</span></button>`).join('')}</div></nav>`;
 }
 
 /* ---------- Today ---------- */
@@ -943,7 +1027,7 @@ function renderToday(){
         return `<div class="ex-row dnd-row" data-i="${i}">
           <button class="row grow" style="gap:12px;text-align:left;min-width:0" data-act="exInfo" data-ex="${pe.exId}" data-pe="${pe.id}" data-date="${sel}">${thumbHTML(ex)}
           <span class="grow"><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}
-          <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> ${ex.unit||'次'}${p.w?` · <span class="num">${fw(p.w)}</span> ${ex.wunit||'kg'}`:''}</div></span></button>
+          <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> ${ex.unit||'次'}${p.w?` · <span class="num">${fw(p.w)}</span> ${ex.wunit||'kg'}`:''}</div></span>${musIcon(ex)}</button>
           <button class="icon-btn" style="width:34px;height:34px" data-act="customize" data-pe="${pe.id}" data-date="${sel}" aria-label="編輯">${ICON.edit}</button>
           <span class="dnd-h" aria-label="拖曳排序">${ICON.grip}</span></div>`}).join('')}
         ${list.length?'':'<div class="empty">這天還沒有動作</div>'}
@@ -972,7 +1056,7 @@ function libListHTML(list,act){
   if(!list.length) return '<div class="empty">找不到動作，可以按「自訂動作」新增</div>';
   const by={};list.forEach(e=>(by[e.group]=by[e.group]||[]).push(e));
   return GROUPS.filter(g=>by[g]).map(g=>`<div class="group-h">${g} · ${by[g].length}</div><div class="card" style="padding:4px 14px">${by[g].map(e=>{const b=bestOf(e.id);
-    return `<button class="ex-row" data-act="${act}" data-ex="${e.id}">${thumbHTML(e)}<span class="grow"><div class="ex-name">${esc(e.name)}</div>${enLine(e)}<div class="ex-sub">${e.equip} · ${e.compound?'複合':'孤立'}${b?` · 最佳 <span class="num">${fw(b.top.w)}</span> kg × ${b.top.r}`:''}</div></span>${ICON.chev}</button>`}).join('')}</div>`).join('');
+    return `<button class="ex-row" data-act="${act}" data-ex="${e.id}">${thumbHTML(e)}<span class="grow"><div class="ex-name">${esc(e.name)}</div>${enLine(e)}<div class="ex-sub">${e.equip} · ${e.compound?'複合':'孤立'}${b?` · 最佳 <span class="num">${fw(b.top.w)}</span> kg × ${b.top.r}`:''}</div></span>${musIcon(e)}</button>`}).join('')}</div>`).join('');
 }
 
 /* ---------- Progress ---------- */
@@ -1006,7 +1090,7 @@ function logHTML(l){
   return `<div class="log"><button class="row" style="width:100%;text-align:left" data-act="toggleLog" data-id="${l.id}">
     <span class="grow"><div class="ex-name">${esc(l.dayName)} <span class="chip" style="color:${P.color};margin-left:4px">${P.name}</span></div>
     <div class="ex-sub">${pd(l.date).getMonth()+1}/${pd(l.date).getDate()} · ${Math.round((l.end-l.start)/6e4)} 分 · <span class="num">${kfmt(l.volume)}</span> kg · ${l.items.length} 動作</div></span>${ICON.chev}</button>
-    ${open?`<div class="log-sets">${l.items.map(it=>`<div class="row" style="gap:8px;align-items:center">${thumbHTML(EX(it.exId),'sm')}<span class="grow"><b>${esc(EX(it.exId).name)}</b>　${it.sets.map(s=>`${s.pr?`<span class="crown">${ICON.crown}</span>`:''}${fw(s.w)}×${s.r}`).join('、')}</span></div>`).join('')}
+    ${open?`<div class="log-sets">${l.items.map(it=>`<div class="row" style="gap:8px;align-items:center">${thumbHTML(EX(it.exId),'sm')}<span class="grow"><b>${esc(EX(it.exId).name)}</b>　${it.sets.map(s=>`${s.pr?`<span class="crown">${ICON.crown}</span>`:''}${fw(s.w)}×${s.r}`).join('、')}</span>${musIcon(EX(it.exId),'sm')}</div>`).join('')}
     <div style="margin-top:6px"><button class="btn sm danger ghost" data-act="delLog" data-id="${l.id}">刪除這筆紀錄</button></div></div>`:''}</div>`;
 }
 
@@ -1063,7 +1147,7 @@ function renderSession(){
     const ex=EX(it.exId),best=bestOf(it.exId),h=history(it.exId).slice(-16),last=lastSets(it.exId);
     const allDone=it.sets.length&&it.sets.every(s=>s.done);
     body+=`<div class="progress-dots">${a.items.map((x,i)=>`<i class="${x.sets.length&&x.sets.every(s=>s.done)?'done':i===a.idx?'cur':''}"></i>`).join('')}</div>
-    <div class="ex-head"><div class="grow"><div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap"><span class="chip ph">${P.name}</span><span class="chip">${ex.group}</span></div>
+    <div class="ex-head"><div class="grow"><div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap"><span class="chip ph">${P.name}</span>${musclesOf(ex).map(m=>`<span class="chip">${MUS[m]}</span>`).join('')}</div>
      <div class="ex-title">${esc(ex.name)}</div>${ex.en?`<div class="en" style="font-size:14px;margin-top:2px">${esc(ex.en)}</div>`:''}</div>${trendHTML(it.exId)}</div>`;
     body+=tutHTML(ex);
     if(ex.compound&&it.sugg>=30&&['槓鈴','史密斯'].includes(ex.equip)){
@@ -1193,15 +1277,25 @@ function renderLayer(){
   }
   if(ui.dialog){const d=ui.dialog;h+=`<div class="dialog"><div class="box"><h2>${esc(d.title)}</h2><div class="muted">${esc(d.msg)}</div><div class="row"><button class="btn" data-act="dlgNo">取消</button><button class="btn ${d.danger?'danger':'primary'}" data-act="dlgOk">${esc(d.ok)}</button></div></div></div>`}
   const keepScroll=L.querySelector('.sheet-b');const st=keepScroll?keepScroll.scrollTop:0;
+  const sk=s?s.type:'',dk=ui.dialog?ui.dialog.title:'';
+  const oldScrim=L.querySelector(':scope>.scrim'),oldDlg=L.querySelector(':scope>.dialog');
+  if(oldScrim&&!s) ghostOut(oldScrim);
+  if(oldDlg&&!ui.dialog) ghostOut(oldDlg);
+  L.classList.toggle('layer-still',!!(s&&L.dataset.sk===sk)&&(!ui.dialog||L.dataset.dk===dk));
+  L.dataset.sk=sk;L.dataset.dk=dk;
   L.innerHTML=h;
   const nb=L.querySelector('.sheet-b');if(nb&&ui.keepSheetScroll){nb.scrollTop=st;ui.keepSheetScroll=false}
+}
+function ghostOut(el){
+  const g=el.cloneNode(true);g.classList.add('closing');const b=el.querySelector('.sheet-b'),gb=g.querySelector('.sheet-b');
+  document.body.appendChild(g);if(b&&gb)gb.scrollTop=b.scrollTop;setTimeout(()=>g.remove(),320);
 }
 const sheetHead=(t,sub)=>`<div class="sheet-h"><div class="grow"><h2>${t}</h2>${sub?`<div class="muted" style="font-size:13px">${sub}</div>`:''}</div><button class="icon-btn" data-act="closeSheet" aria-label="關閉">${ICON.x}</button></div>`;
 
 function sheetCustomize(s){
   const d=s.draft,ex=EX(d.exId),P=PH(s.phaseIdx),p=prescribe(d,P);
   return sheetHead(s.isNew?'新增動作':'調整動作',s.isNew?'':esc(EX(s.origExId).name))+`<div class="sheet-b">
-   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace">${d.exId?thumbHTML(ex):''}<span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span><span class="chip">${s.isNew?'選擇':'更換'}</span></button>
+   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace">${d.exId?thumbHTML(ex):''}<span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span>${d.exId?musIcon(ex):''}<span class="chip">${s.isNew?'選擇':'更換'}</span></button>
    <div class="grid2">
     <div class="field"><label for="cz-sets">組數</label><input id="cz-sets" inputmode="numeric" data-cz="sets" value="${d.sets}"></div>
     ${s.mode==='plan'&&ui.draftPlan?'':`<div class="field"><label for="cz-w">重量 kg（已自動估算）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>`}
@@ -1251,7 +1345,7 @@ function sheetPlan(s){
    ${p.days.map((d,di)=>`<div class="card stack" style="padding:14px">
      <div class="row"><input class="grow" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 10px;font-weight:700;outline:0" data-dayname="${d.id}" value="${esc(d.name)}" aria-label="菜單名稱">
       ${p.rotate?`<span class="chip">第 ${di+1} 週</span>`:`<select data-daywd="${d.id}" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${d.wd===w?'selected':''}>週${WD[w]}</option>`).join('')}</select>`}</div>
-     <div class="ex-list" data-dnd="plan" data-day="${d.id}">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row dnd-row" data-i="${i}" style="padding:8px 0">${thumbHTML(ex)}<span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight&&!dr?' · '+fw(pe.weight)+' kg':''}</div></span>
+     <div class="ex-list" data-dnd="plan" data-day="${d.id}">${d.exercises.map((pe,i)=>{const ex=EX(pe.exId);return `<div class="ex-row dnd-row" data-i="${i}" style="padding:8px 0">${thumbHTML(ex)}<span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${pe.sets}×${pe.repMin}-${pe.repMax}${pe.weight&&!dr?' · '+fw(pe.weight)+' kg':''}</div></span>${musIcon(ex,'sm')}
        <button class="icon-btn" style="width:32px;height:32px" data-act="planEditPe" data-day="${d.id}" data-pe="${pe.id}" aria-label="編輯">${ICON.edit}</button><span class="dnd-h" aria-label="拖曳排序">${ICON.grip}</span></div>`}).join('')}</div>
      <div class="row"><button class="btn sm" data-act="planAddPe" data-day="${d.id}">${ICON.plus}加動作</button><span class="grow"></span>${p.days.length>1?`<button class="btn sm ghost danger" data-act="planDelDay" data-day="${d.id}">刪除這天</button>`:''}</div>
    </div>`).join('')}
@@ -1270,15 +1364,15 @@ function sheetSummary(s){
   const l=s.log;
   return sheetHead('訓練完成',esc(l.dayName)+' · '+PH(l.phaseIdx).name)+`<div class="sheet-b">
    <div class="tiles"><div class="tile"><div class="num">${Math.round((l.end-l.start)/6e4)}</div><small>分鐘</small></div><div class="tile"><div class="num">${kfmt(l.volume)}</div><small>總重量 kg</small></div><div class="tile"><div class="num">${l.items.reduce((a,i)=>a+i.sets.length,0)}</div><small>完成組數</small></div></div>
-   ${s.prs.length?`<div class="card"><div class="eyebrow" style="margin-bottom:4px">新紀錄</div>${s.prs.map(x=>`<div class="verdict">${thumbHTML(EX(x.exId),'sm')}<span class="grow" style="font-size:14px"><b style="font-weight:700">${esc(EX(x.exId).name)}</b><div class="ex-sub">${esc(x.text)}</div></span><span class="crown big">${ICON.crown}</span></div>`).join('')}</div>`:''}
-   ${s.ups.length?`<div class="card"><div class="eyebrow" style="margin-bottom:4px">下次的重量</div>${s.ups.map(u=>`<div class="verdict">${thumbHTML(EX(u.exId),'sm')}<span class="grow" style="font-size:14px"><b style="font-weight:700">${esc(EX(u.exId).name)}</b><div class="ex-sub">${esc(u.why)}</div></span><span class="vtag ${u.kind}">${esc(u.tag)}</span></div>`).join('')}</div>`:''}
+   ${s.prs.length?`<div class="card"><div class="eyebrow" style="margin-bottom:4px">新紀錄</div>${s.prs.map(x=>`<div class="verdict">${thumbHTML(EX(x.exId),'sm')}<span class="grow" style="font-size:14px"><b style="font-weight:700">${esc(EX(x.exId).name)}</b><div class="ex-sub">${esc(x.text)}</div></span>${musIcon(EX(x.exId),'sm')}<span class="crown big">${ICON.crown}</span></div>`).join('')}</div>`:''}
+   ${s.ups.length?`<div class="card"><div class="eyebrow" style="margin-bottom:4px">下次的重量</div>${s.ups.map(u=>`<div class="verdict">${thumbHTML(EX(u.exId),'sm')}<span class="grow" style="font-size:14px"><b style="font-weight:700">${esc(EX(u.exId).name)}</b><div class="ex-sub">${esc(u.why)}</div></span>${musIcon(EX(u.exId),'sm')}<span class="vtag ${u.kind}">${esc(u.tag)}</span></div>`).join('')}</div>`:''}
    <div class="muted" style="font-size:13px">紀錄已存到「進度」。</div>
   </div><div class="sheet-f"><button class="btn primary" data-act="closeSheet">好</button></div>`;
 }
 function sheetExList(){
   const a=state.active;
   return sheetHead('今天的動作')+`<div class="sheet-b"><div class="ex-list">${a.items.map((it,i)=>{const d=it.sets.filter(s=>s.done).length;
-    return `<button class="ex-row" data-act="jumpEx" data-i="${i}">${thumbHTML(EX(it.exId),i===a.idx?'cur':'')}<span class="grow"><div class="ex-name">${esc(EX(it.exId).name)}</div>${enLine(EX(it.exId))}<div class="ex-sub">${d===it.sets.length&&d?'✓ 完成':d+'/'+it.sets.length+' 組'}</div></span>${ICON.chev}</button>`}).join('')}</div>
+    return `<button class="ex-row" data-act="jumpEx" data-i="${i}">${thumbHTML(EX(it.exId),i===a.idx?'cur':'')}<span class="grow"><div class="ex-name">${esc(EX(it.exId).name)}</div>${enLine(EX(it.exId))}<div class="ex-sub">${d===it.sets.length&&d?'✓ 完成':d+'/'+it.sets.length+' 組'}</div></span>${musIcon(EX(it.exId))}</button>`}).join('')}</div>
    <button class="btn" data-act="sessAddEx">${ICON.plus}新增動作</button>
    <button class="btn danger ghost" data-act="discardSess">放棄這次訓練</button></div>`;
 }
@@ -1571,6 +1665,30 @@ document.addEventListener('change',e=>{const t=e.target;
   };
   document.addEventListener('pointerup',end);document.addEventListener('pointercancel',end);
 })();
+(function(){
+  let sw=null;
+  document.addEventListener('pointerdown',e=>{
+    const sh=e.target.closest('#layer .sheet');if(!sh||e.target.closest('button,input,select,textarea,a,.dnd-h')) return;
+    const top=sh.getBoundingClientRect().top,b=sh.querySelector('.sheet-b');
+    const inHead=e.clientY-top<70||!!e.target.closest('.sheet-h');
+    if(!inHead&&!(b&&b.scrollTop<=0&&b.contains(e.target))) return;
+    sw={sh,y0:e.clientY,t0:performance.now(),dy:0,on:false,head:inHead};
+  });
+  document.addEventListener('pointermove',e=>{
+    if(!sw) return;const dy=e.clientY-sw.y0;
+    if(!sw.on){if(dy>8){const b=sw.sh.querySelector('.sheet-b');if(!sw.head&&b&&b.scrollTop>0){sw=null;return}sw.on=true;sw.sh.style.transition='none';sw.sh.style.animation='none'}else if(dy<-6){sw=null;return}else return}
+    sw.dy=Math.max(0,dy);sw.sh.style.transform=`translateY(${sw.dy}px)`;
+    const sc=sw.sh.parentElement;if(sc)sc.style.background=`color-mix(in srgb,var(--scrim) ${Math.max(0,100-sw.dy/4)}%,transparent)`;
+  },{passive:true});
+  const up=()=>{
+    if(!sw) return;const {sh,dy,t0,on}=sw;sw=null;if(!on) return;
+    const v=dy/(performance.now()-t0);
+    if(dy>120||v>.6){sh.style.transition='transform .28s cubic-bezier(.4,0,.8,.4)';sh.style.transform='translateY(110%)';const sc=sh.parentElement;if(sc){sc.style.transition='opacity .28s';sc.style.opacity='0'}
+      setTimeout(()=>{document.getElementById('layer').dataset.sk='';const L=document.getElementById('layer');L.innerHTML='';A.closeSheet()},260)}
+    else{sh.style.transition='transform .5s cubic-bezier(.34,1.4,.5,1)';sh.style.transform='';const sc=sh.parentElement;if(sc)sc.style.background=''}
+  };
+  document.addEventListener('pointerup',up);document.addEventListener('pointercancel',up);
+})();
 document.addEventListener('focusin',e=>{if(e.target.dataset&&e.target.dataset.f)setTimeout(()=>e.target.select(),0)});
 
 /* ---------- plan sharing ---------- */
@@ -1603,7 +1721,7 @@ function applyShared(data){
 }
 function planDaysHTML(P){
   return P.days.map((d,i)=>`<div class="card stack" style="padding:14px"><div class="row between"><div class="ex-name">${esc(d.name)}</div><span class="chip">${P.rotate?'第 '+(i+1)+' 週':'週'+WD[d.wd]}</span></div>
-    <div class="ex-list">${d.exercises.map(e=>{const ex=EX(e.exId);return `<div class="ex-row" style="padding:7px 0">${thumbHTML(ex,'sm')}<span class="grow"><div style="font-size:14px;font-weight:700">${esc(ex.name)}</div><div class="ex-sub">${e.sets} 組 × ${e.repMin}-${e.repMax} 次</div></span></div>`}).join('')||'<div class="ex-sub">（沒有動作）</div>'}</div></div>`).join('');
+    <div class="ex-list">${d.exercises.map(e=>{const ex=EX(e.exId);return `<div class="ex-row" style="padding:7px 0">${thumbHTML(ex,'sm')}<span class="grow"><div style="font-size:14px;font-weight:700">${esc(ex.name)}</div><div class="ex-sub">${e.sets} 組 × ${e.repMin}-${e.repMax} 次</div></span>${musIcon(ex,'sm')}</div>`}).join('')||'<div class="ex-sub">（沒有動作）</div>'}</div></div>`).join('');
 }
 function sheetShare(s){
   const n=s.n||3;
@@ -1888,6 +2006,54 @@ function sheetPhotoView(s){
 }
 
 /* ---------- thumbnails ---------- */
+/* ---------- mini muscle icons ---------- */
+const MI_MIR=d=>`<path d="${d}"/><path d="${d}" transform="matrix(-1 0 0 1 360 0)"/>`;
+const MI_SH={
+ front:{shoulders:MI_MIR('M132 103C116 99 100 106 95 122C93 132 95 141 99 147C104 136 112 126 124 120C130 116 134 110 132 103Z'),
+  chest:MI_MIR('M177 110C162 104 145 104 134 112C127 122 127 140 132 152C143 162 162 164 177 158Z'),
+  biceps:MI_MIR('M104 146C97 160 92 182 92 202C96 206 102 206 105 202C110 184 114 164 113 148C110 143 106 143 104 146Z'),
+  forearms:MI_MIR('M90 214C82 226 74 252 70 290C73 294 78 294 80 290C86 262 94 238 98 220C97 214 93 212 90 214Z'),
+  abs:MI_MIR('M164 168h13v26h-13zM164 198h13v26h-13zM164 228h13v26h-13zM164 258h13v32C170 290 165 282 164 272Z'),
+  obliques:MI_MIR('M134 160C130 186 132 222 140 262C146 270 152 272 158 270L160 236C156 206 154 180 152 164C146 162 140 160 134 160Z'),
+  quads:MI_MIR('M133 344C126 372 126 420 138 456C144 466 152 468 158 462C166 436 168 400 166 372C164 356 160 346 154 342C146 340 138 340 133 344Z'),
+  adductors:MI_MIR('M168 346C160 364 158 392 166 418C172 410 177 392 178 372L178 348Z'),
+  calves:MI_MIR('M142 476C136 492 138 516 146 532C150 534 154 532 156 526C160 508 160 490 156 476C152 470 146 470 142 476Z')},
+ back:{traps:'<path d="M180 78C190 92 206 100 228 106C216 114 204 128 196 150C192 160 186 168 180 172C174 168 168 160 164 150C156 128 144 114 132 106C154 100 170 92 180 78Z"/>',
+  shoulders:MI_MIR('M132 103C116 99 100 106 95 122C93 132 95 141 99 147C104 136 112 126 124 120C130 116 134 110 132 103Z'),
+  triceps:MI_MIR('M104 148C97 162 92 184 92 204C96 208 102 207 106 202C111 184 115 164 113 148C110 143 106 143 104 148Z'),
+  lats:MI_MIR('M136 126C130 150 134 196 152 238C158 244 166 240 170 232C170 204 172 178 176 166C166 160 156 150 148 134C144 128 140 124 136 126Z'),
+  lowerback:MI_MIR('M166 238C164 254 164 274 166 292L178 292L178 232C174 232 170 234 166 238Z'),
+  forearms:MI_MIR('M90 214C82 226 74 252 70 290C73 294 78 294 80 290C86 262 94 238 98 220C97 214 93 212 90 214Z'),
+  abductors:MI_MIR('M138 298C126 306 121 324 125 342C131 348 140 342 144 330C147 316 144 302 138 298Z'),
+  glutes:MI_MIR('M178 298C164 294 146 298 138 312C132 326 136 344 150 352C162 358 174 354 178 346Z'),
+  hamstrings:MI_MIR('M134 362C128 392 130 428 140 458C146 466 154 466 158 460C166 432 170 398 168 370C164 360 156 356 148 356C142 356 137 358 134 362Z'),
+  calves:MI_MIR('M140 470C132 486 134 512 146 532C150 536 156 534 158 528C164 510 164 488 158 472C152 464 144 464 140 470Z')}};
+const MI_BOX={shoulders:[93,98,267,150],chest:[126,103,234,165],biceps:[90,142,270,208],forearms:[66,208,294,296],abs:[162,166,198,292],obliques:[128,158,232,274],quads:[124,338,236,470],adductors:[164,346,196,416],calves:[132,462,228,538],traps:[130,76,230,174],triceps:[90,142,270,210],lats:[128,122,232,246],lowerback:[162,230,198,294],glutes:[132,292,228,358],abductors:[122,300,238,346],hamstrings:[126,352,234,468]};
+const MI_F=new Set(['chest','biceps','abs','obliques','quads','adductors']),MI_B=new Set(['traps','triceps','lats','lowerback','glutes','abductors','hamstrings']);
+const MI_HEART='<path d="M180 330c-8-14-40-20-40 8c0 22 40 44 40 44s40-22 40-44c0-28-32-22-40-8z" fill="url(#miG)"/>';
+function miSVG(side,mus,crop){
+  const sh=MI_SH[side],on=mus.filter(m=>sh[m]);
+  let vb='0 0 360 566';
+  if(crop&&on.length){let [x0,y0,x1,y1]=[999,999,0,0];on.forEach(m=>{const b=MI_BOX[m];x0=Math.min(x0,b[0]);y0=Math.min(y0,b[1]);x1=Math.max(x1,b[2]);y1=Math.max(y1,b[3])});
+    const s=Math.min(560,Math.max(176,Math.max(x1-x0,y1-y0)+44)),cx=(x0+x1)/2,cy=(y0+y1)/2;vb=`${cx-s/2} ${cy-s/2} ${s} ${s}`}
+  const rest=Object.entries(sh).filter(([k])=>!on.includes(k)).map(([,v])=>v).join('');
+  return `<svg viewBox="${vb}" aria-hidden="true"><g class="mi-b">${BM_BASE}</g><g class="mi-m">${rest}</g>${on.slice().reverse().map(m=>`<g class="${m===on[0]?'mi-p':'mi-s'}">${sh[m]}</g>`).join('')}</svg>`;
+}
+const MI_CACHE={};
+function musIcon(ex,cls=''){
+  if(!ex) return '';
+  const k=ex.id+'|'+cls;if(MI_CACHE[k]) return MI_CACHE[k];
+  const mus=musclesOf(ex).filter(m=>m!=='cardio'),lbl=musclesOf(ex).map(m=>MUS[m]).join('、');
+  let inner;
+  if(!mus.length) inner=`<svg viewBox="120 290 120 120" aria-hidden="true">${MI_HEART}</svg>`;
+  else{const p0=mus[0],side=MI_B.has(p0)||p0==='calves'?'back':MI_F.has(p0)?'front':mus.some(m=>MI_B.has(m))&&!mus.some(m=>MI_F.has(m))?'back':'front';inner=miSVG(side,mus,true)}
+  return MI_CACHE[k]=`<span class="mi ${cls}" title="${lbl}" aria-label="訓練部位：${lbl}">${inner}</span>`;
+}
+function musPanel(ex){
+  const all=musclesOf(ex),mus=all.filter(m=>m!=='cardio');
+  const tags=all.map((m,i)=>`<span class="chip mus-c ${i===0?'p':''}">${i===0?'主要・':''}${MUS[m]}</span>`).join('');
+  return `<div class="mus-panel"><div class="mus-figs">${mus.length?`<div>${miSVG('front',mus,false)}<span>正面</span></div><div>${miSVG('back',mus,false)}<span>背面</span></div>`:`<div><svg viewBox="120 290 120 120">${MI_HEART}</svg></div>`}</div><div><div class="eyebrow" style="margin-bottom:8px">訓練部位</div><div class="row" style="gap:6px;flex-wrap:wrap">${tags}</div></div></div>`;
+}
 function thumbHTML(ex,cls=''){
   if(ex&&ex.img) return `<span class="thumb ${cls}"><img src="img/${ex.img}/0.jpg" alt="" loading="lazy"></span>`;
   return `<span class="thumb ph ${cls}">${esc(ex?ex.group[0]:'?')}</span>`;
@@ -1996,7 +2162,7 @@ function tutHTML(ex){
     <div class="links" style="margin-top:10px"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">英文教學</a></div></details>`;
 }
 function tutFull(ex){
-  return `${demoHTML(ex)}
+  return `${demoHTML(ex)}${musPanel(ex)}
    ${ex.cues.length?`<div><div class="eyebrow" style="margin-bottom:6px">動作要點</div><ol class="cues" style="font-size:14px">${ex.cues.map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>`:''}
    ${ex.mistake?`<div class="warn">${esc(ex.mistake)}</div>`:''}
    <div class="links"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">YouTube 英文教學</a></div>`;
@@ -2102,7 +2268,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261116200144';
+const APP_V='20261117141821';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
