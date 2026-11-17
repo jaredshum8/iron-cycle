@@ -222,7 +222,7 @@ textarea{width:100%;min-height:120px;background:var(--surface2);border:0;border-
 .stats small{display:block;font-size:11px;color:var(--muted);font-weight:500}
 .stats .num{font-size:17px;line-height:1.2}
 .sess-body{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
-.sess-body .in{max-width:520px;margin:0 auto;padding:8px max(18px,env(safe-area-inset-right,0px)) 200px max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
+.sess-body .in{max-width:520px;margin:0 auto;padding:8px max(18px,env(safe-area-inset-right,0px)) 40px max(18px,env(safe-area-inset-left,0px));display:flex;flex-direction:column;gap:14px}
 .progress-dots{display:flex;gap:5px}
 .progress-dots i{flex:1;height:5px;border-radius:3px;background:var(--line2)}
 .progress-dots i.done{background:var(--ok)}
@@ -470,7 +470,15 @@ body::before{content:"";position:fixed;inset:-20%;z-index:-1;pointer-events:none
 @keyframes popIn{from{transform:scale(.88);opacity:0}}
 .toast{background:color-mix(in srgb,var(--text) 78%,transparent);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);animation:toastIn .45s cubic-bezier(.34,1.5,.5,1)}
 @keyframes toastIn{from{transform:translate(-50%,-16px) scale(.9);opacity:0}}
-.rest .in{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.18),0 18px 40px -12px var(--accent);animation:sheetIn .5s cubic-bezier(.2,.95,.25,1)}
+.rest .in{box-shadow:inset 0 1px 0 rgba(255,255,255,.45),inset 0 0 0 1px rgba(255,255,255,.18),0 10px 26px -12px var(--accent);}
+.rest.fresh .in{animation:restIn .35s cubic-bezier(.2,.95,.25,1)}
+@keyframes restIn{from{opacity:0;transform:translateY(12px) scale(.98)}}
+.sess-foot .rest{position:static;padding:8px max(14px,env(safe-area-inset-right,0px)) 10px max(14px,env(safe-area-inset-left,0px))}
+.sess-foot .rest .in{padding:8px 10px 8px 12px;gap:10px;height:56px;border-radius:18px}
+.sess-foot .rest .ring,.sess-foot .rest .ring svg{width:38px;height:38px}
+.sess-foot .rest .clock{font-size:24px}
+.sess-foot .rest small{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.sess-foot .rest .rb{height:38px;min-width:40px;padding:0 8px}
 .banner{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 12px 28px -10px var(--accent)}
 .btn.primary{box-shadow:inset 0 1px 0 rgba(255,255,255,.4),0 10px 22px -8px var(--accent)}
 /* springy press */
@@ -481,6 +489,9 @@ button:active,.btn:active{transform:scale(.96);transition-duration:.1s}
 .peek{position:relative;flex:none;border-radius:13px}.peek:active .thumb{transform:scale(.94)}
 .peek-i{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}.peek-i svg{width:10px;height:10px}
 .mi,.thumb{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+.tut-tg::after{content:'展開'}details[open]>summary .tut-tg::after{content:'收起'}
+.ex-last{font-size:12px;color:var(--accent);font-weight:600;margin-top:2px}.ex-last .num{font-size:13px}
+.card.missed{display:flex;flex-direction:column;gap:10px;border:1px solid color-mix(in srgb,var(--accent) 35%,transparent)}.card.missed .row{justify-content:flex-end;gap:8px}
 /* page enter */
 .rise{animation:rise .6s cubic-bezier(.22,1,.36,1) both}
 @keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}}
@@ -1136,6 +1147,24 @@ function renderTabbar(){
 }
 
 /* ---------- Today ---------- */
+/* "上次 50 kg × 8" under each exercise, so you know what to beat */
+function lastTxt(exId){const ls=lastSets(exId);if(!ls||!ls.length)return '';const ex=EX(exId);
+  const t=ls.reduce((a,x)=>(+x.w>+a.w)||(+x.w===+a.w&&+x.r>+a.r)?x:a,ls[0]);const u=ex.unit||'次';
+  return `<div class="ex-last">上次 ${+t.w?`<b class="num">${fw(t.w)}</b> ${ex.wunit||'kg'} × `:''}<b class="num">${t.r}</b> ${u==='次'?'下':u}</div>`}
+/* a planned day earlier this week that was skipped (and nothing trained since): offer to do it today */
+function missedHTML(today,sel,doneOn){
+  if(state.active||sel!==today) return '';
+  const tr=dayFor(today);if(tr&&tr.exercises.length&&!doneOn(today)) return '';
+  if(doneOn(today)) return '';
+  for(let k=1;k<=3;k++){const d=addDays(today,-k);if(d<mondayOf(today))break;
+    if(logs.some(l=>l.date>=d))return '';
+    const r=dayFor(d);if(!r||!r.exercises.length)continue;
+    if(state.settings.missedSkip===d)return '';
+    const w=pd(d).getDay(),lbl=k===1?'昨天':'週'+WD[w];
+    return `<section class="card missed"><div class="grow"><div class="ex-name">${lbl}的「${esc(r.day.name)}」還沒練</div><div class="ex-sub">要今天補上嗎？之後的課表照常。</div></div>
+      <div class="row"><button class="btn sm ghost" data-act="missedSkip" data-d="${d}">不用</button><button class="btn sm primary" data-act="swapDay" data-date="${today}" data-day="${r.day.id}">今天補練</button></div></section>`}
+  return '';
+}
 function renderToday(){
   const today=TODAY(),ph=phaseAt(today),P=PH(ph.idx);
   const mon=addDays(mondayOf(today),ui.weekOff*7);
@@ -1145,18 +1174,19 @@ function renderToday(){
   const doneOn=d=>logs.some(l=>l.date===d);
   let h=`<div class="topbar"><div><div class="brand">WORKOUT</div><h1>訓練</h1></div>
     <button class="btn sm" data-act="openPlan">${ICON.edit}編輯計畫</button></div>`;
-  {const tr=dayFor(today);if(tr&&tr.exercises.length&&!state.active&&!doneOn(today)) h+=`<button class="banner" data-act="start" data-date="${today}"><div class="grow"><div style="font-size:13px;opacity:.85">今天 · ${esc(tr.day.name)} · ${tr.exercises.length} 個動作</div><div style="font-size:20px">開始今天的訓練</div></div><span style="font-size:26px">›</span></button>`}
-  h+=a2hsHTML();
-  if(!state.profile) h+=`<section class="card stack" style="border-color:var(--phase)"><div class="ex-name">填一下身高體重</div><div class="ex-sub">新加入的動作會依你的身體資料自動估算起始重量。</div><button class="btn sm primary" data-act="editProfile" style="align-self:flex-start">填寫身體資料</button></section>`;
+  {const tr=dayFor(today);if(sel!==today&&tr&&tr.exercises.length&&!state.active&&!doneOn(today)) h+=`<button class="banner" data-act="start" data-date="${today}"><div class="grow"><div style="font-size:13px;opacity:.85">今天 · ${esc(tr.day.name)} · ${tr.exercises.length} 個動作</div><div style="font-size:20px">開始今天的訓練</div></div><span style="font-size:26px">›</span></button>`}
+  let tail=a2hsHTML();
+  if(!state.profile) tail+=`<section class="card stack" style="border-color:var(--phase)"><div class="ex-name">填一下身高體重</div><div class="ex-sub">新加入的動作會依你的身體資料自動估算起始重量。</div><button class="btn sm primary" data-act="editProfile" style="align-self:flex-start">填寫身體資料</button></section>`;
   if(state.active) h+=`<button class="banner" data-act="resume"><div class="grow"><div style="font-size:13px;opacity:.75">訓練進行中 · ${esc(state.active.dayName)}</div><div class="num" id="bannerClock">${hms(Date.now()-state.active.startedAt)}</div></div><span>繼續 →</span></button>`;
-  if(ph.idx<0) h+=`<section class="phase-card"><div class="plate"></div><div class="eyebrow">每週相同</div><div class="phase-name" style="margin-top:6px">固定菜單</div><div class="muted" style="font-size:13px;margin-top:6px;max-width:75%">${FIXED.desc}</div></section>`;
-  else h+=`<section class="phase-card"><div class="plate"></div>
+  h+=missedHTML(today,sel,doneOn);
+  if(ph.idx<0) tail=`<section class="phase-card"><div class="plate"></div><div class="eyebrow">每週相同</div><div class="phase-name" style="margin-top:6px">固定菜單</div><div class="muted" style="font-size:13px;margin-top:6px;max-width:75%">${FIXED.desc}</div></section>`+tail;
+  else tail=`<section class="phase-card"><div class="plate"></div>
     <div class="eyebrow">第 ${ph.cycle} 輪 · 第 ${ph.week} / 5 週</div>
     <div class="phase-name" style="margin-top:6px">${P.name}</div>
     <div class="phase-en">${P.en}</div>
     <div class="muted" style="font-size:13px;margin-top:6px;max-width:75%">${P.desc}</div>
     <div class="cyc">${PHASES.map((x,i)=>`<div class="${i===ph.idx?'cur':''}"><i style="background:${i<=ph.idx?x.color:''};opacity:${i<ph.idx?.45:1}"></i><span>${x.name}</span></div>`).join('')}</div>
-  </section>`;
+  </section>`+tail;
   h+=`<section class="card" style="padding:12px 10px">
     <div class="row between" style="padding:0 6px 8px"><button class="icon-btn" style="width:32px;height:32px" data-act="week" data-d="-1" aria-label="上一週">${ICON.left}</button>
       <span class="muted" style="font-size:13px;font-weight:700">${pd(days[0]).getMonth()+1}/${pd(days[0]).getDate()} – ${pd(days[6]).getMonth()+1}/${pd(days[6]).getDate()}</span>
@@ -1175,7 +1205,7 @@ function renderToday(){
         return `<div class="ex-row dnd-row" data-i="${i}">
           <button class="row grow" style="gap:12px;text-align:left;min-width:0" data-act="exInfo" data-ex="${pe.exId}" data-pe="${pe.id}" data-date="${sel}">${thumbHTML(ex)}
           <span class="grow"><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}
-          <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> ${ex.unit||'次'}${p.w?` · <span class="num">${fw(p.w)}</span> ${ex.wunit||'kg'}`:''}</div></span>${musIcon(ex)}</button>
+          <div class="ex-sub"><span class="num">${p.sets}</span> 組 × <span class="num">${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax}</span> ${ex.unit||'次'}${p.w?` · <span class="num">${fw(p.w)}</span> ${ex.wunit||'kg'}`:''}</div>${lastTxt(pe.exId)}</span>${musIcon(ex)}</button>
           <button class="icon-btn" style="width:34px;height:34px" data-act="customize" data-pe="${pe.id}" data-date="${sel}" aria-label="編輯">${ICON.edit}</button>
           <span class="dnd-h" aria-label="拖曳排序">${ICON.grip}</span></div>`}).join('')}
         ${list.length?'':'<div class="empty">這天還沒有動作</div>'}
@@ -1187,7 +1217,7 @@ function renderToday(){
     h+=`<section class="card rest-day"><h2>休息日</h2><p class="muted" style="margin:0 0 16px">肌肉在休息時長大。可以散步 20–30 分鐘或做些伸展。<br>想練的話，選一個菜單：</p>
       <div class="row" style="flex-wrap:wrap;justify-content:center">${state.plan.days.map(d=>`<button class="btn sm" data-act="swapDay" data-date="${sel}" data-day="${d.id}">${esc(d.name)}</button>`).join('')}</div></section>`;
   }
-  return `<div class="stack">${h}</div>`;
+  return `<div class="stack">${h}${tail}</div>`;
 }
 
 /* ---------- Library ---------- */
@@ -1286,6 +1316,13 @@ function renderSettings(){
 
 /* ---------- Session ---------- */
 function sessionTotals(){let v=0,r=0;state.active.items.forEach(it=>{const c=EX(it.exId).group==='有氧';it.sets.forEach(s=>{if(s.done&&!c){v+=(+s.w||0)*(+s.r||0);r+=+s.r||0}})});return {v,r}}
+/* reps to aim for on set i: same weight as last time -> one more rep; heavier -> bottom of range; lighter -> top */
+function repTarget(it,i){const last=lastSets(it.exId);const ls=last&&(last[i]||last[last.length-1]);const s=it.sets[i];
+  if(!ls||ls.r===''||ls.r==null) return it.rmax;
+  const w=+(s&&s.w!==''?s.w:it.sugg)||0,lw=+ls.w||0,lr=+ls.r||it.rmax,cl=x=>Math.max(it.rmin,Math.min(it.rmax,x));
+  if(w===lw) return lr>=it.rmax?it.rmax:cl(lr+1);
+  return w>lw?it.rmin:it.rmax}
+const noLoad=(ex,it)=>['自體重','彈力帶'].includes(ex.equip)&&!(+it.sugg);
 function renderSession(){
   const a=state.active,it=a.items[a.idx],P=PH(a.phaseIdx);
   const tot=sessionTotals();
@@ -1307,9 +1344,10 @@ function renderSession(){
     }
     body+=`<div class="target"><span>目標</span><span class="num">${it.sets.length}</span>組 ×<span class="num">${it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax}</span>次 <span class="grow"></span><button class="btn sm ghost" data-act="restEdit" data-ex="${it.exId}">${ICON.timer}休息 ${mmss(restOf(it.exId,it.rmax))}</button></div>
     <div class="sets">${it.sets.map((s,i)=>{const ls=last&&(last[i]||last[last.length-1]);
+      const nl=noLoad(ex,it),tg=repTarget(it,i);
       return `<div class="set ${s.done?'done':''}" data-i="${i}"><div class="set-n">${s.done&&s.pr?`<span class="crown" title="${s.pr==='w'?'重量新高':'這個重量次數新高'}">${ICON.crown}</span>`:''}${i+1}</div>
-       <label class="fld"><span class="in-row"><input inputmode="decimal" data-f="w" data-i="${i}" value="${s.w===''?'':fw(s.w)}" placeholder="0" aria-label="第${i+1}組重量"><span class="u">${ex.wunit||'kg'}</span></span><small>${ls?'上次 '+fw(ls.w):'建議 '+fw(it.sugg)}</small></label>
-       <label class="fld"><span class="in-row"><input inputmode="numeric" data-f="r" data-i="${i}" value="${esc(s.r)}" placeholder="${it.rmax}" aria-label="第${i+1}組次數"><span class="u">${ex.unit||'次'}</span></span><small>${ls?'上次 '+ls.r:'目標 '+(it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax)}</small></label>
+       <label class="fld"><span class="in-row"><input inputmode="decimal" data-f="w" data-i="${i}" value="${s.w===''||(nl&&!+s.w)?'':fw(s.w)}" placeholder="${nl?(ex.equip==='彈力帶'?'彈力帶':'自重'):'0'}" aria-label="第${i+1}組重量"><span class="u">${nl&&!+s.w?'':ex.wunit||'kg'}</span></span><small>${nl?(ls&&+ls.w?'上次 +'+fw(ls.w):'想加負重再填'):ls?'上次 '+fw(ls.w):'建議 '+fw(it.sugg)}</small></label>
+       <label class="fld"><span class="in-row"><input inputmode="numeric" data-f="r" data-i="${i}" value="${esc(s.r)}" placeholder="${tg}" aria-label="第${i+1}組次數"><span class="u">${ex.unit||'次'}</span></span><small>${ls?'上次 '+ls.r+(s.done?'':' → 目標 '+tg):'目標 '+(it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax)}</small></label>
        <button class="chk" data-act="setDone" data-i="${i}" aria-label="完成第${i+1}組">${ICON.check}</button></div>`}).join('')}</div>
     <div class="row"><button class="btn sm" data-act="addSet">${ICON.plus}加一組</button>${it.sets.length>1?'<button class="btn sm ghost" data-act="rmSet">減一組</button>':''}<span class="grow"></span><button class="btn sm" data-act="customizeSess">${ICON.edit}調整動作</button></div>
     ${allDone?strengthHTML(it):''}
@@ -1321,9 +1359,8 @@ function renderSession(){
     <div class="stats"><div><small>時間</small><div class="num" id="sessClock">${hms(Date.now()-a.startedAt)}</div></div><div><small>總量 kg</small><div class="num">${kfmt(tot.v)}</div></div><div><small>次數</small><div class="num">${tot.r}</div></div></div>
     <button class="btn sm" data-act="exList">${a.idx+1}/${a.items.length}</button></div></div>
    <div class="sess-body" id="sessBody"><div class="in">${body}</div></div>
-   <div class="sess-foot"><div class="in"><button class="btn" data-act="prevEx" ${a.idx===0?'disabled style="opacity:.4"':''}>${ICON.left}上一個</button>
-    ${isLast?'<button class="btn primary" data-act="finish">完成訓練</button>':`<button class="btn primary" data-act="nextEx">下一個${ICON.right}</button>`}</div></div>
-   ${renderRest()}
+   <div class="sess-foot">${a.rest?renderRest(it&&it.sets.length&&it.sets.every(s=>s.done),isLast,a):`<div class="in"><button class="btn" data-act="prevEx" ${a.idx===0?'disabled style="opacity:.4"':''}>${ICON.left}上一個</button>
+    ${isLast?'<button class="btn primary" data-act="finish">完成訓練</button>':`<button class="btn primary" data-act="nextEx">下一個${ICON.right}</button>`}</div>`}</div>
   </div>`;
 }
 function sparkSVG(vals){
@@ -1334,18 +1371,23 @@ function sparkSVG(vals){
   const last=pts[pts.length-1];
   return `<svg class="spark" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-label="重量趨勢"><polygon points="4,${H} ${line} ${W-4},${H}" fill="var(--phase-soft)"/><polyline points="${line}" fill="none" stroke="var(--phase)" stroke-width="2" stroke-linejoin="round" vector-effect="non-scaling-stroke"/><circle cx="${last[0]}" cy="${last[1]}" r="3.5" fill="var(--phase)"/></svg>`;
 }
-function renderRest(){
-  const r=state.active&&state.active.rest;if(!r) return '';
+function renderRest(exDone,isLast,a){
+  const r=a&&a.rest;if(!r) return '';
   const left=(r.endAt-Date.now())/1000,over=left<=0;
   const C=2*Math.PI*24,frac=Math.max(0,Math.min(1,left/r.total));
-  return `<div class="rest ${over?'over':''}" id="rest"><div class="in">
-   <div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" stroke-opacity=".15" stroke-width="5"/><circle id="restArc" cx="28" cy="28" r="24" fill="none" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}"/></svg></div>
-   <div class="grow"><small id="restLbl">${over?'休息結束，開始下一組':'休息中'}</small><div class="clock" id="restClock">${over?'+'+mmss(-left):mmss(left)}</div></div>
-   <button class="rb" data-act="restAdd" data-d="-15">−15</button><button class="rb" data-act="restAdd" data-d="15">+15</button><button class="rb go" data-act="restSkip">${over?'關閉':'跳過'}</button></div></div>`;
+  const nxt=exDone&&!isLast?EX(a.items[a.idx+1].exId):null;
+  const lbl=nxt?`下一個：${esc(nxt.name)}`:exDone&&isLast?'最後一個動作完成了':over?'休息結束，開始下一組':'休息中';
+  const go=nxt?`<button class="rb go" data-act="nextEx">下一個 ›</button>`:exDone&&isLast?`<button class="rb go" data-act="finish">完成</button>`:`<button class="rb go" data-act="restSkip">${over?'關閉':'跳過'}</button>`;
+  const k=r.exId+':'+Math.round(r.endAt-r.total*1000),fresh=ui._restK!==k;ui._restK=k;
+  return `<div class="rest ${over?'over':''} ${fresh?'fresh':''}" id="rest"><div class="in">
+   <div class="ring"><svg viewBox="0 0 56 56"><circle cx="28" cy="28" r="24" fill="none" stroke="currentColor" stroke-opacity=".15" stroke-width="6"/><circle id="restArc" cx="28" cy="28" r="24" fill="none" stroke="currentColor" stroke-width="6" stroke-linecap="round" stroke-dasharray="${C}" stroke-dashoffset="${C*(1-frac)}"/></svg></div>
+   <div class="grow" style="min-width:0"><small id="restLbl">${lbl}</small><div class="clock" id="restClock">${over?'+'+mmss(-left):mmss(left)}</div></div>
+   <button class="rb" data-act="restAdd" data-d="-15">−15</button><button class="rb" data-act="restAdd" data-d="15">+15</button>${go}</div></div>`;
 }
 function bindSessionScroll(){const b=document.getElementById('sessBody');if(b&&ui.keepScroll!=null){b.scrollTop=ui.keepScroll;ui.keepScroll=null}}
 function rerenderSession(keep=true){const b=document.getElementById('sessBody');if(keep&&b) ui.keepScroll=b.scrollTop;render()}
 
+document.addEventListener('toggle',e=>{const d=e.target;if(d&&d.dataset&&d.dataset.tut){(ui.tutOpen=ui.tutOpen||{})[d.dataset.tut]=d.open}},true);
 /* ---------- rest timer & audio ---------- */
 let actx=null;
 function unlockAudio(){try{if(!actx){actx=new (window.AudioContext||window.webkitAudioContext)()}if(actx.state==='suspended')actx.resume()}catch(e){}}
@@ -1484,12 +1526,15 @@ function sheetExDetail(s){
    ${ex.custom?'<button class="btn sm danger ghost" data-act="delCustomEx" style="align-self:flex-start">刪除自訂動作</button>':''}
   </div>`;
 }
+/* plan exercises whose rep range isn't one of the standard steps (e.g. old 8-15) */
+const offLadder=p=>p.days.reduce((n,d)=>n+d.exercises.filter(pe=>{const ex=EX(pe.exId);if(!ex)return false;const [a,b]=snapR(ex,+pe.repMin,+pe.repMax);return a!==+pe.repMin||b!==+pe.repMax}).length,0);
 function sheetPlan(s){
-  const p=PT(),dr=!!ui.draftPlan;
+  const p=PT(),dr=!!ui.draftPlan,off=offLadder(p);
   return sheetHead(dr?'幫別人寫計畫':'編輯計畫',dr?'寫好後產生代碼，對方輸入就能套用；重量會依對方的身體資料估算':'每週固定菜單，五週循環自動調整重量')+`<div class="sheet-b">
    ${dr?`<div class="field"><label for="dr-title">計畫名稱</label><input id="dr-title" data-drtitle="1" value="${esc(p.title||'')}" placeholder="例如：給爸爸的全身訓練"></div>
      <div class="field"><label>週期</label><div class="seg"><button class="${p.periodize?'on':''}" data-act="drPer" data-k="1">五週循環</button><button class="${p.periodize?'':'on'}" data-act="drPer" data-k="0">固定菜單</button></div></div>`
    :`<button class="btn" data-act="redoSetup">重新設定天數、星期與菜單</button><button class="btn" data-act="openShare">分享計畫／幫別人寫計畫／輸入代碼</button>`}
+   ${off?`<div class="card stack tidy" style="padding:14px"><div><div class="ex-name">${off} 個動作的次數不是標準區間</div><div class="ex-sub">例如 8-15。整理成最接近的區間（6-8、8-10、10-12、12-15⋯），之後用 −／+ 調整會比較順。</div></div><button class="btn sm primary" data-act="planTidy" style="align-self:flex-start">一鍵整理</button></div>`:''}
    ${p.rotate?`<div class="card stack" style="padding:14px"><div class="row between"><div><div class="ex-name">每週練一天，菜單輪流</div><div class="ex-sub">${dr?'':`這週是第 ${rotIdx(TODAY())+1} 份，`}共 ${p.days.length} 份</div></div>
      <select data-rotwd="1" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${p.days[0]&&p.days[0].wd===w?'selected':''}>每週${WD[w]}</option>`).join('')}</select></div></div>`:''}
    ${p.days.map((d,di)=>`<div class="card stack" style="padding:14px">
@@ -1598,6 +1643,8 @@ const A={
  selDay:el=>{ui.selDate=el.dataset.d;render()},
  start:el=>startSession(el.dataset.date),
  resume:()=>{ui.inSession=true;keepAwake();render()},
+ planTidy:()=>{const p=PT();let n=0;p.days.forEach(d=>d.exercises.forEach(pe=>{const ex=EX(pe.exId);if(!ex)return;const [a,b]=snapR(ex,+pe.repMin,+pe.repMax);if(a!==+pe.repMin||b!==+pe.repMax){pe.repMin=a;pe.repMax=b;n++}}));save();ui.keepSheetScroll=true;render();toast(`已整理 ${n} 個動作`)},
+ missedSkip:el=>{state.settings.missedSkip=el.dataset.d;save();render()},
  swapDay:el=>{state.overrides[el.dataset.date]={dayId:el.dataset.day,exercises:null};save();render()},
  clearOverride:el=>{delete state.overrides[el.dataset.date];save();render();toast('已還原成計畫菜單')},
  customize:el=>openCustomize({mode:'preview',date:el.dataset.date,peId:el.dataset.pe}),
@@ -1649,7 +1696,7 @@ const A={
  setDone:el=>{
    const a=state.active,it=a.items[a.idx],s=it.sets[+el.dataset.i];
    if(s.done){s.done=false;s.pr=null;save();rerenderSession();return}
-   if(s.r===''||s.r==null) s.r=it.rmax;
+   if(s.r===''||s.r==null) s.r=repTarget(it,+el.dataset.i);
    if(s.w===''||s.w==null) s.w=it.sugg||0;
    s.done=true;s.at=Date.now();
    s.pr=prCheck(it,+el.dataset.i);if(s.pr){toast(s.pr==='w'?`新紀錄：重量新高 ${fw(s.w)} kg`:`新紀錄：${fw(s.w)} kg 做了 ${s.r} 下，最多的一次`)}
@@ -2216,7 +2263,7 @@ function musPanel(ex){
   return `<div class="mus-panel"><div class="mus-figs">${mus.length?`<div>${miSVG('front',mus,false)}<span>正面</span></div><div>${miSVG('back',mus,false)}<span>背面</span></div>`:`<div><svg viewBox="120 290 120 120">${MI_HEART}</svg></div>`}</div><div><div class="eyebrow" style="margin-bottom:8px">訓練部位</div><div class="row" style="gap:6px;flex-wrap:wrap">${tags}</div></div></div>`;
 }
 function thumbHTML(ex,cls=''){
-  if(ex&&ex.img) return `<span class="thumb ${cls}"><img src="img/${ex.img}/0.jpg" alt="" loading="lazy"></span>`;
+  if(ex&&ex.img) return `<span class="thumb ${cls}"><img src="img/${ex.img}/t.jpg" alt="" loading="lazy" decoding="async" onerror="this.onerror=null;this.src='img/${ex.img}/0.jpg'"></span>`;
   return `<span class="thumb ph ${cls}">${esc(ex?ex.group[0]:'?')}</span>`;
 }
 
@@ -2321,7 +2368,7 @@ function demoHTML(ex){
 }
 function tutHTML(ex){
   if(!ex.img&&!ex.cues.length) return `<div class="links"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">YouTube 英文教學</a></div>`;
-  return `${(()=>{const first=!history(ex.id).length;return `<details class="tut" ${first?'open':''} data-tut><summary><span>動作教學${first?'<span class="chip" style="margin-left:6px">第一次做</span>':''}</span><span class="muted" style="font-size:13px">${first?'收起':'展開'}</span></summary>`})()}
+  return `${(()=>{const first=!history(ex.id).length;return `<details class="tut" ${ui.tutOpen&&ui.tutOpen[ex.id]?'open':''} data-tut="${ex.id}"><summary><span class="row" style="gap:10px">${thumbHTML(ex,'sm')}<span>動作教學${first?'<span class="chip" style="margin-left:6px">第一次做</span>':''}</span></span><span class="muted tut-tg" style="font-size:13px"></span></summary>`})()}
     <div class="tut-grid">${demoHTML(ex)||'<div></div>'}<ol class="cues">${ex.cues.map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>
     ${ex.mistake?`<div class="warn" style="margin-top:10px">${esc(ex.mistake)}</div>`:''}
     <div class="links" style="margin-top:10px"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">英文教學</a></div></details>`;
@@ -2438,7 +2485,8 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117184646';
+if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+const APP_V='20261117190003';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
