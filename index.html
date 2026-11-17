@@ -2261,7 +2261,9 @@ function sheetProfile(s){
 
 /* ---------- names & tutorials ---------- */
 const grpMatch=(e,g)=>g==='全部'||(g==='居家'?availEx(e,myEq()):e.group===g);
-const exMatch=(e,q)=>!q||e.name.toLowerCase().includes(q)||(e.en||'').toLowerCase().includes(q)||e.equip.includes(q);
+/* search: every word must match somewhere (name, English name, equipment, group — incl. English equipment words like "cable") */
+const EQ_EN={'繩索':'cable cable machine pulley','啞鈴':'dumbbell db','槓鈴':'barbell bb','器械':'machine','彈力帶':'band resistance band','自體重':'bodyweight body weight','史密斯':'smith machine','壺鈴':'kettlebell kb','EZ槓':'ez bar curl bar barbell'};
+const exMatch=(e,q)=>{if(!q)return true;const hay=(e.name+' '+(e.en||'')+' '+e.equip+' '+e.group+' '+(EQ_EN[e.equip]||'')+' '+e.id.replace(/_/g,' ')).toLowerCase();return q.toLowerCase().split(/[\s\-,，、]+/).filter(Boolean).every(w=>hay.includes(w))};
 const enLine=ex=>ex&&ex.en?`<div class="en">${esc(ex.en)}</div>`:'';
 const ytEn=ex=>'https://www.youtube.com/results?search_query='+encodeURIComponent((ex.en||ex.name)+' proper form tutorial');
 const ytZh=ex=>'https://www.youtube.com/results?search_query='+encodeURIComponent(ex.name+' 教學 動作');
@@ -2388,7 +2390,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117180735';
+const APP_V='20261117181300';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
