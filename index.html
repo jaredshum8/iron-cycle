@@ -809,7 +809,7 @@ try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if
 // movement slots → candidates in order of preference, per tier (beg = new lifters, std = 6+ months, sen = 60+)
 const SLOT={
  squat:{std:['bb_squat','m_hack','sm_squat','m_pendulum','db_goblet','kb_goblet_swing','band_squat','bw_squat'],beg:['m_leg_press','db_goblet','sm_squat','m_hack','band_squat','bw_squat'],sen:['m_leg_press','db_goblet','bw_squat']},
- squat2:{std:['m_leg_press','db_bulgarian','m_hack','db_walk_lunge','db_lunge','bw_split_squat'],beg:['m_leg_press','db_lunge','db_stepup','bw_split_squat','bw_lunge'],sen:['db_stepup','m_leg_press','bw_split_squat']},
+ squat2:{std:['m_leg_press','db_bulgarian','m_hack','db_walk_lunge','db_lunge','bw_split_squat'],beg:['m_leg_press','db_lunge','db_stepup','bw_split_squat','bw_lunge'],sen:['m_leg_press','db_goblet','m_hack','bw_squat','db_stepup']},
  dl:{adv:['bb_deadlift','bb_rdl','db_rdl','sm_rdl','band_good_morning','bw_single_glute_bridge'],std:['bb_rdl','db_rdl','sm_rdl','band_good_morning','bw_single_glute_bridge'],beg:['db_rdl','m_lever_dl','sm_rdl','band_good_morning','bw_glute_bridge'],sen:['m_hip_thrust','bw_glute_bridge']},
  hinge:{std:['db_rdl','bb_rdl','sm_rdl','db_single_rdl','band_good_morning','bw_single_glute_bridge'],beg:['db_rdl','m_back_ext','band_good_morning','bw_glute_bridge'],sen:['m_back_ext_machine','bw_glute_bridge','band_glute_bridge']},
  glute:{std:['bb_hip_thrust','m_hip_thrust','sm_hip_thrust','band_glute_bridge','bw_single_glute_bridge'],beg:['m_hip_thrust','bb_hip_thrust','band_glute_bridge','bw_glute_bridge'],sen:['m_hip_thrust','bw_glute_bridge','band_glute_bridge']},
@@ -922,7 +922,7 @@ function pickSlot(c,slot,dayUsed,weekUsed,main){
   const gym=c.eq.includes('gym');
   const ok=id=>{const e=EX(id);return e&&availEx(e,c.eq)&&!dayUsed.has(id)&&!(c.tier!=='std'&&HARD.has(id))&&!(main&&!e.compound)&&!(c.soft&&gym&&(id==='bw_pullup'||id==='bw_chinup'))};
   // the main lift may repeat across the week; everything else prefers something not used yet this week
-  return (!main&&list.find(id=>ok(id)&&!weekUsed.has(id)))||list.find(ok)||(S.std!==list&&S.std.find(id=>ok(id)&&!HARD.has(id)))||null;
+  return (!main&&list.find(id=>ok(id)&&!weekUsed.has(id)))||list.find(ok)||(S.std!==list&&!(main&&c.tier==='sen')&&S.std.find(id=>ok(id)&&!HARD.has(id)))||null; // 60+: main lift only from the senior-safe list
 }
 function genDay(c,key,n,weekUsed){
   const [name,slots]=DAYS[key],want=exCount(c,n),dayUsed=new Set(),out=[];
@@ -1006,7 +1006,7 @@ function migrate(){
   if(state.onboarded==null) state.onboarded=true; // existing data from earlier versions
   const st=state.settings;if(st.periodize==null)st.periodize=true;if(st.restCompound===150&&!st.restV2){st.restCompound=120}st.restV2=1;if(st.showTut==null)st.showTut=true;
 }
-function loadLocal(){state=LS.get(key('state'))||freshState();logs=LS.get(key('logs'))||[];migrate();if(typeof rebuildEx==='function')rebuildEx()}
+function loadLocal(){state=LS.get(key('state'))||freshState();logs=LS.get(key('logs'))||[];_hv++;migrate();if(typeof rebuildEx==='function')rebuildEx()}
 const ui={libView:'list',libSide:'front',libMus:null,libEq:[],tab:'today',selDate:TODAY(),weekOff:0,libGroup:'全部',libQ:'',range:'30',calMonth:TODAY().slice(0,7),calSel:null,sheet:null,dialog:null,openLog:null,screen:null,auth:{msg:'',busy:false},ob:null};
 
 /* ---------- accounts & cloud sync (Firebase: Google sign-in + Firestore) ---------- */
@@ -1044,7 +1044,7 @@ const Cloud={status:'local',chain:Promise.resolve(),timer:null,hadRemote:false,
   delLog(id){if(!DB||!user)return;const ref=userDoc().collection('logs').doc(id);this.run(()=>ref.delete())},
 };
 function save(){state.updatedAt=Date.now();LS.set(key('state'),state);Cloud.queueState()}
-function saveLogs(){LS.set(key('logs'),logs)}
+function saveLogs(){_hv++;LS.set(key('logs'),logs)}
 const authMsg=e=>{const c=e&&e.code||'';
   if(c==='auth/popup-closed-by-user'||c==='auth/cancelled-popup-request') return '登入已取消';
   if(c==='auth/popup-blocked') return '瀏覽器擋住了登入視窗，請再按一次';
@@ -1105,16 +1105,21 @@ function dayFor(date){
   if(!day) return null;
   return {day,exercises:ov&&ov.exercises?ov.exercises:day.exercises,ov};
 }
-function lastSets(exId,beforeEnd){
+let _hv=0;const _hc={};const _hkey=()=>_hv+':'+logs.length+':'+(logs[0]?logs[0].id:'');
+function _memo(kind,exId,fn){const k=_hkey();const c=_hc[kind]||(_hc[kind]={});if(c._k!==k){for(const x in c)delete c[x];c._k=k}if(!(exId in c))c[exId]=fn();return c[exId]}
+function lastSets(exId,beforeEnd){if(!beforeEnd)return _memo('last',exId,()=>lastSets0(exId));return lastSets0(exId,beforeEnd)}
+function lastSets0(exId,beforeEnd){
   for(const l of logs){ if(beforeEnd&&l.end>=beforeEnd) continue; const it=l.items.find(i=>i.exId===exId); if(it&&it.sets.length) return it.sets }
   return null;
 }
-function history(exId){
+function history(exId){return _memo('hist',exId,()=>history0(exId)).slice()}
+function history0(exId){
   const out=[];
   for(const l of logs){const it=l.items.find(i=>i.exId===exId);if(it&&it.sets.length){const top=it.sets.reduce((a,s)=>s.w>a.w||(s.w===a.w&&s.r>a.r)?s:a,it.sets[0]);out.push({date:l.date,end:l.end,top,sets:it.sets,best1:Math.max(...it.sets.map(s=>e1rm(s.w,s.r)))})}}
   return out.sort((a,b)=>a.end-b.end);
 }
-function bestOf(exId){const h=history(exId);if(!h.length)return null;return h.reduce((a,x)=>x.top.w>a.top.w||(x.top.w===a.top.w&&x.top.r>a.top.r)?x:a,h[0])}
+function bestOf(exId){return _memo('best',exId,()=>bestOf0(exId))}
+function bestOf0(exId){const h=history(exId);if(!h.length)return null;return h.reduce((a,x)=>x.top.w>a.top.w||(x.top.w===a.top.w&&x.top.r>a.top.r)?x:a,h[0])}
 function estMinutes(list,ph){let s=0;list.forEach(pe=>{const p=prescribe(pe,ph);s+=p.sets*(restOf(pe.exId,p.rmax)+45)});return Math.round(s/60)}
 
 /* ---------- theme from phase ---------- */
@@ -1720,7 +1725,8 @@ const A={
    const b=document.querySelector(`[data-act="setDone"][data-i="${el.dataset.i}"]`);if(b)b.classList.add('pop');
  },
  addSet:()=>{const it=state.active.items[state.active.idx];const l=it.sets[it.sets.length-1];it.sets.push({w:l?l.w:it.sugg,r:'',done:false});save();rerenderSession()},
- rmSet:()=>{const it=state.active.items[state.active.idx];if(it.sets.length>1)it.sets.pop();save();rerenderSession()},
+ rmSet:()=>{const it=state.active.items[state.active.idx];if(it.sets.length<=1)return;const go=()=>{it.sets.pop();save();rerenderSession()};
+   if(it.sets[it.sets.length-1].done)confirmDlg('刪掉最後一組？','這一組已經打勾完成，刪掉後不會記錄。','刪掉',go);else go()},
  customizeSess:()=>openCustomize({mode:'session'}),
  sessAddEx:()=>openCustomize({mode:'session',isNew:true}),
  restEdit:el=>{ui.sheet={type:'restEdit',exId:el.dataset.ex,rmax:+el.dataset.r||undefined};render()},
@@ -2511,7 +2517,7 @@ async function boot(){
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-const APP_V='20261117191609';
+const APP_V='20261117192248';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
