@@ -1429,9 +1429,12 @@ function renderLayer(){
   if(oldScrim&&!s) ghostOut(oldScrim);
   if(oldDlg&&!ui.dialog) ghostOut(oldDlg);
   L.classList.toggle('layer-still',!!(s&&L.dataset.sk===sk)&&(!ui.dialog||L.dataset.dk===dk));
+  const prevSk=L.dataset.sk;
+  if(prevSk==='plan'&&sk!=='plan') ui.planScroll=st; // leaving the plan editor (to add/edit an exercise): remember where we were
   L.dataset.sk=sk;L.dataset.dk=dk;
   L.innerHTML=h;
   const nb=L.querySelector('.sheet-b');if(nb&&ui.keepSheetScroll){nb.scrollTop=st;ui.keepSheetScroll=false}
+  else if(nb&&sk==='plan'&&prevSk!=='plan'&&ui.planScroll){nb.scrollTop=ui.planScroll}
 }
 function ghostOut(el){
   const g=el.cloneNode(true);g.classList.add('closing');const b=el.querySelector('.sheet-b'),gb=g.querySelector('.sheet-b');
@@ -1598,7 +1601,7 @@ const A={
  clearOverride:el=>{delete state.overrides[el.dataset.date];save();render();toast('已還原成計畫菜單')},
  customize:el=>openCustomize({mode:'preview',date:el.dataset.date,peId:el.dataset.pe}),
  addExToDay:el=>openCustomize({mode:'preview',date:el.dataset.date,isNew:true}),
- openPlan:()=>{ui.sheet={type:'plan'};render()},
+ openPlan:()=>{ui.planScroll=0;ui.sheet={type:'plan'};render()},
  libGroup:el=>{ui.libGroup=el.dataset.g;render()},
  libView:el=>{ui.libView=el.dataset.k;render()},
  libSide:el=>{ui.libSide=el.dataset.k;render()},
@@ -1685,7 +1688,7 @@ const A={
  peMove:el=>{const d=PT().days.find(x=>x.id===el.dataset.day),i=+el.dataset.i;if(i<=0)return;[d.exercises[i-1],d.exercises[i]]=[d.exercises[i],d.exercises[i-1]];save();ui.keepSheetScroll=true;render()},
  planAddDay:()=>{const PL=PT();if(PL.rotate){const P=PL;P.days.push({id:uid(),name:'訓練日 '+'ABCDEFGHIJ'[P.days.length%10],wd:P.days[0]?P.days[0].wd:6,exercises:[]});save();ui.keepSheetScroll=true;render();toast('已加入輪替');return}const used=new Set(PL.days.map(d=>d.wd));const wd=[1,2,3,4,5,6,0].find(w=>!used.has(w));if(wd==null){toast('一週七天都排滿了');return}
    PL.days.push({id:uid(),name:'新菜單',wd,exercises:[]});PL.freq=PL.days.length;save();ui.keepSheetScroll=true;render()},
- planDelDay:el=>confirmDlg('刪除這天的菜單？','','刪除',()=>{const PL=PT();PL.days=PL.days.filter(d=>d.id!==el.dataset.day);if(!PL.rotate)PL.freq=PL.days.length;save();ui.sheet={type:'plan'};render()}),
+ planDelDay:el=>confirmDlg('刪除這天的菜單？','','刪除',()=>{const PL=PT();PL.days=PL.days.filter(d=>d.id!==el.dataset.day);if(!PL.rotate)PL.freq=PL.days.length;save();ui.sheet={type:'plan'};ui.keepSheetScroll=true;render()}),
   authGuest:()=>{LS.set('ic.guest',1);ui.screen=null;user=null;loadLocal();render()},
  googleLogin:()=>googleSignIn(),
  goLogin:()=>{ui.screen='auth';ui.auth={msg:'',busy:false};render()},
@@ -1717,8 +1720,8 @@ const A={
  drStart:el=>{const n=ui.sheet.n,k=el.dataset.k;let plan;
    if(k==='mine'){plan=clone(state.plan);plan.periodize=state.settings.periodize}
    else{const gen=k==='blank'?null:recOptions(n,{lvl:'mid',age:30},myEqRaw(),'bal')[+k].gen;plan=buildPlan(DEFAULT_WD[n],gen);plan.periodize=true}
-   plan.days.forEach(d=>d.exercises.forEach(pe=>pe.weight=0));plan.title='';ui.draftPlan=plan;ui.sheet={type:'plan'};render()},
- drContinue:()=>{ui.sheet={type:'plan'};render()},
+   plan.days.forEach(d=>d.exercises.forEach(pe=>pe.weight=0));plan.title='';ui.draftPlan=plan;ui.planScroll=0;ui.sheet={type:'plan'};render()},
+ drContinue:()=>{ui.planScroll=0;ui.sheet={type:'plan'};render()},
  drPer:el=>{ui.draftPlan.periodize=el.dataset.k==='1';ui.keepSheetScroll=true;render()},
  drDiscard:()=>confirmDlg('放棄這份計畫？','還沒產生代碼的內容會消失。','放棄',()=>{ui.draftPlan=null;ui.sheet=null;render()}),
  drPublish:async()=>{const p=ui.draftPlan;if(!p.days.some(d=>d.exercises.length)){toast('至少加一個動作');return}
@@ -1758,7 +1761,7 @@ const A={
    ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0;save();
    if(custom){ui.sheet={type:'plan'};render();toast('幫每個訓練日加入動作')}else{render();toast('計畫建立好了')}},
  // generic
- closeSheet:()=>{if(updateReady&&!(state.active&&ui.inSession))setTimeout(checkUpdate,300);const back=ui.sheet&&ui.sheet.ret?ui.sheet.ret:ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:(ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan'?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
+ closeSheet:()=>{if(updateReady&&!(state.active&&ui.inSession))setTimeout(checkUpdate,300);const back=ui.sheet&&ui.sheet.ret?ui.sheet.ret:ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:((ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan')||(ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&ui.pending.mode==='plan')?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
  scrim:(el,e)=>{if(e.target===el) A.closeSheet()},
  dlgNo:()=>{ui.dialog=null;renderLayer()},
  dlgOk:()=>{const f=ui.dialog.onOk;ui.dialog=null;renderLayer();f&&f()},
@@ -2428,7 +2431,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117182241';
+const APP_V='20261117182735';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
