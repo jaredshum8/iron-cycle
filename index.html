@@ -899,7 +899,8 @@ const HI_REP=new Set(['lateral','rear','calf','gluteIso','core','chestIso']);
 /* rep ranges move along fixed, meaningful steps instead of +1 */
 const REP_LAD=[[1,3],[3,5],[4,6],[6,8],[8,10],[10,12],[12,15],[15,20],[20,25],[25,30]];
 const SEC_LAD=[[10,15],[15,20],[20,30],[30,45],[45,60],[60,90],[90,120]];
-const ladOf=ex=>ex&&ex.unit==='秒'?SEC_LAD:REP_LAD;
+const MIN_LAD=[[10,15],[15,20],[20,30],[30,45],[45,60],[60,90]];
+const ladOf=ex=>ex&&ex.unit==='秒'?SEC_LAD:ex&&ex.unit==='分鐘'?MIN_LAD:REP_LAD;
 function ladIdx(L,a,b){let bi=0,bd=1e9;L.forEach(([x,y],i)=>{const d=Math.abs(x-a)+Math.abs(y-b);if(d<bd){bd=d;bi=i}});return bi}
 const snapR=(ex,a,b)=>{const L=ladOf(ex);return L[ladIdx(L,a,b)]};
 function scheme(c,role,slot,ex){const r=scheme0(c,role,slot,ex);return [r[0],...snapR(ex,r[1],r[2])]}
@@ -931,11 +932,15 @@ function genDay(c,key,n,weekUsed){
     dayUsed.add(id);weekUsed.add(id);
     const [sets,rmin,rmax]=scheme(c,role,slots[i],EX(id));out.push([id,sets,rmin,rmax,0]);
   }
+  for(let i=0;i<slots.length&&out.length<want&&out.length;i++){
+    const id=pickSlot(c,slots[i],dayUsed,weekUsed,false);if(!id) continue;
+    dayUsed.add(id);weekUsed.add(id);const [sets,rmin,rmax]=scheme(c,'A',slots[i],EX(id));out.push([id,sets,rmin,rmax,0]);
+  }
   return {name,ex:out};
 }
 function genPlanDays(c,keys){
   const weekUsed=new Set(),cnt={},n=keys.length;
-  return keys.map(k=>{cnt[k]=(cnt[k]||0)+1;const d=genDay(c,k,n,weekUsed);if(cnt[k]>1)d.name=d.name.replace(/ [ABC]$/,'')+' ·'+cnt[k];return d});
+  return keys.map(k=>{cnt[k]=(cnt[k]||0)+1;const d=genDay(c,k,n,weekUsed);if(cnt[k]>1)d.name=d.name+' ·'+cnt[k];return d});
 }
 function recOptions(n,prof,eq,focus){
   const c=genCtx(prof,eq,focus);
@@ -946,8 +951,8 @@ const DEFAULT_WD={1:[6],2:[1,4],3:[1,3,5],4:[1,2,4,5],5:[1,2,3,5,6],6:[1,2,3,4,5
 function buildPlan(wds,gen){
   const mk=d=>d.ex.map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}));
   // one day a week: every menu shares that weekday and they take turns week by week
-  if(wds.length===1) return {freq:1,rotate:true,start:mondayOf(TODAY()),days:(gen||[null]).map(d=>d?{id:uid(),name:d.name,wd:wds[0],exercises:mk(d)}:{id:uid(),name:'訓練日 A',wd:wds[0],exercises:[]})};
-  return {freq:wds.length,days:wds.map((wd,i)=>gen?{id:uid(),name:gen[i].name,wd,exercises:mk(gen[i])}:{id:uid(),name:'訓練日 '+'ABCDEF'[i],wd,exercises:[]})};
+  if(wds.length===1) return {freq:1,rotate:true,start:mondayOf(TODAY()),created:TODAY(),days:(gen||[null]).map(d=>d?{id:uid(),name:d.name,wd:wds[0],exercises:mk(d)}:{id:uid(),name:'訓練日 A',wd:wds[0],exercises:[]})};
+  return {freq:wds.length,created:TODAY(),days:wds.map((wd,i)=>gen?{id:uid(),name:gen[i].name,wd,exercises:mk(gen[i])}:{id:uid(),name:'訓練日 '+'ABCDEF'[i],wd,exercises:[]})};
 }
 
 /* ---------- utils ---------- */
@@ -1015,12 +1020,14 @@ const Cloud={status:'local',chain:Promise.resolve(),timer:null,hadRemote:false,
   async pull(){
     if(!DB||!user) return;
     try{
-      const [d,ls]=await Promise.all([userDoc().get(),userDoc().collection('logs').orderBy('end','desc').limit(3000).get()]);
+      const [d,ls]=await Promise.all([userDoc().get({source:'server'}),userDoc().collection('logs').orderBy('end','desc').limit(3000).get({source:'server'})]);
       const remote=d.exists&&d.data().json?JSON.parse(d.data().json):null;this.hadRemote=!!remote;
       if(remote&&(remote.updatedAt||0)>(state.updatedAt||0)){state=remote;migrate();LS.set(key('state'),state)}
       else if(state.updatedAt) this.queueState(true);
       const rl=ls.docs.map(x=>{try{return JSON.parse(x.data().json)}catch(e){return null}}).filter(Boolean);
-      const ids=new Set(rl.map(l=>l.id));const localOnly=logs.filter(l=>!ids.has(l.id));
+      rl.forEach(l=>l.synced=true);
+      // local logs the server doesn't have: upload them, unless they were uploaded before (then they were deleted elsewhere)
+      const ids=new Set(rl.map(l=>l.id));const localOnly=logs.filter(l=>!ids.has(l.id)&&!(l.synced&&ls.size<3000));
       logs=[...rl,...localOnly].sort((a,b)=>b.end-a.end);saveLogs();
       localOnly.forEach(l=>this.putLog(l));
       this.status='cloud';rebuildEx();
@@ -1033,7 +1040,7 @@ const Cloud={status:'local',chain:Promise.resolve(),timer:null,hadRemote:false,
     clearTimeout(this.timer);
     this.timer=setTimeout(()=>{const json=JSON.stringify(state),ref=userDoc();this.run(()=>ref.set({json,updatedAt:state.updatedAt||Date.now()}))},now?0:900);
   },
-  putLog(l){if(!DB||!user)return;const ref=userDoc().collection('logs').doc(l.id);this.run(()=>ref.set({json:JSON.stringify(l),end:l.end}))},
+  putLog(l){if(!DB||!user)return;const ref=userDoc().collection('logs').doc(l.id);const {synced,...rest}=l;this.run(()=>ref.set({json:JSON.stringify(rest),end:l.end}).then(()=>{l.synced=true;saveLogs()}))},
   delLog(id){if(!DB||!user)return;const ref=userDoc().collection('logs').doc(id);this.run(()=>ref.delete())},
 };
 function save(){state.updatedAt=Date.now();LS.set(key('state'),state);Cloud.queueState()}
@@ -1060,7 +1067,7 @@ async function afterLogin(fu){
   user={id:fu.uid,email:fu.email||'',name:fu.displayName||''};LS.del('ic.guest');photos=null;
   loadLocal();ui.screen=null;ui.auth.busy=false;ui.inSession=!!state.active;render();
   await Cloud.pull();
-  if(!Cloud.hadRemote&&!state.updatedAt&&guestState&&guestState.onboarded){
+  if(Cloud.status==='cloud'&&!Cloud.hadRemote&&!state.updatedAt&&guestState&&guestState.onboarded){
     state=guestState;migrate();const ids=new Set(logs.map(l=>l.id));logs=[...logs,...guestLogs.filter(l=>!ids.has(l.id))].sort((a,b)=>b.end-a.end);
     save();saveLogs();logs.forEach(l=>Cloud.putLog(l));LS.del('ic.state');LS.del('ic.logs');rebuildEx();render();toast('已把這支手機上的紀錄搬進你的帳號');
   }
@@ -1069,7 +1076,7 @@ async function afterLogin(fu){
 /* ---------- domain ---------- */
 const allEx=()=>BASE_EX.concat((state&&state.customEx)||[]);
 let EXMAP={};const rebuildEx=()=>{EXMAP={};allEx().forEach(e=>EXMAP[e.id]=e)};rebuildEx();
-const EX=id=>EXMAP[id]||{id,name:'未知動作',group:'全身',equip:'器械',compound:false};
+const EX=id=>EXMAP[id]||{id,name:'未知動作',group:'全身',equip:'器械',compound:false,cues:[],mistake:'',img:'',en:''};
 const incOf=ex=>INC[ex.equip]||2.5;
 // rest: saved per exercise if you changed it; otherwise by load (heavier sets, longer rest), never above the defaults in Settings
 const restByReps=r=>r<=6?120:r<=10?90:r<=15?75:60;
@@ -1120,6 +1127,7 @@ function applyPhase(){
 
 /* ---------- render: shell ---------- */
 function render(){
+  {const t=TODAY();if(ui._today&&ui._today!==t&&ui.selDate===ui._today){ui.selDate=t;ui.weekOff=0}ui._today=t}
   applyPhase();
   const app=document.getElementById('app');
   if(ui.screen==='auth'){app.innerHTML=renderAuth();renderLayer();return}
@@ -1158,6 +1166,7 @@ function missedHTML(today,sel,doneOn){
   if(doneOn(today)) return '';
   for(let k=1;k<=3;k++){const d=addDays(today,-k);if(d<mondayOf(today))break;
     if(logs.some(l=>l.date>=d))return '';
+    if(state.plan.created&&d<state.plan.created)return '';
     const r=dayFor(d);if(!r||!r.exercises.length)continue;
     if(state.settings.missedSkip===d)return '';
     const w=pd(d).getDay(),lbl=k===1?'昨天':'週'+WD[w];
@@ -1342,7 +1351,7 @@ function renderSession(){
        <ol>${steps.map(([w,r,l])=>`<li><span class="num">${fw(w)}</span> kg × ${r}　${l}</li>`).join('')}</ol>
        ${it.warm?'':`<button class="btn sm" style="margin-top:10px;width:100%" data-act="warmDone">熱身完成</button>`}</details>`;
     }
-    body+=`<div class="target"><span>目標</span><span class="num">${it.sets.length}</span>組 ×<span class="num">${it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax}</span>次 <span class="grow"></span><button class="btn sm ghost" data-act="restEdit" data-ex="${it.exId}">${ICON.timer}休息 ${mmss(restOf(it.exId,it.rmax))}</button></div>
+    body+=`<div class="target"><span>目標</span><span class="num">${it.sets.length}</span>組 ×<span class="num">${it.rmin===it.rmax?it.rmin:it.rmin+'-'+it.rmax}</span>次 <span class="grow"></span><button class="btn sm ghost" data-act="restEdit" data-ex="${it.exId}" data-r="${it.rmax}">${ICON.timer}休息 ${mmss(restOf(it.exId,it.rmax))}</button></div>
     <div class="sets">${it.sets.map((s,i)=>{const ls=last&&(last[i]||last[last.length-1]);
       const nl=noLoad(ex,it),tg=repTarget(it,i);
       return `<div class="set ${s.done?'done':''}" data-i="${i}"><div class="set-n">${s.done&&s.pr?`<span class="crown" title="${s.pr==='w'?'重量新高':'這個重量次數新高'}">${ICON.crown}</span>`:''}${i+1}</div>
@@ -1384,6 +1393,10 @@ function renderRest(exDone,isLast,a){
    <div class="grow" style="min-width:0"><small id="restLbl">${lbl}</small><div class="clock" id="restClock">${over?'+'+mmss(-left):mmss(left)}</div></div>
    <button class="rb" data-act="restAdd" data-d="-15">−15</button><button class="rb" data-act="restAdd" data-d="15">+15</button>${go}</div></div>`;
 }
+function patchRestFoot(){const f=document.querySelector('.sess-foot');if(!f){rerenderSession();return}
+  const a=state.active,it=a.items[a.idx],isLast=a.idx>=a.items.length-1;
+  if(a.rest) f.innerHTML=renderRest(it&&it.sets.length&&it.sets.every(s=>s.done),isLast,a);
+  else f.innerHTML=`<div class="in"><button class="btn" data-act="prevEx" ${a.idx===0?'disabled style="opacity:.4"':''}>${ICON.left}上一個</button>${isLast?'<button class="btn primary" data-act="finish">完成訓練</button>':`<button class="btn primary" data-act="nextEx">下一個${ICON.right}</button>`}</div>`}
 function bindSessionScroll(){const b=document.getElementById('sessBody');if(b&&ui.keepScroll!=null){b.scrollTop=ui.keepScroll;ui.keepScroll=null}}
 function rerenderSession(keep=true){const b=document.getElementById('sessBody');if(keep&&b) ui.keepScroll=b.scrollTop;render()}
 
@@ -1413,11 +1426,11 @@ setInterval(()=>{
   if(c) c.textContent=hms(Date.now()-state.active.startedAt);
   const r=state.active.rest;if(!r) return;
   const left=(r.endAt-Date.now())/1000;
-  if(left<=0&&!r.beeped){r.beeped=true;beep();save();if(ui.inSession) rerenderSession();return}
+  if(left<=0&&!r.beeped){r.beeped=true;beep();save();if(ui.inSession) patchRestFoot();return}
   const el=document.getElementById('restClock');
   if(el){el.textContent=left<=0?'+'+mmss(-left):mmss(left);
     const arc=document.getElementById('restArc');if(arc){const C=2*Math.PI*24;arc.setAttribute('stroke-dashoffset',C*(1-Math.max(0,Math.min(1,left/r.total))))}}
-  if(left<-600){state.active.rest=null;save();if(ui.inSession)rerenderSession()}
+  if(left<-600){state.active.rest=null;save();if(ui.inSession)patchRestFoot()}
 },250);
 let wakeLock=null;
 async function keepAwake(){try{if(navigator.wakeLock&&!wakeLock){wakeLock=await navigator.wakeLock.request('screen');wakeLock.addEventListener('release',()=>wakeLock=null)}}catch(e){}}
@@ -1476,7 +1489,8 @@ function renderLayer(){
   if(prevSk==='plan'&&sk!=='plan') ui.planScroll=st; // leaving the plan editor (to add/edit an exercise): remember where we were
   L.dataset.sk=sk;L.dataset.dk=dk;
   L.innerHTML=h;
-  const nb=L.querySelector('.sheet-b');if(nb&&ui.keepSheetScroll){nb.scrollTop=st;ui.keepSheetScroll=false}
+  const same=s&&ui._lastSheet===s&&prevSk===sk;ui._lastSheet=s;
+  const nb=L.querySelector('.sheet-b');if(nb&&(ui.keepSheetScroll||same)){nb.scrollTop=st;ui.keepSheetScroll=false}
   else if(nb&&sk==='plan'&&prevSk!=='plan'&&ui.planScroll){nb.scrollTop=ui.planScroll}
 }
 function ghostOut(el){
@@ -1573,7 +1587,7 @@ function sheetExList(){
 }
 function sheetRestEdit(s){
   return sheetHead('休息時間',esc(EX(s.exId).name)+' · 會記住這個動作的設定')+`<div class="sheet-b" style="align-items:center">
-   <div class="stepper" style="gap:14px"><button data-act="exRest" data-d="-15" style="width:52px;height:52px">−</button><span class="num" style="font-size:44px;min-width:110px">${mmss(restOf(s.exId))}</span><button data-act="exRest" data-d="15" style="width:52px;height:52px">+</button></div>
+   <div class="stepper" style="gap:14px"><button data-act="exRest" data-d="-15" style="width:52px;height:52px">−</button><span class="num" style="font-size:44px;min-width:110px">${mmss(restOf(s.exId,s.rmax))}</span><button data-act="exRest" data-d="15" style="width:52px;height:52px">+</button></div>
    <div class="row" style="flex-wrap:wrap;justify-content:center">${[60,90,120,150,180,240,300].map(v=>`<button class="btn sm" data-act="exRestSet" data-v="${v}">${mmss(v)}</button>`).join('')}</div>
   </div><div class="sheet-f"><button class="btn primary" data-act="closeSheet">完成</button></div>`;
 }
@@ -1587,7 +1601,7 @@ function openCustomize({mode,date,peId,isNew,dayId}){
     if(isNew) pe={id:uid(),exId:null,sets:3,repMin:8,repMax:12,weight:0};
     else{const planPe=(state.plan.days.find(d=>d.id===a.dayId)||{exercises:[]}).exercises.find(x=>x.id===it.peId);
       pe=planPe?clone(planPe):{id:it.peId||uid(),exId:it.exId,sets:it.sets.length,repMin:it.rmin,repMax:it.rmax,weight:it.sugg};
-      pe.exId=it.exId;pe.sets=it.sets.length;}
+      pe.exId=it.exId;var planSets=planPe?planPe.sets:null;pe.sets=it.sets.length;}
   }else if(mode==='plan'){
     const d=PT().days.find(x=>x.id===dayId);dId=d.id;dayName=d.name;phaseIdx=0;
     pe=isNew?{id:uid(),exId:null,sets:3,repMin:8,repMax:12,weight:0}:clone(d.exercises.find(x=>x.id===peId));
@@ -1596,7 +1610,7 @@ function openCustomize({mode,date,peId,isNew,dayId}){
     pe=isNew?{id:uid(),exId:null,sets:3,repMin:8,repMax:12,weight:0}:clone(r.exercises.find(x=>x.id===peId));
   }
   const draft={...pe,rest:pe.exId?restOf(pe.exId):90};
-  ui.sheet={type:'customize',mode,date,dayId:dId,dayName,phaseIdx,draft,isNew:!!isNew,origExId:pe.exId,scope:mode==='plan'?'plan':'today'};
+  ui.sheet={type:'customize',mode,date,dayId:dId,dayName,phaseIdx,draft,isNew:!!isNew,origExId:pe.exId,scope:mode==='plan'?'plan':'today',planSets:typeof planSets!=='undefined'?planSets:null,shownSets:pe.sets};
   if(isNew){ui.sheet.type='picker';ui.sheet.after='custom';ui.pending={...ui.sheet,type:'customize'}}
   render();
 }
@@ -1614,7 +1628,7 @@ function czApply(del){
     else{const ov=state.overrides[s.date]||(state.overrides[s.date]={dayId:s.dayId,exercises:null});if(!ov.exercises)ov.exercises=clone(planDay.exercises);applyList(ov.exercises)}
   }else{
     const a=state.active,P=PH(a.phaseIdx);
-    if(s.scope==='plan'&&planDay) applyList(planDay.exercises);
+    if(s.scope==='plan'&&planDay){const keep=pe.sets;if(s.planSets!=null&&pe.sets===s.shownSets)pe.sets=s.planSets;applyList(planDay.exercises);pe.sets=keep}
     if(del){a.items.splice(a.idx,1);a.idx=Math.max(0,Math.min(a.idx,a.items.length-1))}
     else if(s.isNew){a.items.push(makeItem(pe,P));a.idx=a.items.length-1}
     else{const it=a.items[a.idx],p=prescribe(pe,P);const changedEx=it.exId!==pe.exId;
@@ -1649,7 +1663,7 @@ const A={
  clearOverride:el=>{delete state.overrides[el.dataset.date];save();render();toast('已還原成計畫菜單')},
  customize:el=>openCustomize({mode:'preview',date:el.dataset.date,peId:el.dataset.pe}),
  addExToDay:el=>openCustomize({mode:'preview',date:el.dataset.date,isNew:true}),
- openPlan:()=>{ui.planScroll=0;ui.sheet={type:'plan'};render()},
+ openPlan:()=>{if(ui.draftPlan){ui._draftStash=ui.draftPlan;ui.draftPlan=null}ui.planScroll=0;ui.sheet={type:'plan'};render()},
  libGroup:el=>{ui.libGroup=el.dataset.g;render()},
  libView:el=>{ui.libView=el.dataset.k;render()},
  libSide:el=>{ui.libSide=el.dataset.k;render()},
@@ -1709,10 +1723,10 @@ const A={
  rmSet:()=>{const it=state.active.items[state.active.idx];if(it.sets.length>1)it.sets.pop();save();rerenderSession()},
  customizeSess:()=>openCustomize({mode:'session'}),
  sessAddEx:()=>openCustomize({mode:'session',isNew:true}),
- restEdit:el=>{ui.sheet={type:'restEdit',exId:el.dataset.ex};render()},
- exRest:el=>{const id=ui.sheet.exId;state.restByEx[id]=Math.max(15,Math.min(900,restOf(id)+(+el.dataset.d)));save();ui.keepSheetScroll=true;render()},
+ restEdit:el=>{ui.sheet={type:'restEdit',exId:el.dataset.ex,rmax:+el.dataset.r||undefined};render()},
+ exRest:el=>{const id=ui.sheet.exId;state.restByEx[id]=Math.max(15,Math.min(900,restOf(id,ui.sheet.rmax)+(+el.dataset.d)));save();ui.keepSheetScroll=true;render()},
  exRestSet:el=>{state.restByEx[ui.sheet.exId]=+el.dataset.v;save();render()},
- restAdd:el=>{const r=state.active.rest;if(!r)return;const d=+el.dataset.d*1000;r.endAt=Math.max(Date.now(),r.endAt+d);r.total=Math.max(1,r.total+(+el.dataset.d));if(r.endAt>Date.now())r.beeped=false;save();rerenderSession()},
+ restAdd:el=>{const r=state.active.rest;if(!r)return;const d=+el.dataset.d*1000;r.endAt=Math.max(Date.now(),r.endAt)+d;r.total=Math.max(1,r.total+(+el.dataset.d));if(r.endAt>Date.now())r.beeped=false;save();rerenderSession()},
  restSkip:()=>{state.active.rest=null;save();rerenderSession()},
  finish:()=>{const a=state.active;const left=a.items.reduce((t,it)=>t+it.sets.filter(s=>!s.done).length,0);
    if(left) confirmDlg('完成訓練？',`還有 ${left} 組沒打勾，只會記錄已完成的組。`,'完成並儲存',finishSession,false);else finishSession()},
@@ -1769,9 +1783,9 @@ const A={
    if(k==='mine'){plan=clone(state.plan);plan.periodize=state.settings.periodize}
    else{const gen=k==='blank'?null:recOptions(n,{lvl:'mid',age:30},myEqRaw(),'bal')[+k].gen;plan=buildPlan(DEFAULT_WD[n],gen);plan.periodize=true}
    plan.days.forEach(d=>d.exercises.forEach(pe=>pe.weight=0));plan.title='';ui.draftPlan=plan;ui.planScroll=0;ui.sheet={type:'plan'};render()},
- drContinue:()=>{ui.planScroll=0;ui.sheet={type:'plan'};render()},
+ drContinue:()=>{if(!ui.draftPlan&&ui._draftStash){ui.draftPlan=ui._draftStash;ui._draftStash=null}ui.planScroll=0;ui.sheet={type:'plan'};render()},
  drPer:el=>{ui.draftPlan.periodize=el.dataset.k==='1';ui.keepSheetScroll=true;render()},
- drDiscard:()=>confirmDlg('放棄這份計畫？','還沒產生代碼的內容會消失。','放棄',()=>{ui.draftPlan=null;ui.sheet=null;render()}),
+ drDiscard:()=>confirmDlg('放棄這份計畫？','還沒產生代碼的內容會消失。','放棄',()=>{ui.draftPlan=null;ui._draftStash=null;ui.sheet=null;render()}),
  drPublish:async()=>{const p=ui.draftPlan;if(!p.days.some(d=>d.exercises.length)){toast('至少加一個動作');return}
    try{const code=await publishPlan(p,p.title||'朋友的計畫',p.periodize);ui.draftPlan=null;ui.sheet={type:'shareDone',code,title:p.title||'朋友的計畫'};render()}catch(e){toast(e.message||'產生代碼失敗')}},
  shareMine:async()=>{try{const code=await publishPlan(state.plan,(user&&user.name?user.name+'的':'我的')+'計畫',state.settings.periodize);ui.sheet={type:'shareDone',code,title:'我目前的計畫'};render()}catch(e){toast(e.message||'產生代碼失敗')}},
@@ -1780,7 +1794,7 @@ const A={
    if(code.length<6){toast('代碼是 6 個英文或數字');return}
    if(!DB){toast('目前連不上雲端，請確認網路');return}
    try{const d=await DB.collection('shared').doc(code).get();if(!d.exists){toast('找不到這個代碼，請再確認一次');return}
-     const data=JSON.parse(d.data().json);ui.sheet={type:'importPreview',code,data,fromOb:ui.sheet.fromOb};render()}catch(e){toast('讀取失敗，請確認網路後再試')}},
+     const data=cleanShared(JSON.parse(d.data().json));if(!data.plan.days.length){toast('這個代碼的內容是空的');return}ui.sheet={type:'importPreview',code,data,fromOb:ui.sheet.fromOb};render()}catch(e){toast('讀取失敗，請確認網路後再試')}},
  applyCode:()=>{const s=ui.sheet,fromOb=s.fromOb;
    const go=()=>{if(fromOb){state.profile=clone(ui.ob.prof);}applyShared(s.data);ui.sheet=null;
      if(fromOb){state.onboarded=true;ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0}save();render();toast('已套用「'+(s.data.title||'計畫')+'」')};
@@ -1809,7 +1823,7 @@ const A={
    ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0;save();
    if(custom){ui.sheet={type:'plan'};render();toast('幫每個訓練日加入動作')}else{render();toast('計畫建立好了')}},
  // generic
- closeSheet:()=>{if(updateReady&&!(state.active&&ui.inSession))setTimeout(checkUpdate,300);const back=ui.sheet&&ui.sheet.ret?ui.sheet.ret:ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:((ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan')||(ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&ui.pending.mode==='plan')?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
+ closeSheet:()=>{if(updateReady&&!(state.active&&ui.inSession))setTimeout(checkUpdate,300);const back=ui.sheet&&ui.sheet.ret?ui.sheet.ret:ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&(!ui.pending.isNew||ui.pending.draft&&ui.pending.draft.exId)?ui.pending:((ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan')||(ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&ui.pending.mode==='plan')?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
  scrim:(el,e)=>{if(e.target===el) A.closeSheet()},
  dlgNo:()=>{ui.dialog=null;renderLayer()},
  dlgOk:()=>{const f=ui.dialog.onOk;ui.dialog=null;renderLayer();f&&f()},
@@ -1829,6 +1843,7 @@ document.addEventListener('input',e=>{
     const v=t.value.trim();s[t.dataset.f]=v===''?'':(t.dataset.f==='w'?parseFloat(v)||0:parseInt(v)||0);
     // weight typed on an undone set carries to following undone sets
     if(t.dataset.f==='w'&&v!==''){for(let j=+t.dataset.i+1;j<it.sets.length;j++){if(!it.sets[j].done){it.sets[j].w=s.w;const inp=document.querySelector(`input[data-f="w"][data-i="${j}"]`);if(inp)inp.value=fw(s.w)}}}
+    if(s.done)s.pr=prCheck(it,+t.dataset.i);
     clearTimeout(A._t);A._t=setTimeout(save,600);return}
   if(t.dataset.cz&&ui.sheet&&ui.sheet.draft){ui.sheet.draft[t.dataset.cz]=t.value;const d={...ui.sheet.draft};['sets','repMin','repMax'].forEach(k=>d[k]=Math.max(1,parseInt(d[k])||1));d.weight=parseFloat(d.weight)||0;if(d.repMax<d.repMin)d.repMax=d.repMin;
     const pv=document.getElementById('czPreview');if(pv&&d.exId)pv.innerHTML=czPreview(d,PH(ui.sheet.phaseIdx));return}
@@ -1913,10 +1928,21 @@ async function publishPlan(plan,title,periodize){
   }
   throw new Error('產生代碼失敗，請再試一次');
 }
+/* share codes come from other people: keep only the fields we expect, with safe types */
+function cleanShared(d){
+  const int=(x,lo,hi,df)=>{x=Math.round(+x);return Number.isFinite(x)?Math.max(lo,Math.min(hi,x)):df};
+  const str=(x,n)=>String(x==null?'':x).slice(0,n);
+  const P=d&&d.plan||{};
+  const customEx=(Array.isArray(d&&d.customEx)?d.customEx:[]).filter(c=>c&&/^cx_[A-Za-z0-9_]{1,40}$/.test(c.id)).slice(0,50)
+    .map(c=>({id:c.id,name:str(c.name,40)||'自訂動作',group:GROUPS.includes(c.group)?c.group:'全身',equip:EQUIPS.includes(c.equip)?c.equip:'器械',compound:!!c.compound,custom:true}));
+  const days=(Array.isArray(P.days)?P.days:[]).slice(0,14).map(x=>({name:str(x&&x.name,30)||'訓練日',wd:int(x&&x.wd,0,6,1),
+    exercises:(Array.isArray(x&&x.exercises)?x.exercises:[]).filter(e=>e&&/^[A-Za-z0-9_]{1,60}$/.test(e.exId)).slice(0,20).map(e=>{const a=int(e.repMin,1,300,8),b=int(e.repMax,1,300,12);return {exId:e.exId,sets:int(e.sets,1,10,3),repMin:Math.min(a,b),repMax:Math.max(a,b)}})}));
+  return {v:1,title:str(d&&d.title,60),periodize:!(d&&d.periodize===false),plan:{rotate:!!P.rotate,days},customEx};
+}
 function applyShared(data){
   (data.customEx||[]).forEach(c=>{if(!state.customEx.some(e=>e.id===c.id))state.customEx.push(c)});rebuildEx();
   const P=data.plan;
-  state.plan={freq:P.rotate?1:P.days.length,rotate:!!P.rotate,start:mondayOf(TODAY()),days:P.days.map(d=>({id:uid(),name:d.name,wd:d.wd,
+  state.plan={freq:P.rotate?1:P.days.length,rotate:!!P.rotate,start:mondayOf(TODAY()),created:TODAY(),days:P.days.map(d=>({id:uid(),name:d.name,wd:d.wd,
     exercises:d.exercises.map(e=>{const last=lastSets(e.exId);return {id:uid(),exId:e.exId,sets:e.sets,repMin:e.repMin,repMax:e.repMax,weight:last?Math.max(...last.map(x=>x.w)):estimateW(e.exId)}})}))};
   state.overrides={};state.settings.periodize=data.periodize!==false;state.settings.cycleStart=mondayOf(TODAY());
 }
@@ -1932,7 +1958,7 @@ function sheetShare(s){
     <div class="ex-sub">重量會依你的年齡、身高、體重自動估算。</div></div>
    ${s.fromOb?'':`<div class="card stack"><div class="ex-name">分享我目前的計畫</div><div class="ex-sub">對方拿到的是動作、組數、次數和星期；不包含你的重量和紀錄。</div><button class="btn" data-act="shareMine">產生代碼</button></div>
    <div class="card stack"><div class="ex-name">幫別人寫一份計畫</div>
-    ${ui.draftPlan?'<button class="btn primary" data-act="drContinue">繼續編輯還沒完成的計畫</button>':''}
+    ${ui.draftPlan||ui._draftStash?'<button class="btn primary" data-act="drContinue">繼續編輯還沒完成的計畫</button>':''}
     <div class="field"><label>對方一週練幾天</label><div class="seg">${[1,2,3,4,5,6].map(k=>`<button class="${n===k?'on':''}" data-act="shareN" data-n="${k}">${k}</button>`).join('')}</div></div>
     <div class="stack" style="gap:8px">${recOptions(n,{lvl:'mid',age:30},myEqRaw(),'bal').map((r,i)=>`<button class="opt" data-act="drStart" data-k="${i}"><b>從「${esc(r.name)}」開始改</b><span>${esc(r.why)}</span></button>`).join('')}
      <button class="opt" data-act="drStart" data-k="blank"><b>從空白開始</b><span>${n} 個空白訓練日${n===1?'（每週輪替）':''}，自己挑動作</span></button>
@@ -2310,7 +2336,7 @@ function progress(a){
   a.items.forEach(it=>{
     const pe=day&&day.exercises.find(x=>x.id===it.peId);
     const done=it.sets.filter(s=>s.done);
-    if(!pe||!done.length) return;
+    if(!pe||!done.length||pe.exId!==it.exId) return; // swapped for today only: don't move the plan's weight
     const ex=EX(it.exId),inc=incOf(ex);
     if(ex.group==='有氧') return;
     if(!adjustable){out.push({exId:it.exId,kind:'hold',tag:'不調整',why:P.name+'只照表操課，基準重量等基礎／負荷週再調整'});return}
@@ -2367,15 +2393,15 @@ function demoHTML(ex){
   return `<div class="demo"><img src="img/${ex.img}/0.jpg" alt="${esc(ex.name)} 起始姿勢" loading="lazy"><img class="b" src="img/${ex.img}/1.jpg" alt="${esc(ex.name)} 動作終點" loading="lazy">${ex.approx?'<span class="approx">近似動作示範</span>':''}</div>`;
 }
 function tutHTML(ex){
-  if(!ex.img&&!ex.cues.length) return `<div class="links"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">YouTube 英文教學</a></div>`;
+  if(!ex.img&&!(ex.cues||[]).length) return `<div class="links"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">YouTube 英文教學</a></div>`;
   return `${(()=>{const first=!history(ex.id).length;return `<details class="tut" ${ui.tutOpen&&ui.tutOpen[ex.id]?'open':''} data-tut="${ex.id}"><summary><span class="row" style="gap:10px">${thumbHTML(ex,'sm')}<span>動作教學${first?'<span class="chip" style="margin-left:6px">第一次做</span>':''}</span></span><span class="muted tut-tg" style="font-size:13px"></span></summary>`})()}
-    <div class="tut-grid">${demoHTML(ex)||'<div></div>'}<ol class="cues">${ex.cues.map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>
+    <div class="tut-grid">${demoHTML(ex)||'<div></div>'}<ol class="cues">${(ex.cues||[]).map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>
     ${ex.mistake?`<div class="warn" style="margin-top:10px">${esc(ex.mistake)}</div>`:''}
     <div class="links" style="margin-top:10px"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">英文教學</a></div></details>`;
 }
 function tutFull(ex){
   return `${demoHTML(ex)}${musPanel(ex)}
-   ${ex.cues.length?`<div><div class="eyebrow" style="margin-bottom:6px">動作要點</div><ol class="cues" style="font-size:14px">${ex.cues.map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>`:''}
+   ${(ex.cues||[]).length?`<div><div class="eyebrow" style="margin-bottom:6px">動作要點</div><ol class="cues" style="font-size:14px">${(ex.cues||[]).map(c=>`<li>${esc(c)}</li>`).join('')}</ol></div>`:''}
    ${ex.mistake?`<div class="warn">${esc(ex.mistake)}</div>`:''}
    <div class="links"><a class="btn sm" href="${ytZh(ex)}" target="_blank" rel="noopener">YouTube 中文教學</a><a class="btn sm" href="${ytEn(ex)}" target="_blank" rel="noopener">YouTube 英文教學</a></div>`;
 }
@@ -2468,25 +2494,24 @@ function sheetExitSess(){
 async function boot(){
   loadLocal();
   if(AUTH){
-    let settled=false;
+    let settled=false,timedOut=false;
     const first=new Promise(res=>{const un=AUTH.onAuthStateChanged(fu=>{
-      if(!settled){settled=true;res(fu);return}
+      if(!settled){settled=true;res(fu);if(timedOut&&fu)afterLogin(fu);return}
       if(fu) afterLogin(fu);
     })});
     AUTH.getRedirectResult().catch(e=>{ui.auth.msg=authMsg(e);ui.auth.busy=false;if(ui.screen==='auth')render()});
-    const fu=await Promise.race([first,new Promise(r=>setTimeout(()=>r('timeout'),6000))]);
-    if(fu&&fu!=='timeout'){await afterLogin(fu);return}
+    const fu=await Promise.race([first,new Promise(r=>setTimeout(()=>{timedOut=true;r('timeout')},6000))]);
+    if(fu&&fu!=='timeout'){await afterLogin(fu);checkStale();render();return}
     if(!LS.get('ic.guest')) ui.screen='auth';
   }
   ui.inSession=!!state.active;checkStale();render();
 }
-document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[data-tut]')){const sp=e.target.querySelector('summary .muted');if(sp)sp.textContent=e.target.open?'收起':'展開'}},true);
 
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-const APP_V='20261117190003';
+const APP_V='20261117191609';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
@@ -2494,6 +2519,7 @@ async function checkUpdate(){
     const r=await fetch('version.json?t='+Date.now(),{cache:'no-store'});if(!r.ok) return;
     const {v}=await r.json();if(!v||v===APP_V) return;
     if(state&&state.active&&ui.inSession){if(!updateReady){updateReady=true;toast('有新版本，練完回到首頁就會更新')}return}
+    try{if(sessionStorage.getItem('reloadFor')===v)return;sessionStorage.setItem('reloadFor',v)}catch(e){}
     await Cloud.chain.catch(()=>{});location.reload();
   }catch(e){}
 }

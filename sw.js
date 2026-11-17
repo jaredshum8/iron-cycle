@@ -24,7 +24,8 @@ self.addEventListener('fetch', e => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const u = new URL(req.url);
-  if (u.pathname.endsWith('/sw.js') || u.pathname.endsWith('/version.json')) return;
+  // Firebase sign-in pages (/__/auth/...) and the update check must always go straight to the network
+  if (u.pathname.startsWith('/__/') || u.pathname.endsWith('/sw.js') || u.pathname.endsWith('/version.json')) return;
   if (isStatic(u)) {
     e.respondWith(caches.open(STATIC).then(async c => {
       const hit = await c.match(req);
