@@ -481,15 +481,6 @@ button:active,.btn:active{transform:scale(.96);transition-duration:.1s}
 .peek{position:relative;flex:none;border-radius:13px}.peek:active .thumb{transform:scale(.94)}
 .peek-i{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}.peek-i svg{width:10px;height:10px}
 .mi,.thumb{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
-/* exercise photos: tinted to the theme so gym backgrounds don't clash with the app */
-.thumb:not(.ph),.demo{position:relative;isolation:isolate}
-.thumb:not(.ph) img,.demo img{filter:grayscale(1) contrast(.88) brightness(1.2)}
-.thumb:not(.ph)::after,.demo::after{content:"";position:absolute;inset:0;pointer-events:none;background:linear-gradient(135deg,var(--accent),var(--accent2));mix-blend-mode:color;opacity:.62}
-.demo::before,.thumb:not(.ph)::before{content:"";position:absolute;inset:0;z-index:1;pointer-events:none;background:#fff;mix-blend-mode:soft-light;opacity:.55}
-[data-theme="night"] .demo::before,[data-theme="night"] .thumb:not(.ph)::before{background:linear-gradient(135deg,var(--accent),var(--accent2));opacity:.3}
-.demo .approx{z-index:2}
-[data-theme="soft"] .thumb img,[data-theme="peach"] .thumb img{mix-blend-mode:normal}
-[data-theme="night"] .thumb:not(.ph) img,[data-theme="night"] .demo img{filter:grayscale(1) contrast(1.05) brightness(.82)}
 /* page enter */
 .rise{animation:rise .6s cubic-bezier(.22,1,.36,1) both}
 @keyframes rise{from{opacity:0;transform:translateY(14px) scale(.985)}}
@@ -2447,7 +2438,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117184337';
+const APP_V='20261117184646';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
