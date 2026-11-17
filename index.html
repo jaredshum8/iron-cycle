@@ -599,7 +599,7 @@ db_incline_curl|上斜啞鈴彎舉|二頭|啞鈴|i
 db_conc|集中彎舉|二頭|啞鈴|i
 db_preacher|啞鈴牧師椅彎舉|二頭|啞鈴|i
 db_spider|蜘蛛彎舉|二頭|啞鈴|i
-cb_curl|繩索彎舉|二頭|繩索|i
+cb_curl|站姿繩索彎舉|二頭|繩索|i
 cb_rope_hammer|繩索錘式彎舉|二頭|繩索|i
 cb_bayesian|貝氏繩索彎舉|二頭|繩索|i
 cb_high_curl|高位繩索彎舉|二頭|繩索|i
@@ -614,7 +614,7 @@ db_kickback|啞鈴後踢|三頭|啞鈴|i
 cb_pushdown|繩索下壓（直槓）|三頭|繩索|i
 cb_rope_pd|繩索下壓（繩索）|三頭|繩索|i
 cb_vbar_pushdown|V 把三頭下壓|三頭|繩索|i
-cb_oh_ext|繩索過頭臂屈伸|三頭|繩索|i
+cb_oh_ext|繩索過頭臂屈伸（站姿・繩索）|三頭|繩索|i
 cb_single_tpd|單臂反握繩索下壓|三頭|繩索|i
 cb_single_ext|單臂繩索三頭下壓|三頭|繩索|i
 bw_dip|雙槓撐體（三頭）|三頭|自體重|c
@@ -2042,14 +2042,18 @@ function recLabel(r,eq){
 /* ---------- muscles & body map ---------- */
 const MUS={serratus:'前鋸肌',chest:'胸',shoulders:'肩膀',biceps:'二頭肌',forearms:'前臂',abs:'腹肌',obliques:'腹斜肌',quads:'股四頭',adductors:'大腿內側',traps:'斜方肌',triceps:'三頭肌',lats:'背闊肌',lowerback:'下背',glutes:'臀部',abductors:'臀側／外展',hamstrings:'腿後',calves:'小腿',cardio:'有氧'};
 const G2M={'胸':['chest'],'背':['lats'],'肩':['shoulders'],'二頭':['biceps'],'三頭':['triceps'],'前臂':['forearms'],'股四頭':['quads'],'腿後':['hamstrings'],'臀':['glutes'],'小腿':['calves'],'核心':['abs'],'全身':['quads','glutes'],'有氧':['cardio']};
-const MUS_OVR={bw_pushup_plus:["chest", "serratus", "triceps"],,cb_seated_crunch:["abs"],cb_standing_crunch:["abs"],cb_reverse_crunch:["abs"],db_serratus_punch:["serratus", "chest"],bw_scap_pushup:["serratus", "chest"],bw_scap_pullup:["lats", "traps"],db_scaption:["shoulders", "traps"],db_lean_lateral:["shoulders"],db_standing_ohp:["shoulders", "triceps"],cb_upright:["shoulders", "traps"],cb_ext_rot:["shoulders"],db_ext_rot:["shoulders"],cb_rope_rear_row:["shoulders", "traps"],cb_incline_fly:["chest", "shoulders"],db_neutral_bench:["chest", "triceps"],svend_press:["chest"],cb_vbar_pd:["lats", "biceps"],cb_rope_pullover:["lats"],bb_reverse_row:["lats", "biceps"],db_zottman:["biceps", "forearms"],db_cross_hammer:["biceps", "forearms"],cb_high_curl:["biceps"],cb_reverse_curl:["forearms", "biceps"],bb_jm_press:["triceps", "chest"],db_tate:["triceps"],cb_single_ext:["triceps"],cb_vbar_pushdown:["triceps"],db_reverse_lunge:["quads", "glutes"],cb_adduction:["adductors"],cb_abduction:["abductors", "glutes"],db_hip_thrust:["glutes", "hamstrings"],bw_single_hip_thrust:["glutes", "hamstrings"],bw_reverse_crunch:["abs"],bw_decline_crunch:["abs"],db_side_bend:["obliques"],bb_shrug:['traps'],db_shrug:['traps'],m_shrug:['traps'],bb_upright:['shoulders','traps'],db_upright:['shoulders','traps'],cb_face_pull:['shoulders','traps'],cb_serratus_punch:['serratus','chest','shoulders'],band_face_pull:['shoulders','traps'],band_pull_apart:['shoulders','traps'],db_rear_fly:['shoulders','traps'],m_rear_delt:['shoulders','traps'],
+const MUS_OVR={bw_pushup_plus:["chest", "serratus", "triceps"],cb_seated_crunch:["abs"],cb_standing_crunch:["abs"],cb_reverse_crunch:["abs"],db_serratus_punch:["serratus", "chest"],bw_scap_pushup:["serratus", "chest"],bw_scap_pullup:["lats", "traps"],db_scaption:["shoulders", "traps"],db_lean_lateral:["shoulders"],db_standing_ohp:["shoulders", "triceps"],cb_upright:["shoulders", "traps"],cb_ext_rot:["shoulders"],db_ext_rot:["shoulders"],cb_rope_rear_row:["shoulders", "traps"],cb_incline_fly:["chest", "shoulders"],db_neutral_bench:["chest", "triceps"],svend_press:["chest"],cb_vbar_pd:["lats", "biceps"],cb_rope_pullover:["lats"],bb_reverse_row:["lats", "biceps"],db_zottman:["biceps", "forearms"],db_cross_hammer:["biceps", "forearms"],cb_high_curl:["biceps"],cb_reverse_curl:["forearms", "biceps"],bb_jm_press:["triceps", "chest"],db_tate:["triceps"],cb_single_ext:["triceps"],cb_vbar_pushdown:["triceps"],db_reverse_lunge:["quads", "glutes"],cb_adduction:["adductors"],cb_abduction:["abductors", "glutes"],db_hip_thrust:["glutes", "hamstrings"],bw_single_hip_thrust:["glutes", "hamstrings"],bw_reverse_crunch:["abs"],bw_decline_crunch:["abs"],db_side_bend:["obliques"],bb_shrug:['traps'],db_shrug:['traps'],m_shrug:['traps'],bb_upright:['shoulders','traps'],db_upright:['shoulders','traps'],cb_face_pull:['shoulders','traps'],cb_serratus_punch:['serratus','chest','shoulders'],band_face_pull:['shoulders','traps'],band_pull_apart:['shoulders','traps'],db_rear_fly:['shoulders','traps'],m_rear_delt:['shoulders','traps'],
  m_back_ext:['lowerback'],m_back_ext_machine:['lowerback'],bw_superman:['lowerback'],m_reverse_hyper:['lowerback','glutes'],bb_good_morning:['hamstrings','lowerback'],band_good_morning:['hamstrings','lowerback'],bb_deadlift:['lowerback','hamstrings','glutes'],m_lever_dl:['lowerback','glutes'],bb_rack_pull:['lowerback','traps'],
  bb_rdl:['hamstrings','glutes','lowerback'],db_rdl:['hamstrings','glutes'],m_adductor:['adductors'],m_abductor:['abductors'],band_monster_walk:['abductors'],db_sumo_squat:['adductors','glutes'],bb_sumo_dl:['glutes','adductors'],
  bw_russian:['obliques'],cb_woodchop:['obliques'],bw_side_plank:['obliques'],cb_pallof:['obliques'],band_pallof:['obliques'],m_rotary:['obliques'],
  bb_power_clean:['traps','glutes'],bb_clean:['traps','quads'],bb_snatch:['traps','shoulders'],bb_thruster:['quads','shoulders'],kb_swing:['glutes','hamstrings'],kb_tgu:['shoulders','abs'],bw_burpee:['cardio','quads'],sled_push:['quads','glutes'],battle_rope:['cardio','shoulders'],db_farmer:['forearms','traps'],
  bb_squat:['quads','glutes'],bb_front_squat:['quads'],db_bulgarian:['quads','glutes'],bb_hip_thrust:['glutes','hamstrings'],bw_mountain:['abs','cardio'],c_jump_rope:['cardio','calves'],bw_pullup:['lats','biceps'],bw_chinup:['lats','biceps'],bb_cgbp:['triceps','chest'],bw_dip:['triceps','chest'],bw_dip_chest:['chest','triceps'],bw_diamond:['triceps','chest']};
 const musclesOf=ex=>MUS_OVR[ex.id]||G2M[ex.group]||[];
-const filterEx=f=>allEx().filter(e=>grpMatch(e,f.g||'全部')&&exMatch(e,f.q||'')&&eqMatch(e,f.eq)&&(!f.mus||musclesOf(e).includes(f.mus)));
+const filterEx=f=>{const base=e=>grpMatch(e,f.g||'全部')&&eqMatch(e,f.eq)&&(!f.mus||musclesOf(e).includes(f.mus));
+  const hit=allEx().filter(e=>base(e)&&exMatch(e,f.q||''));if(hit.length)return hit;
+  // nothing matches every word (e.g. "standing cable curl" when we call it "cable curl"): show the closest ones
+  const ws=exWords(f.q||'');if(ws.length<2)return hit;
+  return allEx().filter(base).map(e=>[e,ws.filter(w=>exHay(e).includes(w)).length]).filter(x=>x[1]>=Math.ceil(ws.length*.6)).sort((a,b)=>b[1]-a[1]).map(x=>x[0])};
 const EQF=[['bb','槓鈴'],['db','啞鈴'],['machine','器械'],['cable','繩索'],['smith','史密斯'],['kb','壺鈴'],['band','彈力帶'],['bw','徒手']];
 const fkey=e=>({'槓鈴':'bb','EZ槓':'bb','啞鈴':'db','器械':'machine','繩索':'cable','史密斯':'smith','壺鈴':'kb','彈力帶':'band','自體重':'bw'})[e.equip]||'machine';
 const eqMatch=(e,eq)=>!eq||!eq.length||eq.includes(fkey(e));
@@ -2305,7 +2309,9 @@ function sheetProfile(s){
 const grpMatch=(e,g)=>g==='全部'||(g==='居家'?availEx(e,myEq()):e.group===g);
 /* search: every word must match somewhere (name, English name, equipment, group — incl. English equipment words like "cable") */
 const EQ_EN={'繩索':'cable cable machine pulley','啞鈴':'dumbbell db','槓鈴':'barbell bb','器械':'machine','彈力帶':'band resistance band','自體重':'bodyweight body weight','史密斯':'smith machine','壺鈴':'kettlebell kb','EZ槓':'ez bar curl bar barbell'};
-const exMatch=(e,q)=>{if(!q)return true;const hay=(e.name+' '+(e.en||'')+' '+e.equip+' '+e.group+' '+(EQ_EN[e.equip]||'')+' '+e.id.replace(/_/g,' ')).toLowerCase();return q.toLowerCase().split(/[\s\-,，、]+/).filter(Boolean).every(w=>hay.includes(w))};
+const exHay=e=>(e.name+' '+(e.en||'')+' '+e.equip+' '+e.group+' '+(EQ_EN[e.equip]||'')+' '+e.id.replace(/_/g,' ')).toLowerCase();
+const exWords=q=>q.toLowerCase().split(/[\s\-,，、]+/).filter(Boolean);
+const exMatch=(e,q)=>{if(!q)return true;const hay=exHay(e);return exWords(q).every(w=>hay.includes(w))};
 const enLine=ex=>ex&&ex.en?`<div class="en">${esc(ex.en)}</div>`:'';
 const ytEn=ex=>'https://www.youtube.com/results?search_query='+encodeURIComponent((ex.en||ex.name)+' proper form tutorial');
 const ytZh=ex=>'https://www.youtube.com/results?search_query='+encodeURIComponent(ex.name+' 教學 動作');
@@ -2432,7 +2438,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117183000';
+const APP_V='20261117183138';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
