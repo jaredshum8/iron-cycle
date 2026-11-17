@@ -338,6 +338,19 @@ a.btn{text-decoration:none}
 .opt b{display:block;font-size:16px}
 .opt span{display:block;font-size:13px;color:var(--muted);margin-top:2px}
 .opt .days{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.opt{position:relative}
+.opt .badge{position:absolute;top:12px;right:14px;display:inline-block;margin:0;padding:3px 9px;border-radius:999px;background:var(--grad);color:var(--on-accent);font-size:11px;font-weight:700}
+.lead .who{display:inline-block;margin:2px 4px 0 0;padding:1px 9px;border-radius:999px;background:var(--accent-soft);color:var(--accent);font-size:13px;font-weight:700}
+.rec-prev{display:flex;flex-direction:column;gap:10px;margin:-2px 0 4px;animation:rise .45s cubic-bezier(.22,1,.36,1)}
+.rp-day{background:var(--lg-bg);-webkit-backdrop-filter:blur(22px) saturate(1.8);backdrop-filter:blur(22px) saturate(1.8);box-shadow:inset 0 1px 0 var(--lg-hi),inset 0 0 0 1px var(--lg-brd),var(--lg-sh);border-radius:18px;padding:10px 12px 6px}
+.rp-h{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:4px}
+.rp-h b{font-size:15px}.rp-h span{font-size:12px;color:var(--muted);font-weight:700}
+.rp-ex{display:flex;align-items:center;gap:10px;padding:6px 0;border-top:1px solid var(--line)}
+.rp-ex:nth-child(2){border-top:0}
+.rp-n{font-size:14px;font-weight:700}
+.rp-main{font-style:normal;margin-left:6px;font-size:11px;font-weight:700;color:var(--accent);background:var(--accent-soft);padding:1px 7px;border-radius:999px;white-space:nowrap}
+.rp-s{font-size:13px;color:var(--text);white-space:nowrap}
+
 .ex-head{display:flex;gap:12px;align-items:flex-start}
 .trend{flex:none;width:42%;max-width:190px;background:var(--surface);border-radius:16px;padding:8px 10px 6px;box-shadow:var(--shadow-sm)}
 .trend .spark{height:48px}
@@ -736,59 +749,142 @@ function applyTheme(){
 try{matchMedia('(prefers-color-scheme: dark)').addEventListener('change',()=>{if(typeof render==='function'&&state)render()})}catch(e){}
 
 /* ---------- Plan templates ---------- */
-const T={
- UA:['上肢 A',[['bb_bench',3,6,8,60],['bb_row',3,8,10,50],['db_ohp',3,8,10,16],['cb_lat_pd',3,10,12,50],['db_lateral',3,15,20,8],['cb_rope_pd',3,10,12,20],['db_curl',3,10,12,10]]],
- LA:['下肢 A',[['bb_squat',3,6,8,80],['bb_rdl',3,8,10,60],['m_leg_press',3,10,12,120],['m_lying_curl',3,10,12,35],['m_standing_calf',4,12,15,60],['cb_crunch',3,12,15,30]]],
- UB:['上肢 B',[['bb_ohp',3,6,8,40],['cb_lat_pd',4,10,12,50],['db_incline',3,8,10,22],['pl_row',3,10,12,60],['db_lateral',4,15,20,8],['cb_face_pull',4,15,20,20],['ez_curl',3,10,12,25]]],
- LB:['下肢 B',[['bb_deadlift',3,4,6,100],['db_bulgarian',3,8,10,14],['bb_hip_thrust',3,8,12,80],['m_leg_ext',3,12,15,45],['m_seated_curl',3,10,12,35],['bw_hanging_leg',3,10,15,0]]],
- PU:['推',[['bb_bench',3,6,8,60],['bb_ohp',3,6,8,40],['db_incline',3,8,10,22],['db_lateral',4,15,20,8],['cb_crossover',3,12,15,15],['cb_rope_pd',3,10,12,20],['db_oh_ext',3,10,12,14]]],
- PL:['拉',[['bw_pullup',3,6,10,0],['bb_row',3,8,10,50],['cb_seated_row',3,10,12,50],['cb_face_pull',3,15,20,20],['db_rear_fly',3,15,20,6],['ez_curl',3,10,12,25],['db_hammer',3,10,12,12]]],
- LG:['腿',[['bb_squat',3,6,8,80],['bb_rdl',3,8,10,60],['m_leg_press',3,10,12,120],['m_leg_ext',3,12,15,45],['m_lying_curl',3,10,12,35],['m_standing_calf',4,12,15,60]]],
- FA:['全身 A',[['bb_squat',3,6,8,80],['bb_bench',3,6,8,60],['bb_row',3,8,10,50],['db_lateral',3,15,20,8],['cb_rope_pd',3,10,12,20],['cb_crunch',3,12,15,30]]],
- FB:['全身 B',[['bb_deadlift',3,4,6,100],['bb_ohp',3,6,8,40],['cb_lat_pd',3,10,12,50],['db_incline',3,8,10,22],['db_curl',3,10,12,10],['m_standing_calf',3,12,15,60]]],
+/* ---------- plan generator: picks exercises, sets and reps from age, experience, sex, focus and equipment ---------- */
+// movement slots → candidates in order of preference, per tier (beg = new lifters, std = 6+ months, sen = 60+)
+const SLOT={
+ squat:{std:['bb_squat','m_hack','sm_squat','m_pendulum','db_goblet','kb_goblet_swing','band_squat','bw_squat'],beg:['m_leg_press','db_goblet','sm_squat','m_hack','band_squat','bw_squat'],sen:['m_leg_press','db_goblet','bw_squat']},
+ squat2:{std:['m_leg_press','db_bulgarian','m_hack','db_walk_lunge','db_lunge','bw_split_squat'],beg:['m_leg_press','db_lunge','db_stepup','bw_split_squat','bw_lunge'],sen:['db_stepup','m_leg_press','bw_split_squat']},
+ dl:{adv:['bb_deadlift','bb_rdl','db_rdl','sm_rdl','band_good_morning','bw_single_glute_bridge'],std:['bb_rdl','db_rdl','sm_rdl','band_good_morning','bw_single_glute_bridge'],beg:['db_rdl','m_lever_dl','sm_rdl','band_good_morning','bw_glute_bridge'],sen:['m_hip_thrust','bw_glute_bridge']},
+ hinge:{std:['db_rdl','bb_rdl','sm_rdl','db_single_rdl','band_good_morning','bw_single_glute_bridge'],beg:['db_rdl','m_back_ext','band_good_morning','bw_glute_bridge'],sen:['m_back_ext_machine','bw_glute_bridge','band_glute_bridge']},
+ glute:{std:['bb_hip_thrust','m_hip_thrust','sm_hip_thrust','band_glute_bridge','bw_single_glute_bridge'],beg:['m_hip_thrust','bb_hip_thrust','band_glute_bridge','bw_glute_bridge'],sen:['m_hip_thrust','bw_glute_bridge','band_glute_bridge']},
+ gluteIso:{std:['m_abductor','cb_kickback','m_glute_kick','band_monster_walk','band_kickback','bw_single_glute_bridge'],sen:['m_abductor','band_monster_walk','bw_glute_bridge']},
+ hamCurl:{std:['m_lying_curl','m_seated_curl','band_ham_curl','db_single_rdl','bw_single_glute_bridge'],beg:['m_seated_curl','m_lying_curl','band_ham_curl','bw_glute_bridge'],sen:['m_seated_curl','band_ham_curl','bw_glute_bridge']},
+ quadIso:{std:['m_leg_ext','bw_split_squat','bw_wall_sit'],sen:['m_leg_ext','bw_wall_sit']},
+ calf:{std:['m_standing_calf','m_seated_calf','db_calf','bw_calf'],sen:['m_seated_calf','bw_calf']},
+ hpush:{std:['bb_bench','db_bench','sm_bench','m_chest_press','bw_pushup'],beg:['m_chest_press','db_bench','sm_bench','band_chest_press','bw_incline_pushup'],sen:['m_chest_press','band_chest_press','bw_incline_pushup']},
+ ipush:{std:['db_incline','bb_incline','m_incline_press','sm_incline','bw_decline_pushup','band_chest_press'],beg:['m_incline_press','db_incline','sm_incline','bw_pushup','band_chest_press'],sen:['m_incline_press','bw_incline_pushup']},
+ vpush:{std:['bb_ohp','db_ohp','m_shoulder_press','band_ohp','bw_pike_pushup'],beg:['m_shoulder_press','db_ohp','band_ohp','bw_pike_pushup'],sen:['m_shoulder_press','db_ohp','band_ohp']},
+ vpull:{std:['bw_pullup','cb_lat_pd','m_lat_pd','band_assist_pullup','band_lat_pd','bw_towel_row'],beg:['cb_lat_pd','m_lat_pd','m_assist_pullup','band_lat_pd','bw_inverted_row'],sen:['m_lat_pd','cb_lat_pd','band_lat_pd']},
+ vpull2:{std:['cb_lat_pd_close','cb_single_pd','m_lat_pd','bw_chinup','band_lat_pd'],sen:['cb_lat_pd','band_lat_pd']},
+ hrow:{std:['bb_row','db_chest_row','cb_seated_row','db_row','band_row','bw_inverted_row','bw_towel_row'],beg:['m_row','cb_seated_row','db_row','band_row','bw_inverted_row','bw_towel_row'],sen:['m_row','cb_seated_row','band_row']},
+ hrow2:{std:['cb_seated_row','db_row','m_row','pl_row','band_row','bw_inverted_row'],sen:['cb_seated_row','band_row']},
+ chestIso:{std:['m_pec_deck','cb_mid_fly','db_fly','band_fly'],sen:['m_pec_deck','band_fly']},
+ lateral:{std:['db_lateral','cb_lateral','m_lateral','band_lateral'],sen:['m_lateral','db_lateral','band_lateral']},
+ rear:{std:['cb_face_pull','m_rear_delt','db_rear_fly','band_face_pull','band_pull_apart'],sen:['m_rear_delt','band_pull_apart']},
+ bicep:{std:['db_curl','ez_curl','cb_curl','db_hammer','band_curl'],sen:['m_bicep_curl','db_curl','band_curl']},
+ bicep2:{std:['db_hammer','db_incline_curl','cb_bayesian','band_curl']},
+ tricep:{std:['cb_rope_pd','db_oh_ext','ez_skull','band_pushdown','bw_diamond','bw_bench_dip'],sen:['cb_rope_pd','m_tri_ext','band_pushdown']},
+ tricep2:{std:['cb_oh_ext','db_oh_ext','db_skull','band_oh_ext','bw_bench_dip']},
+ core:{std:['cb_crunch','bw_hanging_knee','bw_leg_raise','bw_deadbug','bw_plank'],beg:['bw_deadbug','bw_plank','bw_crunch','m_ab_crunch'],sen:['bw_deadbug','bw_plank','cb_pallof','band_pallof']},
 };
-T.FC=['全身 C',[['m_leg_press',3,10,12,120],['db_bench',3,8,10,22],['cb_seated_row',3,10,12,50],['db_bulgarian',3,8,10,14],['cb_face_pull',3,15,20,20],['bw_plank',3,30,60,0]]];
+// day layouts: ordered by priority; the first slot is the heavy main lift. Lower-priority slots drop off for shorter sessions.
+const DAYS={
+ FA:['全身 A',['squat','hpush','vpull','hamCurl','lateral','core']],
+ FB:['全身 B',['dl','vpush','hrow','squat2','bicep','core']],
+ FC:['全身 C',['hpush','squat2','hrow2','glute','rear','tricep']],
+ U1:['上肢 A',['hpush','hrow','vpush','vpull2','lateral','tricep','bicep']],
+ U2:['上肢 B',['vpull','ipush','hrow2','lateral','rear','bicep2','tricep2']],
+ L1:['下肢 A',['squat','hinge','squat2','hamCurl','calf','core']],
+ L2:['下肢 B',['dl','squat2','glute','quadIso','hamCurl','core']],
+ PU:['推 A',['hpush','vpush','ipush','lateral','tricep','chestIso']],
+ PU2:['推 B',['vpush','ipush','chestIso','lateral','tricep2','hpush']],
+ PL:['拉 A',['vpull','hrow','rear','bicep','hrow2','core']],
+ PL2:['拉 B',['hrow','vpull2','rear','bicep2','vpull','core']],
+ LG:['腿 A',['squat','hinge','squat2','hamCurl','calf','core']],
+ LG2:['腿 B',['dl','squat2','glute','quadIso','hamCurl','calf']],
+ G1:['臀腿 A',['glute','squat2','hinge','gluteIso','hamCurl','core']],
+ G2:['臀腿 B',['squat','glute','dl','gluteIso','quadIso','calf']],
+ G3:['臀腿 C',['dl','glute','squat2','gluteIso','hamCurl','core']],
+ GU:['上半身＋核心',['vpull','hpush','hrow2','lateral','rear','core']],
+ GU2:['上半身線條',['vpush','hrow','ipush','lateral','tricep','bicep']],
+ GF:['全身・臀腿加強',['glute','squat','vpull','hpush','gluteIso','core']],
+ GF2:['全身・臀腿加強 B',['dl','squat2','hrow','vpush','gluteIso','core']],
+ SA:['全身 A',['squat','hpush','vpull','glute','core']],
+ SB:['全身 B',['squat2','hrow','vpush','hamCurl','core']],
+ SC:['全身 C',['quadIso','hpush','hrow2','gluteIso','core']],
+};
+// splits per focus and days/week; the first option is the one we recommend for that profile
+function splitOptions(n,focus,tier){
+  if(tier==='sen'){const k=['SA','SB','SC'];return [{days:n===1?k:[...Array(n)].map((_,i)=>k[i%3]),name:n===1?'全身輪替 A → B → C':n===2?'全身 A / B':'全身 A / B / C 輪流',why:'以穩定的器械和自身體重為主，每次練全身，關節負擔小'}]}
+  const beg=tier==='beg',O=[];
+  if(focus==='glute'){
+    if(n===1) O.push({days:['GF','GF2','G1'],name:'全身輪替（臀腿加強）',why:'每週一次，三週輪一圈，每次都有臀腿主項'});
+    if(n===2) O.push({days:['GF','GF2'],name:'全身 A / B（臀腿加強）',why:'每次都練全身，臀腿放最前面最有力的時候'});
+    if(n===3) O.push({days:['G1','GU','G2'],name:'臀腿 / 上半身 / 臀腿',why:'臀腿一週練兩次，上半身一次維持線條'},{days:['GF','GF2','GF'],name:'全身 ×3（臀腿加強）',why:'每次全身，臀腿一週三次'});
+    if(n===4) O.push({days:['G1','GU','G2','GU2'],name:'臀腿 / 上半身 ×2',why:'臀腿和上半身各練兩次，最均衡的臀腿計畫'});
+    if(n===5) O.push({days:['G1','GU','G2','GU2','G3'],name:'臀腿 ×3＋上半身 ×2',why:'臀腿一週三次，訓練量高，適合有經驗'});
+    if(n===6) O.push({days:['G1','GU','G2','GU2','G3','GU'],name:'臀腿 ×3＋上半身 ×3',why:'訓練量最高，需要足夠的睡眠和恢復'});
+  }else if(focus==='upper'){
+    if(n<=2) O.push({days:n===1?['U1','L1','U2']:['U1','FB'],name:n===1?'上肢 / 下肢輪替':'上肢 / 全身',why:'上半身多練一點，腿也不會漏掉'});
+    if(n===3) O.push({days:['U1','L1','U2'],name:'上肢 / 下肢 / 上肢',why:'胸背肩一週練兩次，腿一次'});
+    if(n===4) O.push({days:['PU','PL','LG','U2'],name:'推 / 拉 / 腿 / 上肢',why:'上半身一週兩次，腿一次'});
+    if(n===5) O.push({days:['PU','PL','LG','U1','U2'],name:'推 / 拉 / 腿 / 上肢 ×2',why:'上半身練好練滿，適合有經驗'});
+    if(n===6) O.push({days:['PU','PL','LG','PU2','PL2','U1'],name:'推 / 拉 / 腿 / 推 / 拉 / 上肢',why:'上半身最大訓練量'});
+  }
+  // balanced options (also offered under the other focuses)
+  if(n===1) O.push({days:['FA','FB','FC'],name:'全身輪替 A → B → C',why:'每週練一次全身，三週輪一圈'});
+  if(n===2) O.push({days:['FA','FB'],name:'全身 A / B',why:'時間少也能每個部位都練到'});
+  if(n===3) beg?O.push({days:['FA','FB','FC'],name:'全身 ×3',why:'新手最快進步的方式：每個部位一週練三次，動作熟得快'},{days:['U1','L1','FB'],name:'上肢 / 下肢 / 全身',why:'每個部位一週兩次'})
+               :O.push({days:['U1','L1','FB'],name:'上肢 / 下肢 / 全身',why:'每個部位一週兩次，增肌效率最好'},{days:['FA','FB','FC'],name:'全身 ×3',why:'每次練全身，彈性大'},{days:['PU','PL','LG'],name:'推 / 拉 / 腿',why:'經典三分化，但每個部位一週只練一次'});
+  if(n===4) O.push({days:['U1','L1','U2','L2'],name:'上肢 / 下肢 ×2',why:'每個部位一週兩次，最推薦的四天分法'},{days:['FA','FB','FC','FA'],name:'全身 ×4',why:'每次時間短、每個部位練很多次'});
+  if(n===5) O.push({days:['U1','L1','PU','PL','LG'],name:'上下肢＋推拉腿',why:'每個部位一週兩次，訓練量高'},{days:['U1','L1','U2','L2','FA'],name:'上下肢 ×2＋全身',why:'多一天全身補量'});
+  if(n===6) O.push({days:['PU','PL','LG','PU2','PL2','LG2'],name:'推 / 拉 / 腿 ×2',why:'每個部位一週兩次，A/B 換不同動作'},{days:['U1','L1','U2','L2','U1','L1'],name:'上肢 / 下肢 ×3',why:'每個部位一週三次'});
+  if(beg&&n>=5) O.forEach(o=>o.why+='；新手建議先從 3–4 天開始');
+  const seen=new Set();return O.filter(o=>{const k=o.days.join();if(seen.has(k))return false;seen.add(k);return true});
+}
+function genCtx(prof,eq,focus){
+  const p=prof||{},age=+p.age||30,lvl=p.lvl||'mid';
+  const tier=age>=60?'sen':lvl==='beg'?'beg':'std';
+  return {tier,adv:lvl==='adv'&&tier!=='sen',soft:p.sex==='f'&&lvl!=='adv',age,lvl,eq:(eq&&eq.length?eq:['gym']).filter(k=>k!=='none'),focus:focus||(p.sex==='f'?'glute':'bal')};
+}
+// how many exercises per session: new lifters and older lifters do fewer, better ones
+const exCount=(c,n)=>c.tier==='sen'?4:c.tier==='beg'?(n<=2?5:4):c.adv?(n<=2?6:5):5;
+const HI_REP=new Set(['lateral','rear','calf','gluteIso','core','chestIso']);
+function scheme(c,role,slot,ex){
+  const bw=ex.equip==='自體重',band=ex.equip==='彈力帶',sec=ex.unit==='秒';
+  if(sec) return c.tier==='sen'?[2,20,30]:c.tier==='beg'?[3,20,30]:[3,30,45];
+  if(c.tier==='sen') return role==='M'?[3,10,12]:[2,12,15];
+  let s;
+  if(role==='M') s=slot==='glute'?(c.tier==='beg'?[4,10,12]:[4,8,10]):c.tier==='beg'?[4,8,10]:c.adv?[4,5,7]:[4,6,8];
+  else if(role==='S') s=c.tier==='beg'?[3,10,12]:[3,8,10];
+  else s=HI_REP.has(slot)?[3,12,15]:ex.compound?[3,10,12]:c.tier==='beg'?[3,12,15]:[3,10,12];
+  if(bw&&!['bw_pullup','bw_chinup','bw_dip','bw_dip_chest'].includes(ex.id)) s=[s[0],Math.max(s[1],8),15];
+  else if(band) s=[s[0],Math.max(s[1],12),20];
+  if(['bw_pullup','bw_chinup'].includes(ex.id)) s=[s[0],4,10];
+  return s;
+}
+function pickSlot(c,slot,dayUsed,weekUsed,main){
+  const S=SLOT[slot];const list=(c.adv&&S.adv)||S[c.tier]||S.std;
+  const gym=c.eq.includes('gym');
+  const ok=id=>{const e=EX(id);return e&&availEx(e,c.eq)&&!dayUsed.has(id)&&!(c.tier!=='std'&&HARD.has(id))&&!(main&&!e.compound)&&!(c.soft&&gym&&(id==='bw_pullup'||id==='bw_chinup'))};
+  // the main lift may repeat across the week; everything else prefers something not used yet this week
+  return (!main&&list.find(id=>ok(id)&&!weekUsed.has(id)))||list.find(ok)||(S.std!==list&&S.std.find(id=>ok(id)&&!HARD.has(id)))||null;
+}
+function genDay(c,key,n,weekUsed){
+  const [name,slots]=DAYS[key],want=exCount(c,n),dayUsed=new Set(),out=[];
+  for(let i=0;i<slots.length&&out.length<want;i++){
+    const role=out.length===0?'M':out.length===1?'S':'A';
+    const id=pickSlot(c,slots[i],dayUsed,weekUsed,role==='M');if(!id) continue;
+    dayUsed.add(id);weekUsed.add(id);
+    const [sets,rmin,rmax]=scheme(c,role,slots[i],EX(id));out.push([id,sets,rmin,rmax,0]);
+  }
+  return {name,ex:out};
+}
+function genPlanDays(c,keys){
+  const weekUsed=new Set(),cnt={},n=keys.length;
+  return keys.map(k=>{cnt[k]=(cnt[k]||0)+1;const d=genDay(c,k,n,weekUsed);if(cnt[k]>1)d.name=d.name.replace(/ [ABC]$/,'')+' ·'+cnt[k];return d});
+}
+function recOptions(n,prof,eq,focus){
+  const c=genCtx(prof,eq,focus);
+  return splitOptions(n,c.focus,c.tier).map(o=>({...o,ctx:c,gen:genPlanDays(c,o.days)}));
+}
+const TIER_TXT={beg:'新手',std:'有經驗',sen:'60 歲以上'};
 const DEFAULT_WD={1:[6],2:[1,4],3:[1,3,5],4:[1,2,4,5],5:[1,2,3,5,6],6:[1,2,3,4,5,6]};
-const REC={
- 1:[{name:'全身輪替 A → B → C（長輩友善）',desc:'每週練一次，三週輪一圈。以器械和自身體重為主，動作穩定好上手',days:['SA','SB','SC']},{name:'全身輪替 A → B → C',desc:'每週練一次全身，三週輪一圈',days:['FA','FB','FC']}],
- 2:[{name:'全身 A / B',desc:'每次練全身，適合剛開始或時間少',days:['FA','FB']}],
- 3:[{name:'推 / 拉 / 腿',desc:'最經典的三分化',days:['PU','PL','LG']},{name:'全身 A / B / C',desc:'每個部位一週練三次，新手進步快',days:['FA','FB','FC']}],
- 4:[{name:'上下肢分化 ×2',desc:'每個部位一週兩次，增肌效率高',days:['UA','LA','UB','LB']},{name:'推 / 拉 / 腿 / 上肢',desc:'推拉腿再加一天上半身',days:['PU','PL','LG','UA']}],
- 5:[{name:'推 / 拉 / 腿 / 上肢 / 下肢',desc:'訓練量大，適合有經驗',days:['PU','PL','LG','UA','LB']}],
- 6:[{name:'推 / 拉 / 腿 ×2',desc:'每個部位一週兩次，訓練量最大',days:['PU','PL','LG','PU','PL','LG']}]};
-// 居家：只用徒手、啞鈴、彈力帶
-T.HA=['居家全身 A',[['db_goblet',3,10,12,0],['bw_pushup',3,8,15,0],['db_row',3,10,12,0],['db_rdl',3,10,12,0],['band_lateral',3,15,20,0],['band_face_pull',3,15,20,0],['bw_plank',3,30,60,0]]];
-T.HB=['居家全身 B',[['db_bulgarian',3,8,12,0],['band_chest_press',3,10,15,0],['band_row',3,10,15,0],['band_glute_bridge',3,12,15,0],['db_hammer',3,10,12,0],['band_pushdown',3,12,15,0],['bw_deadbug',3,10,12,0]]];
-T.HC=['居家全身 C',[['db_lunge',3,10,12,0],['bw_decline_pushup',3,8,15,0],['band_lat_pd',3,12,15,0],['db_single_rdl',3,10,12,0],['band_pull_apart',3,15,20,0],['db_curl',3,10,12,0],['bw_leg_raise',3,10,15,0]]];
-T.HU1=['居家上肢 A',[['bw_pushup',3,8,15,0],['db_row',3,10,12,0],['band_ohp',3,10,12,0],['band_fly',3,12,15,0],['band_face_pull',3,15,20,0],['db_curl',3,10,12,0],['band_pushdown',3,12,15,0]]];
-T.HL1=['居家下肢 A',[['db_goblet',4,10,12,0],['db_rdl',3,10,12,0],['db_bulgarian',3,8,12,0],['band_ham_curl',3,12,15,0],['band_glute_bridge',3,12,15,0],['db_calf',3,12,15,0],['bw_plank',3,30,60,0]]];
-T.HU2=['居家上肢 B',[['band_chest_press',3,10,15,0],['band_row',3,10,15,0],['db_lateral',4,15,20,0],['band_pull_apart',3,15,20,0],['db_hammer',3,10,12,0],['band_oh_ext',3,12,15,0],['bw_diamond',3,6,12,0]]];
-T.HL2=['居家下肢 B',[['db_sumo_squat',3,10,12,0],['band_good_morning',3,12,15,0],['db_lunge',3,10,12,0],['band_monster_walk',3,12,15,0],['db_single_rdl',3,10,12,0],['bw_leg_raise',3,10,15,0]]];
-T.HP=['居家推',[['bw_pushup',3,8,15,0],['band_chest_press',3,10,15,0],['band_ohp',3,10,12,0],['db_lateral',4,15,20,0],['band_fly',3,12,15,0],['band_pushdown',3,12,15,0],['band_oh_ext',3,12,15,0]]];
-T.HQ=['居家拉',[['db_row',4,10,12,0],['band_row',3,10,15,0],['band_lat_pd',3,12,15,0],['band_face_pull',3,15,20,0],['db_rear_fly',3,15,20,0],['db_curl',3,10,12,0],['db_hammer',3,10,12,0]]];
-T.HG=['居家腿',[['db_goblet',4,10,12,0],['db_rdl',3,10,12,0],['db_stepup',3,10,12,0],['band_ham_curl',3,12,15,0],['band_glute_bridge',3,12,15,0],['band_monster_walk',3,12,15,0],['db_calf',3,12,15,0]]];
-T.SA=['全身 A（長輩友善）',[['m_leg_press',3,10,15,0],['m_chest_press',2,10,15,0],['m_lat_pd',2,10,15,0],['bw_glute_bridge',2,12,15,0],['m_seated_calf',2,12,15,0],['cb_pallof',2,10,12,0]]];
-T.SB=['全身 B（長輩友善）',[['bw_squat',2,10,15,0],['m_row',2,10,15,0],['m_shoulder_press',2,10,15,0],['m_seated_curl',2,10,15,0],['m_standing_calf',2,12,15,0],['bw_deadbug',2,8,10,0]]];
-T.SC=['全身 C（長輩友善）',[['m_leg_ext',2,12,15,0],['db_stepup',2,8,10,0],['m_incline_press',2,10,15,0],['cb_seated_row',2,10,15,0],['cb_face_pull',2,12,15,0],['m_abductor',2,12,15,0],['bw_plank',2,15,30,0]]];
-REC[1].push({name:'居家全身輪替 A → B → C',desc:'只用徒手、啞鈴、彈力帶，每週練一次，三週輪一圈',days:['HA','HB','HC'],home:true});
-const HOME_DESC='只用徒手、啞鈴、彈力帶，在家或飯店都能練';
-REC[2].push({name:'居家：啞鈴＋彈力帶 全身 A / B',desc:HOME_DESC,days:['HA','HB'],home:true});
-REC[3].push({name:'居家：啞鈴＋彈力帶 全身 A / B / C',desc:HOME_DESC,days:['HA','HB','HC'],home:true});
-REC[4].push({name:'居家：啞鈴＋彈力帶 上下肢 ×2',desc:HOME_DESC,days:['HU1','HL1','HU2','HL2'],home:true});
-REC[5].push({name:'居家：啞鈴＋彈力帶 推 / 拉 / 腿 / 上 / 下',desc:HOME_DESC,days:['HP','HQ','HG','HU1','HL1'],home:true});
-REC[6].push({name:'居家：啞鈴＋彈力帶 推 / 拉 / 腿 ×2',desc:HOME_DESC,days:['HP','HQ','HG','HP','HQ','HG'],home:true});
-function buildPlan(wds,keys){
-  const seen={};
+function buildPlan(wds,gen){
+  const mk=d=>d.ex.map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}));
   // one day a week: every menu shares that weekday and they take turns week by week
-  if(wds.length===1) return {freq:1,rotate:true,start:mondayOf(TODAY()),days:(keys||[null]).map((k,i)=>{
-    if(!k) return {id:uid(),name:'訓練日 A',wd:wds[0],exercises:[]};
-    return {id:uid(),name:T[k][0],wd:wds[0],exercises:T[k][1].map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}))};
-  })};
-  return {freq:wds.length,days:wds.map((wd,i)=>{
-    if(!keys) return {id:uid(),name:'訓練日 '+'ABCDEF'[i],wd,exercises:[]};
-    const k=keys[i];seen[k]=(seen[k]||0)+1;
-    return {id:uid(),name:T[k][0]+(seen[k]>1?' ·'+seen[k]:''),wd,exercises:T[k][1].map(([exId,sets,repMin,repMax,weight])=>({id:uid(),exId,sets,repMin,repMax,weight}))};
-  })};
+  if(wds.length===1) return {freq:1,rotate:true,start:mondayOf(TODAY()),days:(gen||[null]).map(d=>d?{id:uid(),name:d.name,wd:wds[0],exercises:mk(d)}:{id:uid(),name:'訓練日 A',wd:wds[0],exercises:[]})};
+  return {freq:wds.length,days:wds.map((wd,i)=>gen?{id:uid(),name:gen[i].name,wd,exercises:mk(gen[i])}:{id:uid(),name:'訓練日 '+'ABCDEF'[i],wd,exercises:[]})};
 }
 
 /* ---------- utils ---------- */
@@ -829,7 +925,7 @@ const ICON={
 };
 
 /* ---------- state ---------- */
-function defaultPlan(freq){return buildPlan(DEFAULT_WD[freq],REC[freq][0].days)}
+function defaultPlan(freq){try{return buildPlan(DEFAULT_WD[freq],recOptions(freq,null,['gym'],'bal')[0].gen)}catch(e){return buildPlan(DEFAULT_WD[freq],null)}}
 function freshState(){
   return {v:2,updatedAt:0,onboarded:false,settings:{cycleStart:mondayOf(TODAY()),restCompound:120,restIso:90,sound:true,vibrate:true,periodize:true,showTut:true},
     plan:defaultPlan(4),overrides:{},restByEx:{},customEx:[],active:null};
@@ -1546,6 +1642,7 @@ const A={
  redoSetup:()=>{ui.sheet=null;ui.ob=newOb();ui.screen='onboard';render()},
  obN:el=>{const o=ui.ob;o.n=+el.dataset.n;o.wds=DEFAULT_WD[o.n].slice();o.rec=0;render()},
  obWd:el=>{const o=ui.ob,w=+el.dataset.w;o.wds=o.wds.includes(w)?o.wds.filter(x=>x!==w):[...o.wds,w];render()},
+ obFocus:el=>{ui.ob.focus=el.dataset.k;ui.ob.rec=0;render()},
  obRec:el=>{ui.ob.rec=el.dataset.i==='custom'?'custom':+el.dataset.i;render()},
  obPer:el=>{ui.ob.periodize=el.dataset.k==='1';render()},
  obBack:()=>{ui.ob.step--;render()},
@@ -1566,7 +1663,7 @@ const A={
  shareN:el=>{ui.sheet.n=+el.dataset.n;ui.keepSheetScroll=true;render()},
  drStart:el=>{const n=ui.sheet.n,k=el.dataset.k;let plan;
    if(k==='mine'){plan=clone(state.plan);plan.periodize=state.settings.periodize}
-   else{const keys=k==='blank'?null:REC[n][+k].days;plan=buildPlan(DEFAULT_WD[n],keys);plan.periodize=true}
+   else{const gen=k==='blank'?null:recOptions(n,{lvl:'mid',age:30},myEqRaw(),'bal')[+k].gen;plan=buildPlan(DEFAULT_WD[n],gen);plan.periodize=true}
    plan.days.forEach(d=>d.exercises.forEach(pe=>pe.weight=0));plan.title='';ui.draftPlan=plan;ui.sheet={type:'plan'};render()},
  drContinue:()=>{ui.sheet={type:'plan'};render()},
  drPer:el=>{ui.draftPlan.periodize=el.dataset.k==='1';ui.keepSheetScroll=true;render()},
@@ -1601,7 +1698,7 @@ const A={
    const wds=sortWds(o.wds),custom=o.rec==='custom';
    state.profile=clone(o.prof);
    state.settings.equip=o.eq.slice();
-   state.plan=buildPlan(wds,custom?null:REC[o.n][o.rec].days);
+   state.plan=buildPlan(wds,custom?null:recOptions(o.n,o.prof,o.eq,o.focus)[o.rec].gen);state.settings.focus=o.focus||genCtx(o.prof,o.eq).focus;
    adaptPlan(state.plan,myEq());
    state.plan.days.forEach(d=>d.exercises.forEach(pe=>{delete pe._new;pe.weight=estimateW(pe.exId)}));
    state.overrides={};state.settings.periodize=o.periodize;state.settings.cycleStart=mondayOf(TODAY());state.onboarded=true;
@@ -1733,7 +1830,7 @@ function sheetShare(s){
    <div class="card stack"><div class="ex-name">幫別人寫一份計畫</div>
     ${ui.draftPlan?'<button class="btn primary" data-act="drContinue">繼續編輯還沒完成的計畫</button>':''}
     <div class="field"><label>對方一週練幾天</label><div class="seg">${[1,2,3,4,5,6].map(k=>`<button class="${n===k?'on':''}" data-act="shareN" data-n="${k}">${k}</button>`).join('')}</div></div>
-    <div class="stack" style="gap:8px">${REC[n].map((r,i)=>`<button class="opt" data-act="drStart" data-k="${i}"><b>從「${esc(recLabel(r,myEqRaw()).name)}」開始改</b><span>${esc(r.desc)}</span></button>`).join('')}
+    <div class="stack" style="gap:8px">${recOptions(n,{lvl:'mid',age:30},myEqRaw(),'bal').map((r,i)=>`<button class="opt" data-act="drStart" data-k="${i}"><b>從「${esc(r.name)}」開始改</b><span>${esc(r.why)}</span></button>`).join('')}
      <button class="opt" data-act="drStart" data-k="blank"><b>從空白開始</b><span>${n} 個空白訓練日${n===1?'（每週輪替）':''}，自己挑動作</span></button>
      <button class="opt" data-act="drStart" data-k="mine"><b>從我的計畫開始改</b><span>複製一份你目前的計畫再修改</span></button></div>
    </div>`}
@@ -1875,13 +1972,15 @@ function adaptPlan(plan,eq){
 }
 const EQ_NAME={db:'啞鈴',bb:'槓鈴',kb:'壺鈴',band:'彈力帶',bar:'單槓'};
 function eqLabel(eq){const a=eq.filter(k=>EQ_NAME[k]).map(k=>EQ_NAME[k]);return a.length?'徒手＋'+a.join('＋'):'只用徒手'}
+function recPreview(r,n,wds){
+  return `<div class="rec-prev">${r.gen.map((d,j)=>`<div class="rp-day"><div class="rp-h"><b>${esc(d.name)}</b><span>${n===1?`第 ${j+1} 週`:'週'+WD[wds[j]]}</span></div>
+    ${d.ex.map(([id,sets,rmin,rmax],k)=>{const ex=EX(id);return `<div class="rp-ex">${thumbHTML(ex,'sm')}<span class="grow"><span class="rp-n">${esc(ex.name)}</span>${k===0?'<i class="rp-main">主項目</i>':''}</span><span class="rp-s num">${sets}×${rmin===rmax?rmin:rmin+'-'+rmax}${ex.unit==='秒'?'秒':''}</span>${musIcon(ex,'sm')}</div>`}).join('')}</div>`).join('')}</div>`;
+}
 function recLabel(r,eq){
   if(!r.home) return r;
   const gym=!eq.length||eq.includes('gym'),lab=gym?'啞鈴＋彈力帶':eqLabel(eq.filter(k=>k!=='none'));
   return {...r,name:r.name.replace('啞鈴＋彈力帶',lab).replace('居家全身輪替','居家：'+lab+' 全身輪替'),desc:gym?r.desc:(lab==='只用徒手'?'不需要任何器材，在家或飯店都能練':'只用'+lab.replace('徒手＋','徒手、').replace(/＋/g,'、')+'，在家就能練')+(r.desc.includes('三週輪一圈')?'，每週練一次，三週輪一圈':'')};
 }
-function recVisible(n,eq){const gym=!eq.length||eq.includes('gym');return REC[n].map((r,i)=>i).filter(i=>gym||REC[n][i].home)}
-function recSwaps(r,eq){if(!eq.length||eq.includes('gym')) return 0;const e=eq.filter(k=>k!=='none');let c=0;r.days.forEach(k=>T[k][1].forEach(([id])=>{if(!availEx(EX(id),e))c++}));return c}
 
 /* ---------- muscles & body map ---------- */
 const MUS={chest:'胸',shoulders:'肩膀',biceps:'二頭肌',forearms:'前臂',abs:'腹肌',obliques:'腹斜肌',quads:'股四頭',adductors:'大腿內側',traps:'斜方肌',triceps:'三頭肌',lats:'背闊肌',lowerback:'下背',glutes:'臀部',abductors:'臀側／外展',hamstrings:'腿後',calves:'小腿',cardio:'有氧'};
@@ -2192,7 +2291,7 @@ function renderAuth(){
 }
 
 /* ---------- onboarding ---------- */
-function newOb(){const n=state.plan&&state.onboarded?(state.plan.rotate?1:Math.min(6,Math.max(1,state.plan.days.length))):3;const pf=state.profile||{h:'',w:'',sex:'m',lvl:'beg'};return {eq:(state.settings.equip||['gym']).slice(),prof:clone(pf),step:0,n,wds:DEFAULT_WD[n].slice(),rec:0,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
+function newOb(){const n=state.plan&&state.onboarded?(state.plan.rotate?1:Math.min(6,Math.max(1,state.plan.days.length))):3;const pf=state.profile||{h:'',w:'',sex:'m',lvl:'beg'};return {eq:(state.settings.equip||['gym']).slice(),prof:clone(pf),step:0,n,wds:DEFAULT_WD[n].slice(),rec:0,focus:state.settings.focus,periodize:state.settings.periodize!==false,redo:!!state.onboarded}}
 function renderOnboard(){
   const o=ui.ob,steps=`<div class="steps">${[0,1,2,3,4,5].map(i=>`<i class="${i<=o.step?'on':''}"></i>`).join('')}</div>`;
   let body='',next='下一步',ok=true;
@@ -2217,11 +2316,16 @@ function renderOnboard(){
     body=`<div class="big-q">你有哪些器材？</div><p class="lead">可以複選。推薦菜單會換成你做得到的動作。</p>
     <div class="eqgrid">${EQ_OPTS.map(([k,l,d])=>`<button class="opt ${o.eq.includes(k)?'on':''}" data-act="obEq" data-k="${k}"><b>${l}</b><span>${d}</span></button>`).join('')}</div>`;
   }else if(o.step===4){
-    const wdsSorted=sortWds(o.wds),vis=recVisible(o.n,o.eq);
-    if(o.rec!=='custom'&&!vis.includes(o.rec)) o.rec=vis[0];
-    body=`<div class="big-q">選一份菜單</div><p class="lead">依一週 ${o.n} 天${o.eq.includes('gym')?'':'和你的器材'}推薦，重量會依你的身體資料估算。</p>
-    <div class="stack" style="gap:10px">${vis.map(i=>{const r=recLabel(REC[o.n][i],o.eq),sw=recSwaps(REC[o.n][i],o.eq);return `<button class="opt ${o.rec===i?'on':''}" data-act="obRec" data-i="${i}"><b>${esc(r.name)}</b><span>${esc(r.desc)}${sw?`（已依你的器材換掉 ${sw} 個動作）`:''}</span>
-      <span class="days">${r.days.map((k,j)=>`<span class="chip">${o.n===1?`第 ${j+1} 週`:'週'+WD[wdsSorted[j]]} ${T[k][0]}</span>`).join('')}</span></button>`}).join('')}
+    const wdsSorted=sortWds(o.wds),opts=recOptions(o.n,o.prof,o.eq,o.focus),c=opts[0].ctx;
+    if(o.rec!=='custom'&&!(o.rec<opts.length)) o.rec=0;
+    const pf=o.prof,who=[pf.sex==='f'?'女':'男',TIER_TXT[c.tier]==='有經驗'?(pf.lvl==='adv'?'兩年以上經驗':'半年以上經驗'):TIER_TXT[c.tier],c.tier==='sen'?'':pf.age+' 歲','一週 '+o.n+' 天',o.eq.includes('gym')?'健身房':eqLabel(o.eq.filter(k=>k!=='none'))].filter(Boolean);
+    const sel=o.rec==='custom'?null:opts[o.rec];
+    body=`<div class="big-q">為你排好的菜單</div><p class="lead">依你的條件：${who.map(w=>`<b class="who">${esc(w)}</b>`).join('')}</p>
+    ${c.tier==='sen'?'':`<div class="field"><label>想加強哪裡</label><div class="seg">${[['bal','均衡增肌'],['glute','臀腿加強'],['upper','上半身加強']].map(([k,l])=>`<button class="${c.focus===k?'on':''}" data-act="obFocus" data-k="${k}">${l}</button>`).join('')}</div></div>`}
+    <div class="stack" style="gap:10px">${opts.map((r,i)=>{const mins=Math.round(r.gen.reduce((t,d)=>t+estMinutes(d.ex.map(([exId,sets,repMin,repMax])=>({exId,sets,repMin,repMax,weight:0})),FIXED),0)/r.gen.length);
+      return `<button class="opt ${o.rec===i?'on':''}" data-act="obRec" data-i="${i}">${i===0?'<span class="badge">最推薦</span>':''}<b>${esc(r.name)}</b><span>${esc(r.why)}</span>
+      <span class="days"><span class="chip">每次 ${r.gen[0].ex.length} 個動作</span><span class="chip">約 ${mins} 分鐘</span>${o.n===1?`<span class="chip">${r.gen.length} 週輪一圈</span>`:''}</span></button>
+      ${o.rec===i?recPreview(r,o.n,wdsSorted):''}`}).join('')}
       <button class="opt ${o.rec==='custom'?'on':''}" data-act="obRec" data-i="custom"><b>自訂菜單</b><span>先建立 ${o.n} 個空白訓練日，再從動作庫挑動作</span></button>
       <button class="opt" data-act="obCode"><b>我有計畫代碼</b><span>別人幫你寫好的計畫，輸入代碼直接套用</span></button></div>`;
   }else{
@@ -2268,7 +2372,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117141821';
+const APP_V='20261117143001';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
