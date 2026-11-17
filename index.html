@@ -197,6 +197,11 @@ h2{font-size:17px;font-weight:700;margin:0}
 .set-item{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0;border-top:1px solid var(--line)}
 .set-item:first-child{border-top:0}
 .stepper{display:flex;align-items:center;gap:6px}
+.stp-grid{margin-bottom:2px}.stp-f{display:flex;flex-direction:column;align-items:center;gap:8px}.stp-l{font-size:13px;font-weight:700;color:var(--muted)}
+.stp{display:flex;align-items:stretch;width:100%;height:52px;border-radius:16px;background:var(--lg-bg,var(--surface2));border:1px solid var(--lg-brd,var(--line));box-shadow:inset 0 1px 0 var(--lg-hi,transparent);overflow:hidden}
+.stp button{width:48px;flex:none;font-size:24px;font-weight:600;color:var(--accent);transition:background .2s,transform .3s cubic-bezier(.34,1.56,.64,1)}
+.stp button:active{background:var(--accent-soft);transform:scale(.92)}.stp button:disabled{opacity:.3}
+.stp .num{flex:1;display:grid;place-items:center;font-size:22px;font-weight:800;border-left:1px solid var(--line);border-right:1px solid var(--line);color:var(--text)}
 .stepper button{width:38px;height:38px;border-radius:12px;background:var(--surface2);font-size:18px;font-weight:700;color:var(--text)}
 .stepper .num{min-width:56px;text-align:center;font-size:20px}
 .toggle{width:50px;height:30px;border-radius:15px;background:var(--line2);position:relative;flex:none;transition:background .2s}
@@ -842,17 +847,24 @@ function genCtx(prof,eq,focus){
 // how many exercises per session: new lifters and older lifters do fewer, better ones
 const exCount=(c,n)=>c.tier==='sen'?4:c.tier==='beg'?(n<=2?5:4):c.adv?(n<=2?6:5):5;
 const HI_REP=new Set(['lateral','rear','calf','gluteIso','core','chestIso']);
-function scheme(c,role,slot,ex){
+/* rep ranges move along fixed, meaningful steps instead of +1 */
+const REP_LAD=[[1,3],[3,5],[4,6],[6,8],[8,10],[10,12],[12,15],[15,20],[20,25],[25,30]];
+const SEC_LAD=[[10,15],[15,20],[20,30],[30,45],[45,60],[60,90],[90,120]];
+const ladOf=ex=>ex&&ex.unit==='秒'?SEC_LAD:REP_LAD;
+function ladIdx(L,a,b){let bi=0,bd=1e9;L.forEach(([x,y],i)=>{const d=Math.abs(x-a)+Math.abs(y-b);if(d<bd){bd=d;bi=i}});return bi}
+const snapR=(ex,a,b)=>{const L=ladOf(ex);return L[ladIdx(L,a,b)]};
+function scheme(c,role,slot,ex){const r=scheme0(c,role,slot,ex);return [r[0],...snapR(ex,r[1],r[2])]}
+function scheme0(c,role,slot,ex){
   const bw=ex.equip==='自體重',band=ex.equip==='彈力帶',sec=ex.unit==='秒';
   if(sec) return c.tier==='sen'?[2,20,30]:c.tier==='beg'?[3,20,30]:[3,30,45];
   if(c.tier==='sen') return role==='M'?[3,10,12]:[2,12,15];
   let s;
-  if(role==='M') s=slot==='glute'?(c.tier==='beg'?[4,10,12]:[4,8,10]):c.tier==='beg'?[4,8,10]:c.adv?[4,5,7]:[4,6,8];
+  if(role==='M') s=slot==='glute'?(c.tier==='beg'?[4,10,12]:[4,8,10]):c.tier==='beg'?[4,8,10]:c.adv?[4,4,6]:[4,6,8];
   else if(role==='S') s=c.tier==='beg'?[3,10,12]:[3,8,10];
   else s=HI_REP.has(slot)?[3,12,15]:ex.compound?[3,10,12]:c.tier==='beg'?[3,12,15]:[3,10,12];
-  if(bw&&!['bw_pullup','bw_chinup','bw_dip','bw_dip_chest'].includes(ex.id)) s=[s[0],Math.max(s[1],8),15];
-  else if(band) s=[s[0],Math.max(s[1],12),20];
-  if(['bw_pullup','bw_chinup'].includes(ex.id)) s=[s[0],4,10];
+  if(bw&&!['bw_pullup','bw_chinup','bw_dip','bw_dip_chest'].includes(ex.id)) s=[s[0],Math.max(s[1],10),Math.max(s[2],12)];
+  else if(band) s=[s[0],Math.max(s[1],15),20];
+  if(['bw_pullup','bw_chinup'].includes(ex.id)) s=[s[0],6,8];
   return s;
 }
 function pickSlot(c,slot,dayUsed,weekUsed,main){
@@ -1394,12 +1406,11 @@ function sheetCustomize(s){
   const d=s.draft,ex=EX(d.exId),P=PH(s.phaseIdx),p=prescribe(d,P);
   return sheetHead(s.isNew?'新增動作':'調整動作',s.isNew?'':esc(EX(s.origExId).name))+`<div class="sheet-b">
    <div class="ex-row card" style="padding:12px 14px">${d.exId?`<button class="peek" data-act="exPeek" data-ex="${d.exId}" aria-label="看動作示範">${thumbHTML(ex)}<span class="peek-i"><svg viewBox="0 0 10 10"><path d="M3 1.5v7l5.5-3.5z" fill="currentColor"/></svg></span></button>`:''}<button class="row grow" style="gap:12px;text-align:left;min-width:0;color:inherit" data-act="pickReplace"><span class="grow" style="min-width:0"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span>${d.exId?musIcon(ex):''}<span class="chip">${s.isNew?'選擇':'更換'}</span></button></div>
-   <div class="grid2">
-    <div class="field"><label for="cz-sets">組數</label><input id="cz-sets" inputmode="numeric" data-cz="sets" value="${d.sets}"></div>
-    ${s.mode==='plan'&&ui.draftPlan?'':`<div class="field"><label for="cz-w">重量 kg（已自動估算）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>`}
-    <div class="field"><label for="cz-min">最少次數</label><input id="cz-min" inputmode="numeric" data-cz="repMin" value="${d.repMin}"></div>
-    <div class="field"><label for="cz-max">最多次數</label><input id="cz-max" inputmode="numeric" data-cz="repMax" value="${d.repMax}"></div>
+   <div class="grid2 stp-grid">
+    <div class="stp-f"><div class="stp-l">組數</div><div class="stp"><button data-act="czSets" data-d="-1" aria-label="少一組" ${d.sets<=1?'disabled':''}>−</button><span class="num">${d.sets}</span><button data-act="czSets" data-d="1" aria-label="多一組" ${d.sets>=10?'disabled':''}>+</button></div></div>
+    <div class="stp-f"><div class="stp-l">${ex.unit==='秒'?'秒數':'次數'}</div><div class="stp">${(()=>{const L=ladOf(ex),i=ladIdx(L,+d.repMin,+d.repMax);return `<button data-act="czReps" data-d="-1" aria-label="減少次數" ${i<=0?'disabled':''}>−</button><span class="num">${d.repMin}-${d.repMax}</span><button data-act="czReps" data-d="1" aria-label="增加次數" ${i>=L.length-1?'disabled':''}>+</button>`})()}</div></div>
    </div>
+   ${s.mode==='plan'&&ui.draftPlan?'':`<div class="field"><label for="cz-w">重量 kg（已自動估算）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>`}
    ${s.mode==='plan'&&ui.draftPlan?'<div class="msg">重量不用填，對方套用時會依他的年齡、身高、體重自動估算。</div>':`<div class="card" style="padding:12px 14px;font-size:14px" id="czPreview">${czPreview(d,P)}</div>`}
    <div class="set-item" style="border:0;padding:0"><div><div class="ex-name">休息時間</div><div class="ex-sub">這個動作會記住</div></div><div class="stepper"><button data-act="czRest" data-d="-15">−</button><span class="num">${mmss(d.rest)}</span><button data-act="czRest" data-d="15">+</button></div></div>
    ${s.mode==='plan'?'':`<div class="field"><label>套用範圍</label><div class="seg"><button class="${s.scope==='today'?'on':''}" data-act="czScope" data-k="today">只改今天</button><button class="${s.scope==='plan'?'on':''}" data-act="czScope" data-k="plan">整個計畫</button></div>
@@ -1622,9 +1633,11 @@ const A={
  pickReplace:()=>{ui.pending=ui.sheet;ui.sheet={type:'picker',after:'custom'};render()},
  pickGroup:el=>{ui.sheet.g=el.dataset.g;render()},
  pickEx:el=>{const id=el.dataset.ex;const s=ui.pending;ui.pending=null;s.draft.exId=id;s.draft.rest=restOf(id);
-   if(s.isNew||s.origExId!==id){const last=lastSets(id);const ex=EX(id);s.draft.weight=last?Math.max(...last.map(x=>x.w)):estimateW(id);if(s.isNew){s.draft.repMin=ex.compound?6:10;s.draft.repMax=ex.compound?10:15}}
+   if(s.isNew||s.origExId!==id){const last=lastSets(id);const ex=EX(id);s.draft.weight=last?Math.max(...last.map(x=>x.w)):estimateW(id);if(s.isNew){[s.draft.repMin,s.draft.repMax]=ex.unit==='秒'?[30,45]:ex.compound?[8,10]:[10,12]}}
    ui.sheet=s;render()},
  czScope:el=>{ui.sheet.scope=el.dataset.k;ui.keepSheetScroll=true;render()},
+ czSets:el=>{const d=ui.sheet.draft;d.sets=Math.max(1,Math.min(10,(+d.sets||1)+(+el.dataset.d)));ui.keepSheetScroll=true;try{haptic()}catch(e){}render()},
+ czReps:el=>{const d=ui.sheet.draft,L=ladOf(EX(d.exId)),i=Math.max(0,Math.min(L.length-1,ladIdx(L,+d.repMin,+d.repMax)+(+el.dataset.d)));[d.repMin,d.repMax]=L[i];ui.keepSheetScroll=true;try{haptic()}catch(e){}render()},
  czRest:el=>{const d=ui.sheet.draft;d.rest=Math.max(15,Math.min(900,d.rest+(+el.dataset.d)));ui.keepSheetScroll=true;render()},
  czSave:()=>czApply(false),
  czDelete:()=>confirmDlg('刪除這個動作？',ui.sheet.scope==='plan'||ui.sheet.mode==='plan'?'會從計畫中移除。':'只從今天移除。','刪除',()=>czApply(true)),
@@ -1969,7 +1982,7 @@ function adaptPlan(plan,eq){
     d.exercises=d.exercises.map(pe=>{const ex=EX(pe.exId);if(availEx(ex,eq)) return pe;
       const sub=substitute(pe.exId,eq,used);n++;if(!sub) return null;used.add(sub.id);
       const toBw=sub.equip==='自體重'&&ex.equip!=='自體重';
-      return {...pe,exId:sub.id,_new:true,repMin:sub.unit==='秒'?20:toBw?8:pe.repMin,repMax:sub.unit==='秒'?45:toBw?15:pe.repMax};
+      return {...pe,exId:sub.id,_new:true,repMin:sub.unit==='秒'?30:toBw?12:pe.repMin,repMax:sub.unit==='秒'?45:toBw?15:pe.repMax};
     }).filter(Boolean)});
   return n;
 }
@@ -2375,7 +2388,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117180432';
+const APP_V='20261117180735';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
