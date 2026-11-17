@@ -472,6 +472,8 @@ button,.btn,a.btn{transition:transform .45s cubic-bezier(.34,1.56,.64,1),backgro
 button:active,.btn:active{transform:scale(.96);transition-duration:.1s}
 .tabbar button:active{transform:scale(.9)}
 .ex-row:active>.mi,.ex-row:active>.thumb{transform:scale(.96)}
+.peek{position:relative;flex:none;border-radius:13px}.peek:active .thumb{transform:scale(.94)}
+.peek-i{position:absolute;right:-4px;bottom:-4px;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;background:var(--accent);color:#fff;box-shadow:0 2px 6px rgba(0,0,0,.2)}.peek-i svg{width:10px;height:10px}
 .mi,.thumb{transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
 /* page enter */
 .rise{animation:rise .6s cubic-bezier(.22,1,.36,1) both}
@@ -1391,7 +1393,7 @@ const sheetHead=(t,sub)=>`<div class="sheet-h"><div class="grow"><h2>${t}</h2>${
 function sheetCustomize(s){
   const d=s.draft,ex=EX(d.exId),P=PH(s.phaseIdx),p=prescribe(d,P);
   return sheetHead(s.isNew?'新增動作':'調整動作',s.isNew?'':esc(EX(s.origExId).name))+`<div class="sheet-b">
-   <button class="ex-row card" style="padding:12px 14px" data-act="pickReplace">${d.exId?thumbHTML(ex):''}<span class="grow"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span>${d.exId?musIcon(ex):''}<span class="chip">${s.isNew?'選擇':'更換'}</span></button>
+   <div class="ex-row card" style="padding:12px 14px">${d.exId?`<button class="peek" data-act="exPeek" data-ex="${d.exId}" aria-label="看動作示範">${thumbHTML(ex)}<span class="peek-i"><svg viewBox="0 0 10 10"><path d="M3 1.5v7l5.5-3.5z" fill="currentColor"/></svg></span></button>`:''}<button class="row grow" style="gap:12px;text-align:left;min-width:0;color:inherit" data-act="pickReplace"><span class="grow" style="min-width:0"><div class="eyebrow">動作</div><div class="ex-name">${esc(ex.name)}</div>${enLine(ex)}<div class="ex-sub">${ex.group} · ${ex.equip}</div></span>${d.exId?musIcon(ex):''}<span class="chip">${s.isNew?'選擇':'更換'}</span></button></div>
    <div class="grid2">
     <div class="field"><label for="cz-sets">組數</label><input id="cz-sets" inputmode="numeric" data-cz="sets" value="${d.sets}"></div>
     ${s.mode==='plan'&&ui.draftPlan?'':`<div class="field"><label for="cz-w">重量 kg（已自動估算）</label><input id="cz-w" inputmode="decimal" data-cz="weight" value="${fw(d.weight)}"></div>`}
@@ -1563,6 +1565,7 @@ const A={
  adaptMine:()=>{const n=adaptPlan(state.plan,myEq());state.plan.days.forEach(d=>d.exercises.forEach(pe=>{if(pe._new){const last=lastSets(pe.exId);pe.weight=last?Math.max(...last.map(x=>x.w)):estimateW(pe.exId);delete pe._new}}));save();render();toast(n?`已把 ${n} 個做不到的動作換掉`:'目前計畫的動作你都能做')},
  exInfo:el=>{ui.sheet={type:'exDetail',exId:el.dataset.ex,peId:el.dataset.pe,date:el.dataset.date};render()},
  exDetail:el=>{ui.sheet={type:'exDetail',exId:el.dataset.ex};render()},
+ exPeek:el=>{ui.sheet={type:'exDetail',exId:el.dataset.ex,ret:ui.sheet};render()},
  newEx:()=>{ui.sheet={type:'newEx'};render()},
  saveNewEx:()=>{const n=document.getElementById('nx-name').value.trim();if(!n){toast('請輸入動作名稱');return}
    state.customEx.push({id:'cx_'+uid(),name:n,group:document.getElementById('nx-g').value,equip:document.getElementById('nx-e').value,compound:document.getElementById('nx-t').value==='c',custom:true});rebuildEx();save();ui.sheet=null;render();toast('已加入動作庫')},
@@ -1705,7 +1708,7 @@ const A={
    ui.ob=null;ui.screen=null;ui.tab='today';ui.selDate=TODAY();ui.weekOff=0;save();
    if(custom){ui.sheet={type:'plan'};render();toast('幫每個訓練日加入動作')}else{render();toast('計畫建立好了')}},
  // generic
- closeSheet:()=>{if(updateReady&&!(state.active&&ui.inSession))setTimeout(checkUpdate,300);const back=ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:(ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan'?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
+ closeSheet:()=>{if(updateReady&&!(state.active&&ui.inSession))setTimeout(checkUpdate,300);const back=ui.sheet&&ui.sheet.ret?ui.sheet.ret:ui.sheet&&ui.sheet.type==='picker'&&ui.pending&&!ui.pending.isNew?ui.pending:(ui.sheet&&ui.sheet.type==='customize'&&ui.sheet.mode==='plan'?{type:'plan'}:null);ui.pending=null;ui.sheet=back;render()},
  scrim:(el,e)=>{if(e.target===el) A.closeSheet()},
  dlgNo:()=>{ui.dialog=null;renderLayer()},
  dlgOk:()=>{const f=ui.dialog.onOk;ui.dialog=null;renderLayer();f&&f()},
@@ -2372,7 +2375,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117143001';
+const APP_V='20261117180432';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
