@@ -525,6 +525,7 @@ cb_low_fly|繩索夾胸（低位）|胸|繩索|i
 cb_incline_fly|上斜繩索夾胸|胸|繩索|i
 bw_pushup|伏地挺身|胸|自體重|c
 bw_decline_pushup|下斜伏地挺身|胸|自體重|c
+bw_pushup_plus|伏地挺身加強版（Push-Up Plus）|胸|自體重|c
 bw_dip_chest|雙槓撐體（胸）|胸|自體重|c
 m_dip|輔助雙槓撐體機|胸|器械|c
 bb_deadlift|槓鈴硬舉|背|槓鈴|c
@@ -2041,7 +2042,7 @@ function recLabel(r,eq){
 /* ---------- muscles & body map ---------- */
 const MUS={serratus:'前鋸肌',chest:'胸',shoulders:'肩膀',biceps:'二頭肌',forearms:'前臂',abs:'腹肌',obliques:'腹斜肌',quads:'股四頭',adductors:'大腿內側',traps:'斜方肌',triceps:'三頭肌',lats:'背闊肌',lowerback:'下背',glutes:'臀部',abductors:'臀側／外展',hamstrings:'腿後',calves:'小腿',cardio:'有氧'};
 const G2M={'胸':['chest'],'背':['lats'],'肩':['shoulders'],'二頭':['biceps'],'三頭':['triceps'],'前臂':['forearms'],'股四頭':['quads'],'腿後':['hamstrings'],'臀':['glutes'],'小腿':['calves'],'核心':['abs'],'全身':['quads','glutes'],'有氧':['cardio']};
-const MUS_OVR={cb_seated_crunch:["abs"],cb_standing_crunch:["abs"],cb_reverse_crunch:["abs"],db_serratus_punch:["serratus", "chest"],bw_scap_pushup:["serratus", "chest"],bw_scap_pullup:["lats", "traps"],db_scaption:["shoulders", "traps"],db_lean_lateral:["shoulders"],db_standing_ohp:["shoulders", "triceps"],cb_upright:["shoulders", "traps"],cb_ext_rot:["shoulders"],db_ext_rot:["shoulders"],cb_rope_rear_row:["shoulders", "traps"],cb_incline_fly:["chest", "shoulders"],db_neutral_bench:["chest", "triceps"],svend_press:["chest"],cb_vbar_pd:["lats", "biceps"],cb_rope_pullover:["lats"],bb_reverse_row:["lats", "biceps"],db_zottman:["biceps", "forearms"],db_cross_hammer:["biceps", "forearms"],cb_high_curl:["biceps"],cb_reverse_curl:["forearms", "biceps"],bb_jm_press:["triceps", "chest"],db_tate:["triceps"],cb_single_ext:["triceps"],cb_vbar_pushdown:["triceps"],db_reverse_lunge:["quads", "glutes"],cb_adduction:["adductors"],cb_abduction:["abductors", "glutes"],db_hip_thrust:["glutes", "hamstrings"],bw_single_hip_thrust:["glutes", "hamstrings"],bw_reverse_crunch:["abs"],bw_decline_crunch:["abs"],db_side_bend:["obliques"],bb_shrug:['traps'],db_shrug:['traps'],m_shrug:['traps'],bb_upright:['shoulders','traps'],db_upright:['shoulders','traps'],cb_face_pull:['shoulders','traps'],cb_serratus_punch:['serratus','chest','shoulders'],band_face_pull:['shoulders','traps'],band_pull_apart:['shoulders','traps'],db_rear_fly:['shoulders','traps'],m_rear_delt:['shoulders','traps'],
+const MUS_OVR={bw_pushup_plus:["chest", "serratus", "triceps"],,cb_seated_crunch:["abs"],cb_standing_crunch:["abs"],cb_reverse_crunch:["abs"],db_serratus_punch:["serratus", "chest"],bw_scap_pushup:["serratus", "chest"],bw_scap_pullup:["lats", "traps"],db_scaption:["shoulders", "traps"],db_lean_lateral:["shoulders"],db_standing_ohp:["shoulders", "triceps"],cb_upright:["shoulders", "traps"],cb_ext_rot:["shoulders"],db_ext_rot:["shoulders"],cb_rope_rear_row:["shoulders", "traps"],cb_incline_fly:["chest", "shoulders"],db_neutral_bench:["chest", "triceps"],svend_press:["chest"],cb_vbar_pd:["lats", "biceps"],cb_rope_pullover:["lats"],bb_reverse_row:["lats", "biceps"],db_zottman:["biceps", "forearms"],db_cross_hammer:["biceps", "forearms"],cb_high_curl:["biceps"],cb_reverse_curl:["forearms", "biceps"],bb_jm_press:["triceps", "chest"],db_tate:["triceps"],cb_single_ext:["triceps"],cb_vbar_pushdown:["triceps"],db_reverse_lunge:["quads", "glutes"],cb_adduction:["adductors"],cb_abduction:["abductors", "glutes"],db_hip_thrust:["glutes", "hamstrings"],bw_single_hip_thrust:["glutes", "hamstrings"],bw_reverse_crunch:["abs"],bw_decline_crunch:["abs"],db_side_bend:["obliques"],bb_shrug:['traps'],db_shrug:['traps'],m_shrug:['traps'],bb_upright:['shoulders','traps'],db_upright:['shoulders','traps'],cb_face_pull:['shoulders','traps'],cb_serratus_punch:['serratus','chest','shoulders'],band_face_pull:['shoulders','traps'],band_pull_apart:['shoulders','traps'],db_rear_fly:['shoulders','traps'],m_rear_delt:['shoulders','traps'],
  m_back_ext:['lowerback'],m_back_ext_machine:['lowerback'],bw_superman:['lowerback'],m_reverse_hyper:['lowerback','glutes'],bb_good_morning:['hamstrings','lowerback'],band_good_morning:['hamstrings','lowerback'],bb_deadlift:['lowerback','hamstrings','glutes'],m_lever_dl:['lowerback','glutes'],bb_rack_pull:['lowerback','traps'],
  bb_rdl:['hamstrings','glutes','lowerback'],db_rdl:['hamstrings','glutes'],m_adductor:['adductors'],m_abductor:['abductors'],band_monster_walk:['abductors'],db_sumo_squat:['adductors','glutes'],bb_sumo_dl:['glutes','adductors'],
  bw_russian:['obliques'],cb_woodchop:['obliques'],bw_side_plank:['obliques'],cb_pallof:['obliques'],band_pallof:['obliques'],m_rotary:['obliques'],
@@ -2431,7 +2432,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117182735';
+const APP_V='20261117183000';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
