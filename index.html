@@ -569,6 +569,7 @@ cb_lateral|單臂繩索側平舉|肩|繩索|i
 cb_face_pull|繩索面拉|肩|繩索|i
 cb_rear_fly|繩索反向飛鳥|肩|繩索|i
 cb_front|繩索前平舉|肩|繩索|i
+cb_serratus_punch|繩索前鋸肌出拳|肩|繩索|i
 bb_curl|槓鈴彎舉|二頭|槓鈴|i
 ez_curl|EZ 槓彎舉|二頭|EZ槓|i
 ez_preacher|EZ 槓牧師椅彎舉|二頭|EZ槓|i
@@ -2001,7 +2002,7 @@ function recLabel(r,eq){
 /* ---------- muscles & body map ---------- */
 const MUS={chest:'胸',shoulders:'肩膀',biceps:'二頭肌',forearms:'前臂',abs:'腹肌',obliques:'腹斜肌',quads:'股四頭',adductors:'大腿內側',traps:'斜方肌',triceps:'三頭肌',lats:'背闊肌',lowerback:'下背',glutes:'臀部',abductors:'臀側／外展',hamstrings:'腿後',calves:'小腿',cardio:'有氧'};
 const G2M={'胸':['chest'],'背':['lats'],'肩':['shoulders'],'二頭':['biceps'],'三頭':['triceps'],'前臂':['forearms'],'股四頭':['quads'],'腿後':['hamstrings'],'臀':['glutes'],'小腿':['calves'],'核心':['abs'],'全身':['quads','glutes'],'有氧':['cardio']};
-const MUS_OVR={bb_shrug:['traps'],db_shrug:['traps'],m_shrug:['traps'],bb_upright:['shoulders','traps'],db_upright:['shoulders','traps'],cb_face_pull:['shoulders','traps'],band_face_pull:['shoulders','traps'],band_pull_apart:['shoulders','traps'],db_rear_fly:['shoulders','traps'],m_rear_delt:['shoulders','traps'],
+const MUS_OVR={bb_shrug:['traps'],db_shrug:['traps'],m_shrug:['traps'],bb_upright:['shoulders','traps'],db_upright:['shoulders','traps'],cb_face_pull:['shoulders','traps'],cb_serratus_punch:['chest','shoulders'],band_face_pull:['shoulders','traps'],band_pull_apart:['shoulders','traps'],db_rear_fly:['shoulders','traps'],m_rear_delt:['shoulders','traps'],
  m_back_ext:['lowerback'],m_back_ext_machine:['lowerback'],bw_superman:['lowerback'],m_reverse_hyper:['lowerback','glutes'],bb_good_morning:['hamstrings','lowerback'],band_good_morning:['hamstrings','lowerback'],bb_deadlift:['lowerback','hamstrings','glutes'],m_lever_dl:['lowerback','glutes'],bb_rack_pull:['lowerback','traps'],
  bb_rdl:['hamstrings','glutes','lowerback'],db_rdl:['hamstrings','glutes'],m_adductor:['adductors'],m_abductor:['abductors'],band_monster_walk:['abductors'],db_sumo_squat:['adductors','glutes'],bb_sumo_dl:['glutes','adductors'],
  bw_russian:['obliques'],cb_woodchop:['obliques'],bw_side_plank:['obliques'],cb_pallof:['obliques'],band_pallof:['obliques'],m_rotary:['obliques'],
@@ -2390,7 +2391,7 @@ document.addEventListener('toggle',e=>{if(e.target.matches&&e.target.matches('[d
 /* ---------- auto update ----------
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
-const APP_V='20261117181300';
+const APP_V='20261117181649';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
