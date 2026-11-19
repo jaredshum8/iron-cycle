@@ -2,7 +2,7 @@
 <html lang="zh-Hant-TW">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -1096,15 +1096,35 @@ function prescribe(pe,ph){
   return {sets,rmin,rmax,w};
 }
 function rotIdx(date){const P=state.plan,n=P.days.length;if(!n)return 0;const w=Math.floor(between(P.start||mondayOf(TODAY()),date)/7);return ((w%n)+n)%n}
+/* Menus run in order: A → B → C → A …  The weekdays in the plan are just the days you usually go.
+   Skipping a day never skips a menu — the next workout is always the menu after the last one you did,
+   and the upcoming training days are filled in from there. */
+const planWds=()=>{const P=state.plan;return P.rotate?(P.days[0]?[P.days[0].wd]:[]):[...new Set(P.days.map(d=>d.wd))]};
+function logDayIdx(l){const P=state.plan;if(l.dayId){const i=P.days.findIndex(d=>d.id===l.dayId);if(i>=0)return i}
+  return (P.created&&l.date<P.created)?-1:P.days.findIndex(d=>d.name===l.dayName)}
+function nextIdx(){const P=state.plan,n=P.days.length;if(!n)return 0;
+  if(state.active){const i=P.days.findIndex(d=>d.id===state.active.dayId);if(i>=0)return (i+1)%n}
+  for(const l of logs){const i=logDayIdx(l);if(i>=0)return (i+1)%n}
+  return 0}
+const takenToday=()=>{const t=TODAY();return !!(state.active&&state.active.date===t)||logs.some(l=>l.date===t&&logDayIdx(l)>=0)};
 function dayFor(date){
-  const ov=state.overrides[date];
-  const P=state.plan;let day;
-  if(ov) day=P.days.find(d=>d.id===ov.dayId);
-  else if(P.rotate){day=P.days.length&&P.days[0].wd===pd(date).getDay()?P.days[rotIdx(date)]:null}
-  else day=P.days.find(d=>d.wd===pd(date).getDay());
-  if(!day) return null;
-  return {day,exercises:ov&&ov.exercises?ov.exercises:day.exercises,ov};
+  const P=state.plan,n=P.days.length,ov=state.overrides[date],t=TODAY();
+  if(ov){const day=P.days.find(d=>d.id===ov.dayId);if(day)return {day,exercises:ov.exercises||day.exercises,ov}}
+  if(!n) return null;
+  const at=i=>({day:P.days[i],exercises:P.days[i].exercises});
+  if(date<t){const l=logs.find(l=>l.date===date&&logDayIdx(l)>=0);return l?{...at(logDayIdx(l)),past:true}:null}
+  if(date===t){
+    if(state.active&&state.active.date===t){const i=P.days.findIndex(d=>d.id===state.active.dayId);if(i>=0)return at(i)}
+    const l=logs.find(l=>l.date===t&&logDayIdx(l)>=0);if(l)return {...at(logDayIdx(l)),done:true};
+  }
+  const W=planWds();if(!W.includes(pd(date).getDay()))return null;
+  let k=0;for(let d=takenToday()?addDays(t,1):t;d<date;d=addDays(d,1)) if(W.includes(pd(d).getDay())&&!state.overrides[d]) k++;
+  return at((nextIdx()+k)%n);
 }
+/* the menu you'd do next, and the next training day it's lined up for */
+function upNext(){const P=state.plan;if(!P.days.length)return null;const i=nextIdx(),W=planWds(),t=TODAY();
+  let d=takenToday()?addDays(t,1):t;for(let j=0;j<14&&!W.includes(pd(d).getDay());j++)d=addDays(d,1);
+  return {day:P.days[i],idx:i,date:d}}
 let _hv=0;const _hc={};const _hkey=()=>_hv+':'+logs.length+':'+(logs[0]?logs[0].id:'');
 function _memo(kind,exId,fn){const k=_hkey();const c=_hc[kind]||(_hc[kind]={});if(c._k!==k){for(const x in c)delete c[x];c._k=k}if(!(exId in c))c[exId]=fn();return c[exId]}
 function lastSets(exId,beforeEnd){if(!beforeEnd)return _memo('last',exId,()=>lastSets0(exId));return lastSets0(exId,beforeEnd)}
@@ -1188,11 +1208,10 @@ function renderToday(){
   const doneOn=d=>logs.some(l=>l.date===d);
   let h=`<div class="topbar"><div><div class="brand">WORKOUT</div><h1>訓練</h1></div>
     <button class="btn sm" data-act="openPlan">${ICON.edit}編輯計畫</button></div>`;
-  {const tr=dayFor(today);if(sel!==today&&tr&&tr.exercises.length&&!state.active&&!doneOn(today)) h+=`<button class="banner" data-act="start" data-date="${today}"><div class="grow"><div style="font-size:13px;opacity:.85">今天 · ${esc(tr.day.name)} · ${tr.exercises.length} 個動作</div><div style="font-size:20px">開始今天的訓練</div></div><span style="font-size:26px">›</span></button>`}
+  {const tr=dayFor(today);if(sel!==today&&tr&&tr.exercises.length&&!state.active&&!tr.done) h+=`<button class="banner" data-act="start" data-date="${today}" data-day="${tr.day.id}"><div class="grow"><div style="font-size:13px;opacity:.85">今天 · ${esc(tr.day.name)} · ${tr.exercises.length} 個動作</div><div style="font-size:20px">開始今天的訓練</div></div><span style="font-size:26px">›</span></button>`}
   let tail=a2hsHTML();
   if(!state.profile) tail+=`<section class="card stack" style="border-color:var(--phase)"><div class="ex-name">填一下身高體重</div><div class="ex-sub">新加入的動作會依你的身體資料自動估算起始重量。</div><button class="btn sm primary" data-act="editProfile" style="align-self:flex-start">填寫身體資料</button></section>`;
   if(state.active) h+=`<button class="banner" data-act="resume"><div class="grow"><div style="font-size:13px;opacity:.75">訓練進行中 · ${esc(state.active.dayName)}</div><div class="num" id="bannerClock">${hms(Date.now()-state.active.startedAt)}</div></div><span>繼續 →</span></button>`;
-  h+=missedHTML(today,sel,doneOn);
   if(ph.idx<0) tail=`<section class="phase-card"><div class="plate"></div><div class="eyebrow">每週相同</div><div class="phase-name" style="margin-top:6px">固定菜單</div><div class="muted" style="font-size:13px;margin-top:6px;max-width:75%">${FIXED.desc}</div></section>`+tail;
   else tail=`<section class="phase-card"><div class="plate"></div>
     <div class="eyebrow">第 ${ph.cycle} 輪 · 第 ${ph.week} / 5 週</div>
@@ -1212,9 +1231,9 @@ function renderToday(){
     const list=r.exercises;const nSets=list.reduce((a,pe)=>a+prescribe(pe,selPh).sets,0);
     h+=`<section class="card stack">
       <div class="day-head"><div><div class="eyebrow">${sel===today?'今天':pd(sel).getMonth()+1+'/'+pd(sel).getDate()+' 週'+WD[pd(sel).getDay()]} · ${selPh.name}</div><div class="day-title">${esc(r.day.name)}</div></div>
-      ${r.ov&&r.ov.exercises?'<span class="chip ph">今日已調整</span>':''}</div>
+      ${r.done||r.past?'<span class="chip" style="background:var(--ok-soft,rgba(80,190,150,.15));color:var(--ok)">✓ 已完成</span>':r.ov&&r.ov.exercises?'<span class="chip ph">今日已調整</span>':''}</div>
       <div class="meta"><span><b>${list.length}</b>動作</span><span><b>${nSets}</b>組</span><span><b>${estMinutes(list,selPh)}</b>分鐘</span></div>
-      ${state.active||!list.length?'':`<button class="btn primary big" data-act="start" data-date="${sel}">開始訓練</button>`}
+      ${state.active||!list.length||r.done||r.past||sel<today?'':`<button class="btn primary big" data-act="start" data-date="${sel}" data-day="${r.day.id}">${sel===today?'開始訓練':'今天就練這個'}</button>`}
       <div class="ex-list" data-dnd="today" data-date="${sel}">${list.map((pe,i)=>{const ex=EX(pe.exId),p=prescribe(pe,selPh);
         return `<div class="ex-row dnd-row" data-i="${i}">
           <button class="row grow" style="gap:12px;text-align:left;min-width:0" data-act="exInfo" data-ex="${pe.exId}" data-pe="${pe.id}" data-date="${sel}">${thumbHTML(ex)}
@@ -1228,8 +1247,16 @@ function renderToday(){
         ${r.ov?`<button class="btn sm ghost" data-act="clearOverride" data-date="${sel}">還原成計畫</button>`:''}</div>
     </section>`;
   }else{
-    h+=`<section class="card rest-day"><h2>休息日</h2><p class="muted" style="margin:0 0 16px">肌肉在休息時長大。可以散步 20–30 分鐘或做些伸展。<br>想練的話，選一個菜單：</p>
-      <div class="row" style="flex-wrap:wrap;justify-content:center">${state.plan.days.map(d=>`<button class="btn sm" data-act="swapDay" data-date="${sel}" data-day="${d.id}">${esc(d.name)}</button>`).join('')}</div></section>`;
+    const nx=upNext();
+    if(sel<today) h+=`<section class="card rest-day"><h2>這天沒有訓練</h2><p class="muted" style="margin:0">沒關係，菜單不會跳過，下次會接著練「${nx?esc(nx.day.name):''}」。</p></section>`;
+    else if(sel===today&&nx&&!state.active&&!takenToday()){const L=nx.day.exercises,ph0=PH(phaseAt(today).idx);
+      h+=`<section class="card stack"><div class="day-head"><div><div class="eyebrow">今天沒排訓練 · 下一個菜單</div><div class="day-title">${esc(nx.day.name)}</div></div></div>
+       <div class="ex-sub">原本排在 ${pd(nx.date).getMonth()+1}/${pd(nx.date).getDate()} 週${WD[pd(nx.date).getDay()]}。今天練的話，之後的菜單會順延。</div>
+       <div class="meta"><span><b>${L.length}</b>動作</span><span><b>${L.reduce((a,pe)=>a+prescribe(pe,ph0).sets,0)}</b>組</span><span><b>${estMinutes(L,ph0)}</b>分鐘</span></div>
+       ${L.length?`<button class="btn primary big" data-act="start" data-date="${today}" data-day="${nx.day.id}">今天練「${esc(nx.day.name)}」</button>`:''}
+       <div class="ex-list">${L.map(pe=>{const ex=EX(pe.exId),p=prescribe(pe,ph0);return `<div class="ex-row" style="padding:8px 0">${thumbHTML(ex,'sm')}<span class="grow"><div class="ex-name" style="font-size:14px">${esc(ex.name)}</div><div class="ex-sub">${p.sets} 組 × ${p.rmin===p.rmax?p.rmin:p.rmin+'-'+p.rmax} ${ex.unit||'次'}</div>${lastTxt(pe.exId)}</span>${musIcon(ex,'sm')}</div>`}).join('')}</div>
+       ${state.plan.days.length>1?`<div class="ex-sub" style="margin-top:4px">或練別的菜單：</div><div class="row" style="flex-wrap:wrap">${state.plan.days.filter(d=>d.id!==nx.day.id).map(d=>`<button class="btn sm" data-act="swapDay" data-date="${today}" data-day="${d.id}">${esc(d.name)}</button>`).join('')}</div>`:''}</section>`}
+    else h+=`<section class="card rest-day"><h2>休息日</h2><p class="muted" style="margin:0">肌肉在休息時長大。可以散步 20–30 分鐘或做些伸展。</p></section>`;
   }
   return `<div class="stack">${h}${tail}</div>`;
 }
@@ -1447,8 +1474,10 @@ function makeItem(pe,P){
   const sugg=p.w||(last?last[0].w:0);
   return {key:uid(),exId:pe.exId,peId:pe.id,rmin:p.rmin,rmax:p.rmax,sugg,warm:false,sets:Array.from({length:p.sets},()=>({w:sugg,r:'',done:false}))};
 }
-function startSession(date){
-  const r=dayFor(date);if(!r) return;
+function startSession(date,dayId){
+  let r=dayFor(date);
+  if(dayId){const day=state.plan.days.find(d=>d.id===dayId);if(day&&(!r||r.day.id!==dayId))r={day,exercises:day.exercises}}
+  if(!r) return;
   const ph=phaseAt(TODAY()),P=PH(ph.idx);
   state.active={id:uid(),date:TODAY(),planDate:date,dayId:r.day.id,dayName:r.day.name,phaseIdx:ph.idx,cycle:ph.cycle,startedAt:Date.now(),idx:0,items:r.exercises.map(pe=>makeItem(pe,P)),rest:null};
   ui.inSession=true;save();keepAwake();render();
@@ -1464,7 +1493,7 @@ function finishSession(){
   if(!items.length){ui.dialog={title:'還沒有完成任何一組',msg:'要直接放棄這次訓練嗎？不會留下紀錄。',ok:'放棄訓練',danger:true,onOk:()=>{state.active=null;ui.inSession=false;save();render()}};render();return}
   const volume=items.reduce((t,it)=>t+(EX(it.exId).group==='有氧'?0:it.sets.reduce((x,s)=>x+s.w*s.r,0)),0);
   const reps=items.reduce((t,it)=>t+it.sets.reduce((x,s)=>x+s.r,0),0);
-  const log={id:uid(),date:a.date,dayName:a.dayName,phaseIdx:a.phaseIdx,cycle:a.cycle,start:a.startedAt,end:sessionEnd(a),items,volume,reps};
+  const log={id:uid(),date:a.date,dayId:a.dayId,dayName:a.dayName,phaseIdx:a.phaseIdx,cycle:a.cycle,start:a.startedAt,end:sessionEnd(a),items,volume,reps};
   // PRs vs previous history
   const prs=[];items.forEach(it=>{const w=it.sets.filter(x=>x.pr==='w');const r=it.sets.filter(x=>x.pr==='r');
     if(w.length){const top=w.reduce((a,x)=>x.w>a.w?x:a,w[0]);prs.push({exId:it.exId,text:`重量新高 ${fw(top.w)} kg × ${top.r}`})}
@@ -1554,7 +1583,7 @@ function sheetPlan(s){
      <div class="field"><label>週期</label><div class="seg"><button class="${p.periodize?'on':''}" data-act="drPer" data-k="1">五週循環</button><button class="${p.periodize?'':'on'}" data-act="drPer" data-k="0">固定菜單</button></div></div>`
    :`<button class="btn" data-act="redoSetup">重新設定天數、星期與菜單</button><button class="btn" data-act="openShare">分享計畫／幫別人寫計畫／輸入代碼</button>`}
    ${off?`<div class="card stack tidy" style="padding:14px"><div><div class="ex-name">${off} 個動作的次數不是標準區間</div><div class="ex-sub">例如 8-15。整理成最接近的區間（6-8、8-10、10-12、12-15⋯），之後用 −／+ 調整會比較順。</div></div><button class="btn sm primary" data-act="planTidy" style="align-self:flex-start">一鍵整理</button></div>`:''}
-   ${p.rotate?`<div class="card stack" style="padding:14px"><div class="row between"><div><div class="ex-name">每週練一天，菜單輪流</div><div class="ex-sub">${dr?'':`這週是第 ${rotIdx(TODAY())+1} 份，`}共 ${p.days.length} 份</div></div>
+   ${p.rotate?`<div class="card stack" style="padding:14px"><div class="row between"><div><div class="ex-name">每週練一天，菜單輪流</div><div class="ex-sub">${dr?'':`下一次練第 ${nextIdx()+1} 份，`}共 ${p.days.length} 份</div></div>
      <select data-rotwd="1" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 8px" aria-label="星期">${[1,2,3,4,5,6,0].map(w=>`<option value="${w}" ${p.days[0]&&p.days[0].wd===w?'selected':''}>每週${WD[w]}</option>`).join('')}</select></div></div>`:''}
    ${p.days.map((d,di)=>`<div class="card stack" style="padding:14px">
      <div class="row"><input class="grow" style="height:40px;border-radius:10px;background:var(--surface2);border:1px solid var(--line2);padding:0 10px;font-weight:700;outline:0" data-dayname="${d.id}" value="${esc(d.name)}" aria-label="菜單名稱">
@@ -1660,7 +1689,7 @@ const A={
  tab:el=>{ui.tab=el.dataset.k;render();window.scrollTo(0,0)},
  week:el=>{ui.weekOff+=+el.dataset.d;ui.selDate=addDays(mondayOf(TODAY()),ui.weekOff*7+(ui.weekOff===0?(pd(TODAY()).getDay()+6)%7:0));render()},
  selDay:el=>{ui.selDate=el.dataset.d;render()},
- start:el=>startSession(el.dataset.date),
+ start:el=>startSession(el.dataset.date,el.dataset.day),
  resume:()=>{ui.inSession=true;keepAwake();render()},
  planTidy:()=>{const p=PT();let n=0;p.days.forEach(d=>d.exercises.forEach(pe=>{const ex=EX(pe.exId);if(!ex)return;const [a,b]=snapR(ex,+pe.repMin,+pe.repMax);if(a!==+pe.repMin||b!==+pe.repMax){pe.repMin=a;pe.repMax=b;n++}}));save();ui.keepSheetScroll=true;render();toast(`已整理 ${n} 個動作`)},
  missedSkip:el=>{state.settings.missedSkip=el.dataset.d;save();render()},
@@ -2517,7 +2546,7 @@ async function boot(){
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-const APP_V='20261117192248';
+const APP_V='20261119180402';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
@@ -2544,7 +2573,13 @@ function checkStale(){
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&user&&!state.active&&ui.screen==null)Cloud.pull();if(document.visibilityState==='visible'&&!ui.dialog&&state.active&&Date.now()-state.active.startedAt>=6*36e5){checkStale();render()}});
 </script>
-<style>.field input,.field select,.search input,textarea{font-size:16px}</style>
+<style>.field input,.field select,.search input,textarea{font-size:16px}
+/* no zooming: no double-tap zoom, and inputs ≥16px so iPhone doesn't zoom in when you tap a field */
+html,body{touch-action:manipulation;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+input,select,textarea{font-size:max(16px,1em)}</style>
+<script>/* iPhone ignores user-scalable=no, so block pinch-zoom directly */
+['gesturestart','gesturechange','gestureend'].forEach(t=>document.addEventListener(t,e=>e.preventDefault(),{passive:false}));
+document.addEventListener('touchmove',e=>{if(e.touches.length>1)e.preventDefault()},{passive:false});</script>
 <script>try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist()}catch(e){}</script>
 </body>
 </html>
