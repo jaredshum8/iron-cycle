@@ -13,6 +13,11 @@
 <link rel="manifest" href="manifest.webmanifest">
 <style>:root{padding-top:var(--top,env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}
 /* ===== session: big demo, favourites ===== */
+.sess-pic-row{display:flex;align-items:flex-end;gap:8px;margin-top:10px}
+.sess-pic{width:104px;height:72px;border-radius:14px;overflow:hidden;flex:none;background:#fff;box-shadow:0 0 0 1px var(--line),var(--shadow-sm);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.sess-pic img{width:100%;height:100%;object-fit:cover;display:block}.sess-pic:active{transform:scale(.94)}
+.sess-pic-row .fav-mini{position:static;width:32px;height:32px;font-size:16px;color:var(--muted);background:var(--surface2);-webkit-backdrop-filter:none;backdrop-filter:none}
+.sess-pic-row .fav-mini.on{color:#E8A800;background:color-mix(in srgb,#FFD166 25%,var(--surface))}
 .sess-demo{position:relative;border-radius:20px;overflow:hidden;box-shadow:var(--shadow-sm);cursor:pointer}
 .sess-demo .demo{aspect-ratio:16/10;border-radius:0}
 .sess-demo .sd-tip{position:absolute;left:10px;bottom:10px;font-size:12px;font-weight:700;color:#fff;background:rgba(20,16,34,.55);-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);padding:4px 10px;border-radius:99px}
@@ -1457,8 +1462,8 @@ function renderSession(){
     const allDone=it.sets.length&&it.sets.every(s=>s.done);
     body+=`<div class="progress-dots">${a.items.map((x,i)=>`<i class="${x.sets.length&&x.sets.every(s=>s.done)?'done':i===a.idx?'cur':''}"></i>`).join('')}</div>
     <div class="ex-head"><div class="grow"><div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap"><span class="chip ph">${P.name}</span>${musclesOf(ex).map(m=>`<span class="chip">${MUS[m]}</span>`).join('')}</div>
-     <div class="ex-title">${esc(ex.name)}</div>${ex.en?`<div class="en" style="font-size:14px;margin-top:2px">${esc(ex.en)}</div>`:''}</div>${trendHTML(it.exId)}</div>`;
-    if(ex.img) body+=`<div class="sess-demo" data-act="exPeek" data-ex="${ex.id}" role="button" aria-label="看完整教學">${demoHTML(ex)}<span class="sd-tip">點開看完整教學</span><button class="fav-mini ${isFav(ex.id)?'on':''}" data-act="favEx" data-ex="${ex.id}" aria-label="收藏">★</button></div>`;
+     <div class="ex-title">${esc(ex.name)}</div>${ex.en?`<div class="en" style="font-size:14px;margin-top:2px">${esc(ex.en)}</div>`:''}
+     <div class="sess-pic-row">${ex.img?`<button class="sess-pic" data-act="exPeek" data-ex="${ex.id}" aria-label="看完整教學"><img src="img/${ex.img}/0.jpg" alt="${esc(ex.name)} 起始姿勢"></button>`:''}<button class="fav-mini ${isFav(ex.id)?'on':''}" data-act="favEx" data-ex="${ex.id}" aria-label="收藏">★</button></div></div>${trendHTML(it.exId)}</div>`;
     body+=tutHTML(ex);
     if(ex.compound&&it.sugg>=30&&['槓鈴','史密斯'].includes(ex.equip)){
       const bar=ex.equip==='槓鈴'?20:15,inc=incOf(ex),W=it.sugg;
@@ -2744,7 +2749,7 @@ async function boot(){
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-const APP_V='20261122004651';
+const APP_V='20261122005113';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
