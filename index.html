@@ -13,6 +13,22 @@
 <link rel="manifest" href="manifest.webmanifest">
 <style>:root{padding-top:var(--top,env(safe-area-inset-top,0px));padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}
 /* ===== session: big demo, favourites ===== */
+.ex-head.sh{align-items:center;gap:12px}
+.ex-head.sh .sess-pic{width:84px;height:64px;position:relative}
+.ex-head.sh .sess-pic span{position:absolute;left:4px;bottom:4px;font-size:10px;font-weight:800;color:#fff;background:rgba(20,16,34,.6);padding:1px 6px;border-radius:6px}
+.ex-head.sh .sess-pic.ph{display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);font-weight:800;font-size:22px}
+.sh-chips{display:flex;gap:4px;flex-wrap:nowrap;overflow:hidden;margin-bottom:2px}.sh-chips .chip{font-size:11px;padding:2px 8px;height:auto}
+.ex-head.sh .ex-title{font-size:22px;line-height:1.2;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.ex-head.sh .en{font-size:12px;margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ex-head.sh .fav-mini{position:static;flex:none;align-self:flex-start;width:32px;height:32px;font-size:16px;color:var(--muted);background:var(--surface2);-webkit-backdrop-filter:none;backdrop-filter:none}
+.ex-head.sh .fav-mini.on{color:#E8A800;background:color-mix(in srgb,#FFD166 25%,var(--surface))}
+/* compact set rows so 4+ sets fit on screen */
+.sets{gap:7px}
+.set{padding:6px;border-radius:18px}
+.fld{padding:3px 4px;border-radius:12px}
+.fld input{font-size:24px;line-height:1.1}
+.fld small{font-size:10px;line-height:1.2}
+.sess-body .in{gap:10px}
 .sess-pic-row{display:flex;align-items:flex-end;gap:8px;margin-top:10px}
 .sess-pic{width:104px;height:72px;border-radius:14px;overflow:hidden;flex:none;background:#fff;box-shadow:0 0 0 1px var(--line),var(--shadow-sm);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
 .sess-pic img{width:100%;height:100%;object-fit:cover;display:block}.sess-pic:active{transform:scale(.94)}
@@ -1461,14 +1477,14 @@ function renderSession(){
     const ex=EX(it.exId),best=bestOf(it.exId),h=history(it.exId).slice(-16),last=lastSets(it.exId);
     const allDone=it.sets.length&&it.sets.every(s=>s.done);
     body+=`<div class="progress-dots">${a.items.map((x,i)=>`<i class="${x.sets.length&&x.sets.every(s=>s.done)?'done':i===a.idx?'cur':''}"></i>`).join('')}</div>
-    <div class="ex-head"><div class="grow"><div class="row" style="gap:6px;margin-bottom:6px;flex-wrap:wrap"><span class="chip ph">${P.name}</span>${musclesOf(ex).map(m=>`<span class="chip">${MUS[m]}</span>`).join('')}</div>
-     <div class="ex-title">${esc(ex.name)}</div>${ex.en?`<div class="en" style="font-size:14px;margin-top:2px">${esc(ex.en)}</div>`:''}
-     <div class="sess-pic-row">${ex.img?`<button class="sess-pic" data-act="exPeek" data-ex="${ex.id}" aria-label="看完整教學"><img src="img/${ex.img}/0.jpg" alt="${esc(ex.name)} 起始姿勢"></button>`:''}<button class="fav-mini ${isFav(ex.id)?'on':''}" data-act="favEx" data-ex="${ex.id}" aria-label="收藏">★</button></div></div>${trendHTML(it.exId)}</div>`;
-    body+=tutHTML(ex);
+    <div class="ex-head sh">${ex.img?`<button class="sess-pic" data-act="exPeek" data-ex="${ex.id}" aria-label="看完整教學"><img src="img/${ex.img}/0.jpg" alt="${esc(ex.name)} 起始姿勢"><span>教學</span></button>`:`<button class="sess-pic ph" data-act="exPeek" data-ex="${ex.id}" aria-label="看教學">${esc(ex.group[0])}<span>教學</span></button>`}
+     <div class="grow" style="min-width:0"><div class="sh-chips"><span class="chip ph">${P.name}</span>${musclesOf(ex).slice(0,2).map(m=>`<span class="chip">${MUS[m]}</span>`).join('')}</div>
+     <div class="ex-title">${esc(ex.name)}</div>${ex.en?`<div class="en">${esc(ex.en)}</div>`:''}</div>
+     <button class="fav-mini ${isFav(ex.id)?'on':''}" data-act="favEx" data-ex="${ex.id}" aria-label="收藏">★</button></div>`;
     if(ex.compound&&it.sugg>=30&&['槓鈴','史密斯'].includes(ex.equip)){
       const bar=ex.equip==='槓鈴'?20:15,inc=incOf(ex),W=it.sugg;
       const steps=[[bar,10,'空槓'],[Math.max(bar,roundTo(W*.5,inc)),5,'輕'],[Math.max(bar,roundTo(W*.7,inc)),3,'中'],[Math.max(bar,roundTo(W*.85,inc)),1,'中重']];
-      body+=`<details class="warm" ${it.warm?'':'open'}><summary><span>${it.warm?'✓ 熱身完成':'熱身組'}</span><span class="muted" style="font-size:13px">${it.warm?'展開':'依今天重量計算'}</span></summary>
+      body+=`<details class="warm"><summary><span>${it.warm?'✓ 熱身完成':'熱身組'}</span><span class="muted" style="font-size:13px">${it.warm?'展開':'依今天重量計算'}</span></summary>
        <ol>${steps.map(([w,r,l])=>`<li><span class="num">${fw(w)}</span> kg × ${r}　${l}</li>`).join('')}</ol>
        ${it.warm?'':`<button class="btn sm" style="margin-top:10px;width:100%" data-act="warmDone">熱身完成</button>`}</details>`;
     }
@@ -2749,7 +2765,7 @@ async function boot(){
    deploy.sh stamps APP_V here and in version.json. When the app comes back to the foreground
    and a newer version is live, reload right away (or after the workout if one is running). */
 if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
-const APP_V='20261122005113';
+const APP_V='20261122005341';
 let updateReady=false;
 async function checkUpdate(){
   if(APP_V==='dev') return;
